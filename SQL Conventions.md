@@ -20,6 +20,6 @@
 	* 預設值
 	* 描述
 		
-	![](http://i.imgur.com/zEuY5o9.png)	
+	![Img1](http://i.imgur.com/zEuY5o9.png)	
 		
 2. 使用資料庫圖表來拉關連
