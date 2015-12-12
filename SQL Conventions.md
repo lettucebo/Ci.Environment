@@ -29,6 +29,7 @@
 		
 2. 使用資料庫圖表來拉關連
     * 一對一
+        * <a href="http://blog.miniasp.com/post/2011/05/18/SQL-Server-Database-Design-One-To-One-Relationship.aspx" target="_blank">如何在 SQL Server 資料庫設計「一對一」表格關聯</a>
     * 多對一
     * 一對多
    
