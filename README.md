@@ -3,8 +3,11 @@
 
 當然不是說要用規範來限制開發人員，基本上只會設定大方向原則
 
-以下撰寫出相關原則，若有問題，大家可以利用 github 所提供的相關功能來一起編修
+以下撰寫出相關原則，若有問題，大家可以利用 github 所提供的相關功能一起來編修
 
-`單純疑問可開 issue 出來，若是有相關建議編輯可以使用 pull request 來協同編輯`
+```
+＊ 單純疑問可開 issue 出來
+＊ 有相關建議編輯可以使用 pull request 來協同編輯
+```
 
 1. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/SQL%20Conventions.md" target="_blank">SQL 設計準則</a>
