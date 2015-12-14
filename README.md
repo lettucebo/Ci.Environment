@@ -10,4 +10,4 @@
 ＊ 有相關建議編輯可以使用 pull request 來協同編輯
 ```
 
-1. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/SQL%20Conventions.md" target="_blank">SQL 設計準則</a>
+1. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/SQL.md" target="_blank">SQL 設計準則</a>
