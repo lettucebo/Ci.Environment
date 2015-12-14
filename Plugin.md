@@ -6,4 +6,5 @@
   * NPOI
 
 * Javascript 提醒視窗
-bootbox
+   * bootbox
+     * Server回傳參數一律使用：TempData["alert"]
