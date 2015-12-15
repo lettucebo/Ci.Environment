@@ -94,7 +94,8 @@
 </table>
 
 * 時間欄位
-    * 時間欄位為因應雲端化來臨，時間欄位一律儲存世界協調時間，並於欄位名稱最後加上Utc代表此欄位的儲存方式為世界協調時間
+    * 時間欄位名稱均於名字後面加上Time做為區別
+    * 若欄位只單純儲存日期則於名字後面加上Date 做為區別
     <table>
     <tr>
         <th>欄位名稱</th>
@@ -104,22 +105,30 @@
         <th>描述</th>
     </tr>
     <tr>
-        <td>CreatTimeUtc</td>
+        <td>CreatTime</td>
         <td>datetime</td>
         <td>(sysutcdatetime())</td>
         <td>否</td>
         <td>建立時間</td>
     </tr>
     <tr>
-        <td>DeleteTimeUtc</td>
+        <td>DeleteTime</td>
         <td>datetime</td>
         <td></td>
         <td>是</td>
         <td>刪除時間</td>
     </tr>
+    <tr>
+        <td>BirthDate</td>
+        <td>date</td>
+        <td></td>
+        <td>否</td>
+        <td>生日</td>
+    </tr>
 </table>
-    * 若欄位只單純儲存日期則不需 Follow 此規則
-        * 如：生日：BirthDate date
+    * 時間欄位為因應雲端化來臨，若網站放置於 Azure 上，則依照以下設定進行
+        * 於 azure config 上設定時區 WEBSITE_TIME_ZONE = "Taipei Standard Time" 設定成台北時間
+        * 時區可視當地時間變更
 
 * 刪除資料
     * 資料表刪除基本上以不刪除資料為準(視情況而定，大多均需要保留)
