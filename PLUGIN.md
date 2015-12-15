@@ -9,3 +9,10 @@
 * Javascript 提醒視窗
    * bootbox
      * Server回傳參數一律使用：TempData["alert"]
+
+* 錯誤紀錄模組
+  * Elmah.MVC
+    * ELMAH on MS SQL Server
+    * ELMAH on MySQL
+    * ELMAH on XML Log
+  * Application Insights
