@@ -16,3 +16,12 @@
     * ELMAH on MySQL
     * ELMAH on XML Log
   * Application Insights
+    * 紀錄 Client 端資訊
+    * 紀錄 Server 端資訊
+    * 自訂 Log 紀錄
+
+* 網頁分頁
+  * PagedList.Mvc 
+
+* CSS 框架
+  * Bootstrap 
