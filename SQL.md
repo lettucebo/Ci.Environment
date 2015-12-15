@@ -78,18 +78,18 @@
         <th>描述</th>
     </tr>
     <tr>
-        <td>Id</td>
-        <td>nvarchar(128)</td>
-        <td>(newid())</td>
+        <td>IsDelete</td>
+        <td>bit</td>
+        <td>(0)</td>
         <td>否</td>
-        <td>每個資料表的主鍵</td>
+        <td>是否刪除</td>
     </tr>
     <tr>
-        <td>CreatTimeUtc</td>
-        <td>datetime</td>
-        <td>(sysutcdatetime())</td>
+        <td>IsShow</td>
+        <td>bit</td>
+        <td>(1)</td>
         <td>否</td>
-        <td>建立時間（世界協調時間）</td>
+        <td>是否顯示</td>
     </tr>
 </table>
 
