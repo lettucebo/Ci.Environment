@@ -71,4 +71,7 @@
     ```
 <hr/>
 
+#### 特殊規則
+  * public ActionResult Index(Model model){}
+
 ## 註解
