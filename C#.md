@@ -14,6 +14,10 @@
     		<td>網站</td>
     	</tr>
     	<tr>
+    		<td>Sa.Fund.Services</td>
+    		<td>網站</td>
+    	</tr>
+    	<tr>
     		<td>Sa.Fund.Library</td>
     		<td>類別庫</td>
     	</tr>
@@ -23,6 +27,11 @@
     	</tr>
     </table>
     <hr/>
+    
+## 專案結構
+  - Services
+  - Librarys
+  - UI(Web or Console etc...)
     
 ## 變數命名
   * 不論是何種物件（類別、屬性、方法、事件、函數、委派或其他物件等），只要是非專屬於迴圈中使用的，一律採明確名稱方式命名，其名稱需要明白的表明用途，不可使用無意義的名稱
