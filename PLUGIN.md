@@ -30,7 +30,15 @@
     * 說明：<a href="http://kevintsengtw.blogspot.tw/2011/10/nlog-advanced-net-logging-1.html" target="_blank">使用 NLog - Advanced .NET Logging by mkrt</a>
 
 * 網頁分頁
-  * PagedList.Mvc 
+  * PagedList.Mvc
+    * <a href="https://github.com/TroyGoode/PagedList" target="_blank">官方網站</a>
+    * <a href="http://kevintsengtw.blogspot.tw/2013/10/aspnet-mvc-pagedlistmvc.html" target="_blank">ASP.NET MVC 資料分頁 - 使用 PagedList.Mvc</a>
+    * 不再維護
+  * X.PagedList
+    * PagedList.Mvc 的 Fork
+    * 使用方法大致與 PagedList.Mvc 相同
+    * <a href="https://github.com/kpi-ua/X.PagedList" target="_blank">官方網站</a>
+    * <a href="http://www.wuleba.com/25734.html" target="_blank">ASP.NET MVC 5使用X.PagedList.Mvc進行分頁教程</a>   
 
 * CSS 框架
   * Bootstrap 
