@@ -5,6 +5,7 @@
 
 ## Commit message 的格式
  - 每次提交，Commit message 都包括三個部分：Subject，Body 和 Footer
+ 
    ``` xml
       <type>: <subject>
       // 空一行
