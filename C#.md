@@ -1,5 +1,6 @@
 ## 專案命名
   * {機關名稱}.{專案名稱}.{專案類型}
+  * 命名均統一為單數
   * 舉例
     * 機關名稱：體育署(Sa)
     * 專案名稱：基金會預算報備(Fund)
@@ -14,11 +15,11 @@
     		<td>網站</td>
     	</tr>
     	<tr>
-    		<td>Sa.Fund.Services</td>
+    		<td>Sa.Fund.Service</td>
     		<td>網站</td>
     	</tr>
     	<tr>
-    		<td>Sa.Fund.Libraries</td>
+    		<td>Sa.Fund.Library</td>
     		<td>類別庫</td>
     	</tr>
     	<tr>
