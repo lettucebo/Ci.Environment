@@ -1,5 +1,6 @@
 ## Commit 訊息
  - 每次 Commit，都要寫 Commit message，否則就不允許 Commit。
+ - 
 <hr/>
 
 ## Commit message 的格式
@@ -20,6 +21,7 @@
    - refactor：重構（即不是新增功能，也不是修改 bug 的代碼變動）
    - test：增加測試
    - chore：構建過程或輔助工具的變動
+
 <hr/>
  
 ##### Subject
@@ -28,6 +30,7 @@
    - 以動詞開頭，使用第一人稱現在時，比如 change，而不是 changed 或 changes
    - 第一個字母小寫
    - 結尾不加句號（.）
+
 <hr/>
 
 ##### Body
@@ -44,6 +47,7 @@
    - Bullet points are okay, too
    - Use a hanging indent
    ```
+
 <hr/>
    
 ##### Footer
@@ -78,6 +82,7 @@
      ```
      Closes #123, #245, #992
      ```
+
 <hr/>
    
 ##### Revert
@@ -90,6 +95,7 @@
  - Body 部分的格式是固定的，必須寫成 `This reverts commit <hash>.`，其中的 `hash` 是被撤銷 commit 的 SHA1
 
  - 如果當前 commit 與被撤銷的 commit，在同一個發佈（release）裡面，那麼它們都不會出現在 Change log 裡面。如果兩者在不同的發布，那麼當前 commit，會出現在 Change log 的 `Reverts` 小標題下面。
+
 <hr/>
  
 ## 範例
