@@ -104,7 +104,7 @@
 #### 特殊規則
   * Action 回傳之 Model 變數均命名為：model
     - public ActionResult Index(ViewModel model){}
-    - 
+    
 <hr/>
 
 ## 註解
