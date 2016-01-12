@@ -30,9 +30,9 @@
     <hr/>
     
 ## 專案結構
-  - Services
+  - Service
     - 業務邏輯 
-  - Libraries
+  - Library
     - 相關共用類別等
       - 如：Models, Enums etc...
   - UI
