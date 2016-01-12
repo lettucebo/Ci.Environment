@@ -81,6 +81,7 @@
 ##### 類別與方法
   * 使用 Pascal 命名法(每個單字字首都要大寫)
   * 類別
+
     ```csharp
       public class ForDemoPurpose
       {
@@ -171,3 +172,38 @@
      ```
      
 <hr/>
+
+## 程式碼格式與樣式
+主要樣式均已設定於 StyleCop 中
+
+ - 大括號後需換行後接續程式碼 (Class, Method, if, while etc...)
+
+   ``` csharp
+      public class AccountController : Controller
+      {
+        private const string XsrfKey = "XsrfKey";
+      }
+    ```
+ - 大括號結尾後需間隔一行
+
+   ``` csharp
+      if (isTest)
+      {
+          Trace("Testing...");
+      }
+
+      ShowResult(0);
+    ```
+ - 每個方法或類別之間需間隔一行
+   ``` csharp
+      public ChallengeResult(string provider, string redirectUri) : this(provider, redirectUri, null)
+      {
+      }
+
+      public ChallengeResult(string provider, string redirectUri, string userId)
+      {
+          LoginProvider = provider;
+          RedirectUri = redirectUri;
+          UserId = userId;
+      }
+    ```
