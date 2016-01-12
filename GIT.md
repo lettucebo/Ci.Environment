@@ -101,3 +101,5 @@
 ## 範例
 ![](http://i.imgur.com/ZchtUlM.png)
  
+##### 參考
+1. http://www.ruanyifeng.com/blog/2016/01/commit_message_change_log.html
