@@ -1,6 +1,6 @@
 # `非以下列表之套件，使用前請與主管討論後才可使用`
 
-### 套件列表
+### C#
 * Excel處理
   * EPPLUS
     * 以此套為準
@@ -10,10 +10,6 @@
   * NPOI
     * 除非一定要使用2003格式檔(xls)，才可使用NPOI
 
-* Javascript 提醒視窗
-   * bootbox
-     * Server回傳參數一律使用：TempData["alert"]
-   * fancyBox
 
 * 錯誤紀錄模組
   * Elmah.MVC
@@ -40,5 +36,16 @@
     * <a href="https://github.com/kpi-ua/X.PagedList" target="_blank">官方網站</a>
     * <a href="http://www.wuleba.com/25734.html" target="_blank">ASP.NET MVC 5使用X.PagedList.Mvc進行分頁教程</a>   
 
+<hr/>
+### Javascript
+* Javascript 提醒視窗
+   * bootbox
+     * Server回傳參數一律使用：TempData["alert"]
+   * fancyBox
+
+<hr/>
+### CSS
 * CSS 框架
   * Bootstrap 
+
+<hr/>
