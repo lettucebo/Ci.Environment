@@ -27,7 +27,8 @@
     		<td>Console</td>
     	</tr>
     </table>
-    <hr/>
+
+<hr/>
     
 ## 專案結構
   - Service
@@ -38,12 +39,15 @@
   - UI
     - Web, Console etc...
     
+<hr/>
+
 ## 變數命名
   * 不論是何種物件（類別、屬性、方法、事件、函數、委派或其他物件等），只要是非專屬於迴圈中使用的，一律採明確名稱方式命名，其名稱需要明白的表明用途，不可使用無意義的名稱
   * 不得使用匈牙利命名法
     * 如：lngAmount、iDataCount、strCompanyName等
   * 若物件仍難以直接由名稱了解時，則必須要在宣告處加上註解以協助閱讀 
   * 命名物件時，不要使用底線（_）來連接兩個字彙
+  * 
 <hr/>
 
 ##### 類別私有成員變數
@@ -71,6 +75,7 @@
     ```csharp
     bool lightSwitch;
     ```
+    
 <hr/>
     
 ##### 類別與方法
@@ -92,11 +97,13 @@
         {
         }
       ```
+      
 <hr/>
 
 #### 特殊規則
   * Action 回傳之 Model 變數均命名為：model
     - public ActionResult Index(ViewModel model){}
+    - 
 <hr/>
 
 ## 註解
@@ -162,3 +169,5 @@
         }
       }
      ```
+     
+<hr/>
