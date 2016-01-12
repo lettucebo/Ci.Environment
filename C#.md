@@ -103,6 +103,10 @@
   * <span style="red">不要有想法：我之後再回來補！<sapn/>
   * 安裝 GhostDoc Pro
     * Ctrl + Shift + D 
+  * 註解開始前先空一格
+    ``` csharp
+    // 檔不可以沒有註解
+    ```
   * class 註解
     * summary: 描述此 class 之大致用途 
     
