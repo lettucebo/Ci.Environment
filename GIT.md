@@ -1,6 +1,6 @@
 ## Commit 訊息
  - 每次 Commit，都要寫 Commit message，否則就不允許 Commit。
- - 
+
 <hr/>
 
 ## Commit message 的格式
