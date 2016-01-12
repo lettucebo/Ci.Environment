@@ -1,4 +1,4 @@
-# `非以下列表之套件，使用前請與主管討論後才可使用`
+# `非以下列表之套件，使用前請與主管討論後方可使用`
 
 ### CSharp
 * Excel處理
@@ -33,6 +33,7 @@
   * X.PagedList
     * PagedList.Mvc 的 Fork
     * 使用方法大致與 PagedList.Mvc 相同
+    * 不依賴 System.Web，可用在多種種類專案中(WinForm, WPF etc...)
     * <a href="https://github.com/kpi-ua/X.PagedList" target="_blank">官方網站</a>
     * <a href="http://www.wuleba.com/25734.html" target="_blank">ASP.NET MVC 5使用X.PagedList.Mvc進行分頁教程</a>   
 
