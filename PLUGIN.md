@@ -9,6 +9,8 @@
     * 可以用LINQ的方式操作 Excel，並自動塞入Model
   * NPOI
     * 除非一定要使用2003格式檔(xls)，才可使用NPOI
+  * Ole.Db
+    * 大量資料匯入 
 
 
 * 錯誤紀錄模組
