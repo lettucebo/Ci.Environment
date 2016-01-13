@@ -103,10 +103,7 @@
 
 #### 特殊規則
   * Action 回傳之 Model 變數均命名為：model
-  
-    ```csharp
-      public ActionResult Index(ViewModel model){}
-    ```
+    - public ActionResult Index(ViewModel model){}
     
 <hr/>
 
@@ -198,6 +195,7 @@
       ShowResult(0);
     ```
  - 每個方法或類別之間需間隔一行
+ 
    ``` csharp
       public ChallengeResult(string provider, string redirectUri) : this(provider, redirectUri, null)
       {
@@ -210,3 +208,42 @@
           UserId = userId;
       }
     ```
+    
+ - 除了 for loop 外，禁止使用無意義變數
+   
+   ``` csharp
+      // for loop example
+      for (int i = 1; i <= 5; i++)
+      {
+          Console.WriteLine(i);
+      }
+      
+      // other example
+      int count = 0;
+      while(count<10)
+      {
+          count++;
+      }
+      ```
+ - 空白行不可超過兩行以上
+   - 以下為不符規範範例
+
+     ``` csharp
+        private string Example(string str, int len)
+        {
+            str = str.Substring(0, len);
+
+
+            return str;
+        }
+      ```
+   - 以下為符合規範範例
+
+     ``` csharp
+        private string Example(string str, int len)
+        {
+            str = str.Substring(0, len);
+
+            return str;
+        }
+      ```
