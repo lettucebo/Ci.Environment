@@ -10,6 +10,8 @@
 ＊ 有相關建議編輯可以使用 pull request 來協同編輯
 ```
 
+
+0. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/ENVIRONMENT.md" target="_blank">電腦環境安裝與設定</a>
 1. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/SQL.md" target="_blank">SQL 設計準則</a>
 2. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/C%23.md" target="_blank">C# 設計準則</a>
 3. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/GIT.md" target="_blank">GIT 設計準則</a>
