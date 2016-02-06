@@ -75,6 +75,7 @@
   - [TGIT](https://visualstudiogallery.msdn.microsoft.com/46A20578-F0D5-4B1E-B55D-F001A6345748)
 - [Microsoft SQL Server 2014](http://www.microsoft.com/zh-tw/server-cloud/products/sql-server/)
   - [Redgate SQLPrompt](http://www.red-gate.com/products/sql-development/sql-prompt/) 
+- [Java SE Development Kit](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
   
  ### 文書處理
  
