@@ -73,6 +73,8 @@
     - 於 Visual Studio 安裝擴充套件：[Visual StyleCop](https://visualstudiogallery.msdn.microsoft.com/cac2a05b-6eb6-4fa2-95b9-1f8d011e6cae)
     - 下載[設定檔](http://1drv.ms/1S6WfFV)後，放置於 **C:\Program Files (x86)\StyleCop 4.7** 下
   - [TGIT](https://visualstudiogallery.msdn.microsoft.com/46A20578-F0D5-4B1E-B55D-F001A6345748)
+- [Microsoft SQL Server 2014](http://www.microsoft.com/zh-tw/server-cloud/products/sql-server/)
+  - [Redgate SQLPrompt](http://www.red-gate.com/products/sql-development/sql-prompt/) 
   
  ### 文書處理
  
