@@ -2,7 +2,7 @@
 
 ## 實作環境說明
 
-為了能讓大家的環境基本上都差不多相同，請於開工前把需要的軟體全部安裝好，以下是安裝的相關軟體與安裝步驟與說明，如果安裝過程有遇到任何問題，請向**紙鈔**諮詢。
+為了能讓大家的環境基本上都差不多能在課堂上順利地進行實作，請於開工前把需要的軟體全部安裝好，以下是安裝的相關軟體與安裝步驟與說明，如果安裝過程有遇到任何問題，請向**紙鈔**諮詢。
 
 ### 作業系統
 
@@ -67,6 +67,7 @@
   - [Surpercharger](https://visualstudiogallery.msdn.microsoft.com/f58941e3-13c6-4e97-9235-195f6f380ea3)
   - [GhostDoc Pro](http://submain.com/GhostDoc/)
     - [[工具介紹]C# 快速撰寫註解 - GhostDoc](https://www.dotblogs.com.tw/hatelove/archive/2008/12/31/6580.aspx) By In 91
+  - [Indent Guides](https://visualstudiogallery.msdn.microsoft.com/e792686d-542b-474a-8c55-630980e72c30)
   - [StyleCop](https://stylecop.codeplex.com/)
     - 先至[StyleCop官網](https://stylecop.codeplex.com/)下載並安裝
     - 於 Visual Studio 安裝擴充套件：[Visual StyleCop](https://visualstudiogallery.msdn.microsoft.com/cac2a05b-6eb6-4fa2-95b9-1f8d011e6cae)
