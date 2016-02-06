@@ -16,7 +16,7 @@
     	</tr>
     	<tr>
     		<td>Sa.Fund.Service</td>
-    		<td>邏輯層</td>
+    		<td>業務邏輯層</td>
     	</tr>
     	<tr>
     		<td>Sa.Fund.Library</td>
@@ -47,7 +47,7 @@
     * 如：lngAmount、iDataCount、strCompanyName等
   * 若物件仍難以直接由名稱了解時，則必須要在宣告處加上註解以協助閱讀 
   * 命名物件時，不要使用底線（_）來連接兩個字彙
-  * 
+  
 <hr/>
 
 ##### 類別私有成員變數
@@ -103,7 +103,11 @@
 
 #### 特殊規則
   * Action 回傳之 Model 變數均命名為：model
-    - public ActionResult Index(ViewModel model){}
+    ``` csharp
+      public ActionResult Index(ViewModel model)
+      {
+      }
+    ```
     
 <hr/>
 
