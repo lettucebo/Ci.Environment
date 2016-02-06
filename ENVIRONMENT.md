@@ -67,11 +67,11 @@
   - [Surpercharger](https://visualstudiogallery.msdn.microsoft.com/f58941e3-13c6-4e97-9235-195f6f380ea3)
   - [GhostDoc Pro](http://submain.com/GhostDoc/)
     - [[工具介紹]C# 快速撰寫註解 - GhostDoc](https://www.dotblogs.com.tw/hatelove/archive/2008/12/31/6580.aspx) By In 91
-  - [StyleCop]
-    - [保哥線上講堂：利用 StyleCop 撰寫一致的 C# 程式碼風格](http://www.slideshare.net/WillHuangTW/stylecop)
+  - [StyleCop](https://stylecop.codeplex.com/)
     - 先至[StyleCop官網](https://stylecop.codeplex.com/)下載並安裝
     - 於 Visual Studio 安裝擴充套件：[Visual StyleCop](https://visualstudiogallery.msdn.microsoft.com/cac2a05b-6eb6-4fa2-95b9-1f8d011e6cae)
     - 下載[設定檔](http://1drv.ms/1S6WfFV)後，放置於 **C:\Program Files (x86)\StyleCop 4.7** 下
+    - [保哥線上講堂：利用 StyleCop 撰寫一致的 C# 程式碼風格](http://www.slideshare.net/WillHuangTW/stylecop)
   - [TGIT](https://visualstudiogallery.msdn.microsoft.com/46A20578-F0D5-4B1E-B55D-F001A6345748)
 - [Microsoft SQL Server 2014](http://www.microsoft.com/zh-tw/server-cloud/products/sql-server/)
   - [Redgate SQLPrompt](http://www.red-gate.com/products/sql-development/sql-prompt/) 
