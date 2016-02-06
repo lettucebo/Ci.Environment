@@ -2,7 +2,7 @@
 
 ## 實作環境說明
 
-為了能讓大家的環境基本上都差不多能在課堂上順利地進行實作，請務必在上課前把需要的軟體全部安裝好，以下是安裝的相關軟體與安裝步驟與說明，如果安裝過程有遇到任何問題，請向**紙鈔**諮詢。
+為了能讓大家的環境基本上都差不多能在課堂上順利地進行實作，請於開工前把需要的軟體全部安裝好，以下是安裝的相關軟體與安裝步驟與說明，如果安裝過程有遇到任何問題，請向**紙鈔**諮詢。
 
 ### 作業系統
 
@@ -14,7 +14,27 @@
 
 ### 文字編輯器
 
-- Sublime Text 3
+- [Sublime Text 3](https://www.sublimetext.com/3)
+  - [Sublime Text 3 新手上路：必要的安裝、設定與基本使用教學](http://blog.miniasp.com/post/2014/01/06/Useful-tool-Sublime-Text-3-Quick-Start.aspx) By Will保哥 
+  - [ConvertToUTF8](https://sublime.wbond.net/packages/ConvertToUTF8)
+    - 自動偵測文件的編碼字集(Charset)，並轉為 UTF-8
+  - [Emmet](https://sublime.wbond.net/packages/Emmet)
+    - 傳說中的 Zen Coding 就是這一套，請自行參考以下相關連結學習
+      - [Emmet Documentation](http://docs.emmet.io/)
+      - [Emmet for Sublime Text](https://github.com/sergeche/emmet-sublime) (GitHub) (有許多 Sublime 的用法與說明)
+      - 使用者定義的設定檔參考內容: [Emmet.sublime-settings](https://github.com/sergeche/emmet-sublime/blob/master/Emmet.sublime-settings)
+  - [AngularJS](https://sublime.wbond.net/packages/AngularJS)
+    - 提供許多 AngularJS 開發過程所需的自動完成 (Auto-completion) 需求
+    - 常見的 AngularJS 工具函式與 ng 模組中內建的 services 都有提供 Intellisense
+    - 可快速跳躍至選中的 directive, filter, …
+  - [Git](https://sublime.wbond.net/packages/Git)
+    - 安裝完成後，只要先按下 **Ctrl+Shift+P** 再按照你原本輸入 Git 指令的方式選擇想執行的動作即可  
+  - [Auto​File​Name](https://sublime.wbond.net/packages/AutoFileName)
+    - 可以在輸入 URL 或圖片網址時，自動提供路徑或檔名建議 (autocompletes filenames)
+  - [Bracket​Highlighter](https://sublime.wbond.net/packages/BracketHighlighter)
+    - 可自動顯示 HTML 標籤或 JavaScript 的各種對應區塊 ( { } )
+  - [SideBarEnhancements](https://sublime.wbond.net/packages/SideBarEnhancements)
+    - 提供許多側邊攔 (SideBar) 的右鍵選單功能，非常實用！ ( 按下 **Ctrl+K+B** 可顯示/隱藏側邊攔 )
 
 ### 開發工具
 
@@ -30,7 +50,7 @@
 	- [Web Essentials](http://vswebessentials.com/)
 	  - [Web Essentials 2015.1](https://visualstudiogallery.msdn.microsoft.com/ee6e6d8c-c837-41fb-886a-6b50ae2d06a2)
 	  - [Web Essentials 2013.5](https://visualstudiogallery.msdn.microsoft.com/56633663-6799-41d7-9df7-0f2a504ca361)
-	  - [Visual Studio - 提升Web與CSS開發的流暢度 By KingKong Bruce](http://blog.kkbruce.net/2011/11/visual-studio-webcss.html)
+	  - [Visual Studio - 提升Web與CSS開發的流暢度](http://blog.kkbruce.net/2011/11/visual-studio-webcss.html) By KingKong Bruce
 	- [Productivity Power Tools 2015](https://visualstudiogallery.msdn.microsoft.com/34ebc6a2-2777-421d-8914-e29c1dfa7f5d)
 	  - 安裝後至設定關閉 Syntactic Line Compression
   - [C# Essentials](https://visualstudiogallery.msdn.microsoft.com/a4445ad0-f97c-41f9-a148-eae225dcc8a5)
@@ -45,3 +65,17 @@
     - [tangible T4 Editor 2.3.0 plus modeling tools for VS 2015](https://visualstudiogallery.msdn.microsoft.com/784cf592-b797-4d4d-ad33-331fcf63faad)
     - [tangible T4 Editor 2.3.0 plus modeling tools for VS 2013](https://visualstudiogallery.msdn.microsoft.com/6d1223ca-5e52-49d0-a489-910f9b76396e)
   - [Surpercharger](https://visualstudiogallery.msdn.microsoft.com/f58941e3-13c6-4e97-9235-195f6f380ea3)
+  - [GhostDoc Pro](http://submain.com/GhostDoc/)
+    - [[工具介紹]C# 快速撰寫註解 - GhostDoc](https://www.dotblogs.com.tw/hatelove/archive/2008/12/31/6580.aspx) By In 91
+  - [StyleCop]
+    - [保哥線上講堂：利用 StyleCop 撰寫一致的 C# 程式碼風格](http://www.slideshare.net/WillHuangTW/stylecop)
+    - 先至[StyleCop官網](https://stylecop.codeplex.com/)下載並安裝
+    - 於 Visual Studio 安裝擴充套件：[Visual StyleCop](https://visualstudiogallery.msdn.microsoft.com/cac2a05b-6eb6-4fa2-95b9-1f8d011e6cae)
+    - 下載[設定檔](http://1drv.ms/1S6WfFV)後，放置於 **C:\Program Files (x86)\StyleCop 4.7** 下
+  - [TGIT](https://visualstudiogallery.msdn.microsoft.com/46A20578-F0D5-4B1E-B55D-F001A6345748)
+  
+ ### 文書處理
+ 
+  - Office 2016
+
+ ### 版本控管
