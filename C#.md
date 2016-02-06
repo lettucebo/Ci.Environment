@@ -4,7 +4,7 @@
   * 舉例
     * 機關名稱：體育署(Sa)
     * 專案名稱：基金會預算報備(Fund)
-    * 專案類型：Web, Console
+    * 專案類型：網站(Web), 主控台(Console)
     <table>
     	<tr>
     		<td>範例</td>
@@ -16,7 +16,7 @@
     	</tr>
     	<tr>
     		<td>Sa.Fund.Service</td>
-    		<td>網站</td>
+    		<td>邏輯層</td>
     	</tr>
     	<tr>
     		<td>Sa.Fund.Library</td>
@@ -35,7 +35,7 @@
     - 業務邏輯 
   - Library
     - 相關共用類別等
-      - 如：Models, Enums etc...
+      - 如：Models, Enums, Repository etc...
   - UI
     - Web, Console etc...
     
