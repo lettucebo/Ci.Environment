@@ -78,6 +78,15 @@
   
  ### 文書處理
  
-  - Office 2016
+- [Office 2016](http://www.microsoftstore.com/store/mstw/zh_TW/cat/Office/categoryID.66795700)
 
  ### 版本控管
+ 
+- [Git for Windows](https://git-scm.com/)
+- [TortoiseGit](https://tortoisegit.org/)
+- [GitHub Desktop](https://desktop.github.com/)
+
+ ### 遠端桌面管理
+- [Remote Desktop Connection Manager](https://www.microsoft.com/en-us/download/details.aspx?id=44989)
+  - [介紹好用工具：RDCMan ( 遠端桌面連線管理工具 )](http://blog.miniasp.com/post/2010/07/15/Useful-tool-RDCMan.aspx) By Will保哥
+  - [RDCMan 2.7 (遠端桌面連線管理工具) 如何在多台電腦共用已儲存的密碼](http://blog.miniasp.com/post/2014/11/28/RDCMan-27-share-passwords-between-computers.aspx) By Will保哥
