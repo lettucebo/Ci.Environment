@@ -7,6 +7,7 @@
 ### 作業系統
 
 - Windows 8.1 以上版本 (更新到最新 Service Pack 版本)
+- 確認有加入網域以及電腦名稱正確
 
 ### 瀏覽器
 
@@ -45,22 +46,19 @@
       - [Visual Studio 2015 的 SQL Server Data Tools](http://go.microsoft.com/fwlink/?LinkID=619253)
       - [Visual Studio 2013 的 SQL Server Data Tools](https://msdn.microsoft.com/dn864412)
   - 下載最新版的 [Microsoft Azure SDK](https://azure.microsoft.com/zh-tw/downloads/) ( 最新版: 2.8.2 )
-	  - 建議使用 [Web Platform Installer](https://www.microsoft.com/web/downloads/platform.aspx) 進行安裝
-	  - 請注意：[Visual Studio 2013](http://go.microsoft.com/fwlink/?linkid=323510&clcid=0x404) 與 [Visual Studio 2015](http://go.microsoft.com/fwlink/?linkid=518003&clcid=0x404) 要分開安裝！ 
-	- [Web Essentials](http://vswebessentials.com/)
-	  - [Web Essentials 2015.1](https://visualstudiogallery.msdn.microsoft.com/ee6e6d8c-c837-41fb-886a-6b50ae2d06a2)
-	  - [Web Essentials 2013.5](https://visualstudiogallery.msdn.microsoft.com/56633663-6799-41d7-9df7-0f2a504ca361)
-	  - [Visual Studio - 提升Web與CSS開發的流暢度](http://blog.kkbruce.net/2011/11/visual-studio-webcss.html) By KingKong Bruce
+    - 建議使用 [Web Platform Installer](https://www.microsoft.com/web/downloads/platform.aspx) 進行安裝
+    - 請注意：[Visual Studio 2013](http://go.microsoft.com/fwlink/?linkid=323510&clcid=0x404) 與 [Visual Studio 2015](http://go.microsoft.com/fwlink/?linkid=518003&clcid=0x404) 要分開安裝！ 
+  - [Web Essentials](http://vswebessentials.com/)
+    - [Web Essentials 2015.1](https://visualstudiogallery.msdn.microsoft.com/ee6e6d8c-c837-41fb-886a-6b50ae2d06a2)
+    - [Web Essentials 2013.5](https://visualstudiogallery.msdn.microsoft.com/56633663-6799-41d7-9df7-0f2a504ca361)
+    - [Visual Studio - 提升Web與CSS開發的流暢度](http://blog.kkbruce.net/2011/11/visual-studio-webcss.html) By KingKong Bruce
 	- [Productivity Power Tools 2015](https://visualstudiogallery.msdn.microsoft.com/34ebc6a2-2777-421d-8914-e29c1dfa7f5d)
-	  - 安裝後至設定關閉 Syntactic Line Compression
+    - 安裝後至設定關閉 Syntactic Line Compression
   - [C# Essentials](https://visualstudiogallery.msdn.microsoft.com/a4445ad0-f97c-41f9-a148-eae225dcc8a5)
   - [ReSharper](https://www.jetbrains.com/resharper/)
     - 額外安裝擴充套件
       - [StyleCop by JetBrains](https://resharper-plugins.jetbrains.com/packages/StyleCop.StyleCop/)
       - [Enhanced Tooltip](https://resharper-plugins.jetbrains.com/packages/JLebosquain.EnhancedTooltip/)
-  - Developer Assistant (以下請挑版本安裝)
-	  - [Visual Studio 2015](https://visualstudiogallery.msdn.microsoft.com/5d01e3bd-6433-47f2-9c6d-a9da52d172cc)
-	  - [Visual Studio 2013](https://visualstudiogallery.msdn.microsoft.com/a1166718-a2d9-4a48-a5fd-504ff4ad1b65)
   - [tangible T4 Editor](http://t4-editor.tangible-engineering.com/T4-Editor-Visual-T4-Editing.html)
     - [tangible T4 Editor 2.3.0 plus modeling tools for VS 2015](https://visualstudiogallery.msdn.microsoft.com/784cf592-b797-4d4d-ad33-331fcf63faad)
     - [tangible T4 Editor 2.3.0 plus modeling tools for VS 2013](https://visualstudiogallery.msdn.microsoft.com/6d1223ca-5e52-49d0-a489-910f9b76396e)
@@ -74,7 +72,8 @@
     - 下載[設定檔](http://1drv.ms/1S6WfFV)後，放置於 **C:\Program Files (x86)\StyleCop 4.7** 下
     - [保哥線上講堂：利用 StyleCop 撰寫一致的 C# 程式碼風格](http://www.slideshare.net/WillHuangTW/stylecop)
   - [TGIT](https://visualstudiogallery.msdn.microsoft.com/46A20578-F0D5-4B1E-B55D-F001A6345748)
-- [Microsoft SQL Server 2014](http://www.microsoft.com/zh-tw/server-cloud/products/sql-server/)
+- [Microsoft SQL Server 2014 Express](https://www.microsoft.com/zh-tw/download/details.aspx?id=42299)\
+  -  使用「SQLEXPRWT」版本
   - [Redgate SQLPrompt](http://www.red-gate.com/products/sql-development/sql-prompt/) 
 - [Java SE Development Kit](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
   
