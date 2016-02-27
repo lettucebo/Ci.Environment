@@ -64,6 +64,8 @@
 
 * 主鍵
     * 一律使用 Id 欄位，資料型態為 nvarchar(128) 且預設值為 (newid()) 作為主鍵
+      * [[SQL][問題處理]使用 GUID 欄位型態與統計資料過舊造成的效能異常案例處理](https://dotblogs.com.tw/jamesfu/2016/01/18/guid_1)
+      * [[SQL][問題處理]再論 GUID 當成主鍵需要注意事項](https://dotblogs.com.tw/jamesfu/2016/01/20/guid_2#disqus_thread)
 
 * 關聯
     * 資料表之間有關係的一定要拉關聯
