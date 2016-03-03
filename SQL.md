@@ -58,7 +58,7 @@
         <td>datetime</td>
         <td>(getdate())</td>
         <td>否</td>
-        <td>建立時間（世界協調時間）</td>
+        <td>建立時間</td>
     </tr>
 </table>
 
