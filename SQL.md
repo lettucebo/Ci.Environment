@@ -54,9 +54,9 @@
         <td>每個資料表的主鍵</td>
     </tr>
     <tr>
-        <td>CreatTimeUtc</td>
+        <td>CreatTime</td>
         <td>datetime</td>
-        <td>(sysutcdatetime())</td>
+        <td>(getdate())</td>
         <td>否</td>
         <td>建立時間（世界協調時間）</td>
     </tr>
@@ -112,7 +112,7 @@
     <tr>
         <td>CreatTime</td>
         <td>datetime</td>
-        <td>(sysutcdatetime())</td>
+        <td>(getdate())</td>
         <td>否</td>
         <td>建立時間</td>
     </tr>
@@ -137,7 +137,7 @@
 
 * 刪除資料
     * 資料表刪除基本上以不刪除資料為準(視情況而定，大多均需要保留)
-    * 只將 IsDelete 欄位設為 false 若要記錄刪除時間則設定 DeleteTimeUtc 為 DateTime.UtcNow
+    * 只將 IsDelete 欄位設為 false 若要記錄刪除時間則設定 DeleteTime 為 DateTime.Now
 
 ### 4. 描述填寫方式
 * 一定要填寫描述；描述等於程式碼的註解
