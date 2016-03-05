@@ -20,3 +20,5 @@
 
 - [在 ASP.NET MVC 使用 @Html.ActionLink 所發生的詭異現象](http://blog.miniasp.com/post/2012/09/30/ASPNET-MVC-common-pitfall-for-html-actionlink-helper-method.aspx) By Will保哥
   - 使用標準的 @Html.ActionLink 輔助方法輸出 **<<a>a>** 超連結標籤時，竟然有些超連結的尾巴會加上 ?Length=4 這個查詢字串
+
+- [【茶包射手日記】只在CSHTML發生的編譯錯誤](<http://blog.darkthread.net/post-2016-03-05-compile-error-only-in-cshtml.aspx>) By 黑暗執行緒
