@@ -6,7 +6,7 @@
 
 ### 作業系統
 
-- Windows 8.1 以上版本 (更新到最新 Service Pack 版本)
+- Windows 10 (開啟自動更新)
 - 確認有加入網域以及電腦名稱正確
 
 ### 瀏覽器
@@ -24,18 +24,6 @@
       - [Emmet Documentation](http://docs.emmet.io/)
       - [Emmet for Sublime Text](https://github.com/sergeche/emmet-sublime) (GitHub) (有許多 Sublime 的用法與說明)
       - 使用者定義的設定檔參考內容: [Emmet.sublime-settings](https://github.com/sergeche/emmet-sublime/blob/master/Emmet.sublime-settings)
-  - [AngularJS](https://sublime.wbond.net/packages/AngularJS)
-    - 提供許多 AngularJS 開發過程所需的自動完成 (Auto-completion) 需求
-    - 常見的 AngularJS 工具函式與 ng 模組中內建的 services 都有提供 Intellisense
-    - 可快速跳躍至選中的 directive, filter, …
-  - [Git](https://sublime.wbond.net/packages/Git)
-    - 安裝完成後，只要先按下 **Ctrl+Shift+P** 再按照你原本輸入 Git 指令的方式選擇想執行的動作即可  
-  - [Auto​File​Name](https://sublime.wbond.net/packages/AutoFileName)
-    - 可以在輸入 URL 或圖片網址時，自動提供路徑或檔名建議 (autocompletes filenames)
-  - [Bracket​Highlighter](https://sublime.wbond.net/packages/BracketHighlighter)
-    - 可自動顯示 HTML 標籤或 JavaScript 的各種對應區塊 ( { } )
-  - [SideBarEnhancements](https://sublime.wbond.net/packages/SideBarEnhancements)
-    - 提供許多側邊攔 (SideBar) 的右鍵選單功能，非常實用！ ( 按下 **Ctrl+K+B** 可顯示/隱藏側邊攔 )
 
 ### 開發工具
 
@@ -86,3 +74,5 @@
 - [Remote Desktop Connection Manager](https://www.microsoft.com/en-us/download/details.aspx?id=44989)
   - [介紹好用工具：RDCMan ( 遠端桌面連線管理工具 )](http://blog.miniasp.com/post/2010/07/15/Useful-tool-RDCMan.aspx) By Will保哥
   - [RDCMan 2.7 (遠端桌面連線管理工具) 如何在多台電腦共用已儲存的密碼](http://blog.miniasp.com/post/2014/11/28/RDCMan-27-share-passwords-between-computers.aspx) By Will保哥
+- [TeamViewer](https://www.teamviewer.com/zhTW/)
+	- [TeamViewer 必備教學：新免安裝版與遠端控制手機](http://www.playpcesor.com/2015/11/teamviewer.html)
