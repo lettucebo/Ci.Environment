@@ -18,11 +18,11 @@
     - ![先雙擊欲更改的印表機](http://i.imgur.com/dT4aa92.png)
 
   2. 點選自訂印表機
-    ![點選自訂印表機](http://i.imgur.com/RMkPaAQ.png)
+    - ![點選自訂印表機](http://i.imgur.com/RMkPaAQ.png)
 
   3. 選取喜好設定
-    ![選取喜好設定](http://i.imgur.com/a3Ixwdt.png)
+    - ![選取喜好設定](http://i.imgur.com/a3Ixwdt.png)
 
   4. 設定為雙面列印與黑白輸出
-    ![設定為雙面列印與黑白輸出](http://i.imgur.com/4ZA21HQ.png)
+    - ![設定為雙面列印與黑白輸出](http://i.imgur.com/4ZA21HQ.png)
 
