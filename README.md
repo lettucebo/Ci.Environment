@@ -1,4 +1,4 @@
-# 創鈺研發部開發規範
+# 創鈺規範
 所謂『無規不成圓，無矩不成方』，一個團隊在合作開發時大家總要遵循一些總則，才不至於每個人寫的樣子完全的不一樣，到最後互相維護時才發現根本就看不懂
 
 當然不是說要用規範來限制開發人員，基本上只會設定大方向原則
@@ -10,8 +10,11 @@
 ＊ 有相關建議編輯可以使用 pull request 來協同編輯
 ```
 
+### 通用規範
 
-0. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/ENVIRONMENT.md" target="_blank">電腦環境安裝與設定</a>
-1. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/SQL.md" target="_blank">SQL 設計準則</a>
-2. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/C%23.md" target="_blank">C# 設計準則</a>
-3. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/GIT.md" target="_blank">GIT 設計準則</a>
+### 科技部規範
+
+1. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/ENVIRONMENT.md" target="_blank">電腦環境安裝與設定</a>
+2. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/SQL.md" target="_blank">SQL 設計準則</a>
+3. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/C%23.md" target="_blank">C# 設計準則</a>
+4. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/GIT.md" target="_blank">GIT 設計準則</a>
