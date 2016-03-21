@@ -16,6 +16,7 @@
 1. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/EMAIL.md" target="_blank">加班規範</a>
 2. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/EMAIL.md" target="_blank">Email 規範</a>
 3. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/TRELLO.md" target="_blank">Trello 規範</a>
+4. <a href="https://github.com/lettucebo/Creatidea.Conventions/blob/master/PRINTER.md" target="_blank">印表機設定說明</a>
 
 ### 科技部規範
 
