@@ -65,7 +65,6 @@
  
 - [Git for Windows](https://git-scm.com/)
 - [TortoiseGit](https://tortoisegit.org/)
-- [GitHub Desktop](https://desktop.github.com/)
 
  ### 遠端桌面管理
 - [Remote Desktop Connection Manager](https://www.microsoft.com/en-us/download/details.aspx?id=44989)
