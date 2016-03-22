@@ -48,9 +48,9 @@
       - [Visual Studio 2013 的 SQL Server Data Tools](https://msdn.microsoft.com/dn864412)
     - 下載最新版的 [Microsoft Azure SDK](https://azure.microsoft.com/zh-tw/downloads/) ( 最新版: 2.8.2 )
     - 建議使用 [Web Platform Installer](https://www.microsoft.com/web/downloads/platform.aspx) 進行安裝
-    - [Web Essentials](http://vswebessentials.com/)
-      - [Web Essentials 2015.1](https://visualstudiogallery.msdn.microsoft.com/ee6e6d8c-c837-41fb-886a-6b50ae2d06a2)
-      - [Visual Studio - 提升Web與CSS開發的流暢度](http://blog.kkbruce.net/2011/11/visual-studio-webcss.html) By KingKong Bruce
+  - [Web Essentials](http://vswebessentials.com/)
+    - [Web Essentials 2015.1](https://visualstudiogallery.msdn.microsoft.com/ee6e6d8c-c837-41fb-886a-6b50ae2d06a2)
+    - [Visual Studio - 提升Web與CSS開發的流暢度](http://blog.kkbruce.net/2011/11/visual-studio-webcss.html) By KingKong Bruce
   - [Productivity Power Tools 2015](https://visualstudiogallery.msdn.microsoft.com/34ebc6a2-2777-421d-8914-e29c1dfa7f5d)
     - 安裝後至設定關閉 Syntactic Line Compression
   - [C# Essentials](https://visualstudiogallery.msdn.microsoft.com/a4445ad0-f97c-41f9-a148-eae225dcc8a5)
