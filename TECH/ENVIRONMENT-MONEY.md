@@ -109,7 +109,8 @@
 ### 文書處理
  
 - [Office 2016](http://www.microsoftstore.com/store/mstw/zh_TW/cat/Office/categoryID.66795700)
-  - 用 Microsoft Office 開啟 Google Drive 檔案：[Google 雲端硬碟外掛程式](https://tools.google.com/dlpage/driveforoffice/)
+  - [Google 雲端硬碟外掛程式 Microsoft Office 版](https://tools.google.com/dlpage/driveforoffice/)
+    - 這個外掛程式可讓您輕鬆編輯儲存在 Google 雲端硬碟中的 Office 檔案。 
 - [Adobe Acrobat](https://acrobat.adobe.com/us/en/)
 - [Sway](https://sway.com/)
 - 相關字型
