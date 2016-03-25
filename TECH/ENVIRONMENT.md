@@ -40,14 +40,12 @@
     - [Web Essentials 2015.1](https://visualstudiogallery.msdn.microsoft.com/ee6e6d8c-c837-41fb-886a-6b50ae2d06a2)
     - [Web Essentials 2013.5](https://visualstudiogallery.msdn.microsoft.com/56633663-6799-41d7-9df7-0f2a504ca361)
     - [Visual Studio - 提升Web與CSS開發的流暢度](http://blog.kkbruce.net/2011/11/visual-studio-webcss.html) By KingKong Bruce
-	- [Productivity Power Tools 2015](https://visualstudiogallery.msdn.microsoft.com/34ebc6a2-2777-421d-8914-e29c1dfa7f5d)
-    - 安裝後至設定關閉 Syntactic Line Compression
-  - [C# Essentials](https://visualstudiogallery.msdn.microsoft.com/a4445ad0-f97c-41f9-a148-eae225dcc8a5)
   - [ReSharper](https://www.jetbrains.com/resharper/)
     - 額外安裝擴充套件
       - [StyleCop by JetBrains](https://resharper-plugins.jetbrains.com/packages/StyleCop.StyleCop/)
       - [Enhanced Tooltip](https://resharper-plugins.jetbrains.com/packages/JLebosquain.EnhancedTooltip/)
   - [Surpercharger](https://visualstudiogallery.msdn.microsoft.com/f58941e3-13c6-4e97-9235-195f6f380ea3)
+    - [官網介紹](http://supercharger.tools/)
   - [GhostDoc Pro](http://submain.com/GhostDoc/)
     - [[工具介紹]C# 快速撰寫註解 - GhostDoc](https://www.dotblogs.com.tw/hatelove/archive/2008/12/31/6580.aspx) By In 91
   - [StyleCop](https://stylecop.codeplex.com/)
@@ -68,7 +66,6 @@
  
 - [Git for Windows](https://git-scm.com/)
 - [TortoiseGit](https://tortoisegit.org/)
-- [GitHub Desktop](https://desktop.github.com/)
 
  ### 遠端桌面管理
 - [Remote Desktop Connection Manager](https://www.microsoft.com/en-us/download/details.aspx?id=44989)

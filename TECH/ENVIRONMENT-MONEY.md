@@ -48,11 +48,9 @@
       - [Visual Studio 2013 的 SQL Server Data Tools](https://msdn.microsoft.com/dn864412)
     - 下載最新版的 [Microsoft Azure SDK](https://azure.microsoft.com/zh-tw/downloads/) ( 最新版: 2.8.2 )
     - 建議使用 [Web Platform Installer](https://www.microsoft.com/web/downloads/platform.aspx) 進行安裝
-	- [Web Essentials](http://vswebessentials.com/)
+  - [Web Essentials](http://vswebessentials.com/)
     - [Web Essentials 2015.1](https://visualstudiogallery.msdn.microsoft.com/ee6e6d8c-c837-41fb-886a-6b50ae2d06a2)
     - [Visual Studio - 提升Web與CSS開發的流暢度](http://blog.kkbruce.net/2011/11/visual-studio-webcss.html) By KingKong Bruce
-  - [Productivity Power Tools 2015](https://visualstudiogallery.msdn.microsoft.com/34ebc6a2-2777-421d-8914-e29c1dfa7f5d)
-    - 安裝後至設定關閉 Syntactic Line Compression
   - [C# Essentials](https://visualstudiogallery.msdn.microsoft.com/a4445ad0-f97c-41f9-a148-eae225dcc8a5)
   - [ReSharper](https://www.jetbrains.com/resharper/)
     - 額外安裝擴充套件
@@ -68,20 +66,8 @@
     - 下載[設定檔](http://1drv.ms/1S6WfFV)後，放置於 **C:\Program Files (x86)\StyleCop 4.7** 下
     - [保哥線上講堂：利用 StyleCop 撰寫一致的 C# 程式碼風格](http://www.slideshare.net/WillHuangTW/stylecop)
   - [TGIT](https://visualstudiogallery.msdn.microsoft.com/be8a61ca-9358-4f43-80e3-4fc73b09dff3?SRC=Featured)
-  - [Web Extension Pack](https://visualstudiogallery.msdn.microsoft.com/f3b504c6-0095-42f1-a989-51d5fc2a8459) [ 裝這個就好了，底下的相依套件會自動安裝完成 ]
-    - [Bootstrap Snippet Pack](https://visualstudiogallery.msdn.microsoft.com/e82e7862-f731-4183-a27a-3a44b261bfe5)
-    - [Browser Sync](https://visualstudiogallery.msdn.microsoft.com/5741a548-5179-4a77-ad96-fca71535774d)
-    - [Glyphfriend](https://visualstudiogallery.msdn.microsoft.com/5fd24afb-b3b2-4cec-9b03-1cfcec6123aa)
-    - [Image Optimizer](https://visualstudiogallery.msdn.microsoft.com/a56eddd3-d79b-48ac-8c8f-2db06ade77c3)
-    - [NPM Scripts Task Runner](https://visualstudiogallery.msdn.microsoft.com/8f2f2cbc-4da5-43ba-9de2-c9d08ade4941)
-    - [Open Command Line](https://visualstudiogallery.msdn.microsoft.com/4e84e2cf-2d6b-472a-b1e2-b84932511379)
-    - [Package Installer](https://visualstudiogallery.msdn.microsoft.com/753b9720-1638-4f9a-ad8d-2c45a410fd74)
-    - [Web Analyzer](https://visualstudiogallery.msdn.microsoft.com/6edc26d4-47d8-4987-82ee-7c820d79be1d)
-    - [Web Compiler](https://visualstudiogallery.msdn.microsoft.com/3b329021-cd7a-4a01-86fc-714c2d05bb6c)
-    - [Web Essentials 2015](https://visualstudiogallery.msdn.microsoft.com/ee6e6d8c-c837-41fb-886a-6b50ae2d06a2) ( [官網](http://vswebessentials.com/) )
   - [Bundler & Minifier](https://visualstudiogallery.msdn.microsoft.com/9ec27da7-e24b-4d56-8064-fd7e88ac1c40)
   - [NuGet Packager](https://visualstudiogallery.msdn.microsoft.com/daf5c6db-386b-4994-bdd7-b6cd52f11b72)
-  - [VSCommands](https://visualstudiogallery.msdn.microsoft.com/c84be782-b1f1-4f6b-85bb-945ebc852aa1)
   - [Go To Definition](https://visualstudiogallery.msdn.microsoft.com/4b286b9c-4dd5-416b-b143-e31d36dc622b)
   - [Automatic Versions](https://visualstudiogallery.msdn.microsoft.com/dd8c5682-58a4-4c13-a0b4-9eadaba919fe)
   	- [Automatic Versions 別再手動改版本號了](http://demo.tc/post/825) By Demo
@@ -109,6 +95,8 @@
 ### 文書處理
  
 - [Office 2016](http://www.microsoftstore.com/store/mstw/zh_TW/cat/Office/categoryID.66795700)
+  - [Google 雲端硬碟外掛程式 Microsoft Office 版](https://tools.google.com/dlpage/driveforoffice/)
+    - 這個外掛程式可讓您輕鬆編輯儲存在 Google 雲端硬碟中的 Office 檔案。 
 - [Adobe Acrobat](https://acrobat.adobe.com/us/en/)
 - [Sway](https://sway.com/)
 - 相關字型
