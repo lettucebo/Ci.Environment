@@ -24,6 +24,7 @@
       - [Emmet Documentation](http://docs.emmet.io/)
       - [Emmet for Sublime Text](https://github.com/sergeche/emmet-sublime) (GitHub) (有許多 Sublime 的用法與說明)
       - 使用者定義的設定檔參考內容: [Emmet.sublime-settings](https://github.com/sergeche/emmet-sublime/blob/master/Emmet.sublime-settings)
+    - [ChinesOpenConvert](https://dotblogs.com.tw/jaigi/2015/06/20/151609)
 
 ### 開發工具
 
