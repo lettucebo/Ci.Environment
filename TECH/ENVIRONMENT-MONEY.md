@@ -37,6 +37,7 @@
   - [SideBarEnhancements](https://sublime.wbond.net/packages/SideBarEnhancements)
     - 提供許多側邊攔 (SideBar) 的右鍵選單功能，非常實用！ ( 按下 **Ctrl+K+B** 可顯示/隱藏側邊攔 )
 - [MarkDown Edit](http://markdownedit.com/)
+- [GitBook Editor](https://www.gitbook.com/editor)
 
 ### 開發工具
 

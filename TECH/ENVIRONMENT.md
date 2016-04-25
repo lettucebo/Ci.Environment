@@ -1,8 +1,8 @@
 # 電腦環境安裝與設定
 
-## 實作環境說明
+## 環境說明
 
-為了能讓大家的環境基本上都差不多能在課堂上順利地進行實作，請於開工前把需要的軟體全部安裝好，以下是安裝的相關軟體與安裝步驟與說明，如果安裝過程有遇到任何問題，請向**紙鈔**諮詢。
+為了能讓大家的環境基本上都差不多，請於開工前把需要的軟體全部安裝好，以下是安裝的相關軟體與安裝步驟與說明，如果安裝過程有遇到任何問題，請向**紙鈔**諮詢。
 
 ### 作業系統
 
@@ -24,6 +24,7 @@
       - [Emmet Documentation](http://docs.emmet.io/)
       - [Emmet for Sublime Text](https://github.com/sergeche/emmet-sublime) (GitHub) (有許多 Sublime 的用法與說明)
       - 使用者定義的設定檔參考內容: [Emmet.sublime-settings](https://github.com/sergeche/emmet-sublime/blob/master/Emmet.sublime-settings)
+    - [ChinesOpenConvert](https://dotblogs.com.tw/jaigi/2015/06/20/151609)
 
 ### 開發工具
 
