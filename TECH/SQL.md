@@ -48,7 +48,7 @@
     </tr>
     <tr>
         <td>Id</td>
-        <td>nvarchar(128)</td>
+        <td>uniqueidentifier</td>
         <td>(newid())</td>
         <td>否</td>
         <td>每個資料表的主鍵</td>
@@ -63,7 +63,7 @@
 </table>
 
 * 主鍵
-    * 一律使用 Id 欄位，資料型態為 nvarchar(128) 且預設值為 (newid()) 作為主鍵
+    * 一律使用 Id 欄位，資料型態為 uniqueidentifier 且預設值為 (newid()) 作為主鍵
       * [[SQL][問題處理]使用 GUID 欄位型態與統計資料過舊造成的效能異常案例處理](https://dotblogs.com.tw/jamesfu/2016/01/18/guid_1)
       * [[SQL][問題處理]再論 GUID 當成主鍵需要注意事項](https://dotblogs.com.tw/jamesfu/2016/01/20/guid_2#disqus_thread)
 
