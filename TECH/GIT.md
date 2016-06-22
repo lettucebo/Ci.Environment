@@ -1,6 +1,9 @@
 ## Commit 訊息
   - 每次 Commit，都要寫 Commit message，否則就不允許 Commit。
   - **[很重要之必讀 - 語意明確的版本變更](http://www.ithome.com.tw/voice/85505)** 
+  - automatic generating of the changelog
+  - simple navigation through git history (eg. ignoring style changes)
+
 <hr/>
 
 ## Commit message 的格式
