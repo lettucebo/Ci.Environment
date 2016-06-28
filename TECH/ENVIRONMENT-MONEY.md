@@ -66,7 +66,7 @@
     - 先至[StyleCop官網](https://stylecop.codeplex.com/)下載並安裝
     - 下載[設定檔](http://1drv.ms/1S6WfFV)後，放置於 **C:\Program Files (x86)\StyleCop 4.7** 下
     - [保哥線上講堂：利用 StyleCop 撰寫一致的 C# 程式碼風格](http://www.slideshare.net/WillHuangTW/stylecop)
-  - [TGIT](https://visualstudiogallery.msdn.microsoft.com/be8a61ca-9358-4f43-80e3-4fc73b09dff3?SRC=Featured)
+  - [TGIT](https://visualstudiogallery.msdn.microsoft.com/132a30d8-f318-4a53-8386-2c9fe52d77a1)
   - [Bundler & Minifier](https://visualstudiogallery.msdn.microsoft.com/9ec27da7-e24b-4d56-8064-fd7e88ac1c40)
   - [NuGet Packager](https://visualstudiogallery.msdn.microsoft.com/daf5c6db-386b-4994-bdd7-b6cd52f11b72)
   - [Go To Definition](https://visualstudiogallery.msdn.microsoft.com/4b286b9c-4dd5-416b-b143-e31d36dc622b)
