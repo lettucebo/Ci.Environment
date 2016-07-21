@@ -111,6 +111,28 @@
     
 <hr/>
 
+### ASP.NET MVC 命名
+
+#### Controller
+  * Controller 均使用單數命名
+    ``` csharp
+      public class AccountController : BaseController
+      {
+      }
+    ```
+    
+<hr/>
+
+#### 特殊規則
+  * Action 回傳之 Model 變數均命名為：model
+    ``` csharp
+      public ActionResult Index(ViewModel model)
+      {
+      }
+    ```
+    
+<hr/>
+
 ## 註解
   * <span style="red">不要有想法：我之後再回來補！<sapn/>
   * 安裝 GhostDoc Pro
