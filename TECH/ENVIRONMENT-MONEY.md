@@ -15,29 +15,8 @@
 
 ### 文字編輯器
 
-- [Sublime Text 3](https://www.sublimetext.com/3)
-  - [Sublime Text 3 新手上路：必要的安裝、設定與基本使用教學](http://blog.miniasp.com/post/2014/01/06/Useful-tool-Sublime-Text-3-Quick-Start.aspx) By Will保哥 
-  - [ConvertToUTF8](https://sublime.wbond.net/packages/ConvertToUTF8)
-    - 自動偵測文件的編碼字集(Charset)，並轉為 UTF-8
-  - [Emmet](https://sublime.wbond.net/packages/Emmet)
-    - 傳說中的 Zen Coding 就是這一套，請自行參考以下相關連結學習
-      - [Emmet Documentation](http://docs.emmet.io/)
-      - [Emmet for Sublime Text](https://github.com/sergeche/emmet-sublime) (GitHub) (有許多 Sublime 的用法與說明)
-      - 使用者定義的設定檔參考內容: [Emmet.sublime-settings](https://github.com/sergeche/emmet-sublime/blob/master/Emmet.sublime-settings)
-  - [AngularJS](https://sublime.wbond.net/packages/AngularJS)
-    - 提供許多 AngularJS 開發過程所需的自動完成 (Auto-completion) 需求
-    - 常見的 AngularJS 工具函式與 ng 模組中內建的 services 都有提供 Intellisense
-    - 可快速跳躍至選中的 directive, filter, …
-  - [Git](https://sublime.wbond.net/packages/Git)
-    - 安裝完成後，只要先按下 **Ctrl+Shift+P** 再按照你原本輸入 Git 指令的方式選擇想執行的動作即可  
-  - [Auto​File​Name](https://sublime.wbond.net/packages/AutoFileName)
-    - 可以在輸入 URL 或圖片網址時，自動提供路徑或檔名建議 (autocompletes filenames)
-  - [Bracket​Highlighter](https://sublime.wbond.net/packages/BracketHighlighter)
-    - 可自動顯示 HTML 標籤或 JavaScript 的各種對應區塊 ( { } )
-  - [SideBarEnhancements](https://sublime.wbond.net/packages/SideBarEnhancements)
-    - 提供許多側邊攔 (SideBar) 的右鍵選單功能，非常實用！ ( 按下 **Ctrl+K+B** 可顯示/隱藏側邊攔 )
+- [Visual Studio Code](https://code.visualstudio.com)
 - [MarkDown Edit](http://markdownedit.com/)
-- [GitBook Editor](https://www.gitbook.com/editor)
 
 ### 開發工具
 
@@ -67,27 +46,20 @@
     - 下載[設定檔](http://1drv.ms/1S6WfFV)後，放置於 **C:\Program Files (x86)\StyleCop 4.7** 下
     - [保哥線上講堂：利用 StyleCop 撰寫一致的 C# 程式碼風格](http://www.slideshare.net/WillHuangTW/stylecop)
   - [TGIT](https://visualstudiogallery.msdn.microsoft.com/132a30d8-f318-4a53-8386-2c9fe52d77a1)
-  - [Bundler & Minifier](https://visualstudiogallery.msdn.microsoft.com/9ec27da7-e24b-4d56-8064-fd7e88ac1c40)
   - [NuGet Packager](https://visualstudiogallery.msdn.microsoft.com/daf5c6db-386b-4994-bdd7-b6cd52f11b72)
   - [Go To Definition](https://visualstudiogallery.msdn.microsoft.com/4b286b9c-4dd5-416b-b143-e31d36dc622b)
-  - [Automatic Versions](https://visualstudiogallery.msdn.microsoft.com/dd8c5682-58a4-4c13-a0b4-9eadaba919fe)
-  	- [Automatic Versions 別再手動改版本號了](http://demo.tc/post/825) By Demo
   - [ReAttach](https://visualstudiogallery.msdn.microsoft.com/8cccc206-b9de-42ef-8f5a-160ad0f017ae)
   	- [Visual Studio 擴充套件 - ReAttach](http://kevintsengtw.blogspot.tw/2013/02/visual-studio-reattach.html) By KingKong Bruce
   - [Alive](https://comealive.io/)
   	- [Alive 推坑文](https://www.facebook.com/91agile/posts/494359890738634) By In91
   	- [Visual Studio - Alive - Debug at design-time](http://karatejb.blogspot.tw/2015/10/visual-studio-alive-debug-at-design-time.html) By KarateJb
   - [WakaTime](https://visualstudiogallery.msdn.microsoft.com/ca0ea1f3-e824-4586-a73e-c8e4a65323d8)
-  - [Ref12](https://visualstudiogallery.msdn.microsoft.com/f89b27c5-7d7b-4059-adde-7ccc709fa86e)
   - [NuGet References](https://visualstudiogallery.msdn.microsoft.com/e8d1fcad-5fa5-4353-ba9c-90f4b6a68154)
-  - [VSColorOutput](https://visualstudiogallery.msdn.microsoft.com/f4d9c2b5-d6d7-4543-a7a5-2d7ebabc2496)
-  - [ShowMyGitBranch](https://visualstudiogallery.msdn.microsoft.com/6eef160a-4765-4f6b-8064-31ecd16896c1)
-  - [File Path On Footer](https://visualstudiogallery.msdn.microsoft.com/d9fc97d4-3b42-4b56-ba47-23f8b81ebd17)
 - [Microsoft SQL Server 2014](http://www.microsoft.com/zh-tw/server-cloud/products/sql-server/)
   - [Redgate SQLPrompt](http://www.red-gate.com/products/sql-development/sql-prompt/) 
 - [Java SE Development Kit](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 - [NuGet Package Explorer](https://npe.codeplex.com/)
-- [Azure Storage Explorer](http://storageexplorer.com/)
+- [Azure Explorer](http://www.red-gate.com/products/azure-development/azure-explorer/)
 - [OpenSSL](https://slproweb.com/products/Win32OpenSSL.html)
 - [ArcGIS for Desktop](http://www.esri.com/software/arcgis/arcgis-for-desktop)
 - [Adobe Creative Suite 6](https://www.adobe.com/products/cs6.html)
