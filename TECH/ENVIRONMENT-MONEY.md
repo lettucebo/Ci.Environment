@@ -28,7 +28,7 @@
     - 下載最新版的 [Microsoft Azure SDK](https://azure.microsoft.com/zh-tw/downloads/) ( 最新版: 2.9.5 )
     - 建議使用 [Web Platform Installer](https://www.microsoft.com/web/downloads/platform.aspx) 進行安裝
   - [Web Essentials](http://vswebessentials.com/)
-    - [Web Essentials 2015.1](https://visualstudiogallery.msdn.microsoft.com/ee6e6d8c-c837-41fb-886a-6b50ae2d06a2)
+    - [Web Essentials 2015.3](https://visualstudiogallery.msdn.microsoft.com/ee6e6d8c-c837-41fb-886a-6b50ae2d06a2)
     - [Visual Studio - 提升Web與CSS開發的流暢度](http://blog.kkbruce.net/2011/11/visual-studio-webcss.html) By KingKong Bruce
   - [C# Essentials](https://visualstudiogallery.msdn.microsoft.com/a4445ad0-f97c-41f9-a148-eae225dcc8a5)
   - [ReSharper](https://www.jetbrains.com/resharper/)
@@ -54,7 +54,7 @@
   	- [Visual Studio - Alive - Debug at design-time](http://karatejb.blogspot.tw/2015/10/visual-studio-alive-debug-at-design-time.html) By KarateJb
   - [WakaTime](https://visualstudiogallery.msdn.microsoft.com/ca0ea1f3-e824-4586-a73e-c8e4a65323d8)
   - [NuGet References](https://visualstudiogallery.msdn.microsoft.com/e8d1fcad-5fa5-4353-ba9c-90f4b6a68154)
-- [Microsoft SQL Server 2014](http://www.microsoft.com/zh-tw/server-cloud/products/sql-server/)
+- [Microsoft SQL Server 2016](http://www.microsoft.com/zh-tw/server-cloud/products/sql-server/)
   - [Redgate SQLPrompt](http://www.red-gate.com/products/sql-development/sql-prompt/) 
 - [Java SE Development Kit](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 - [NuGet Package Explorer](https://npe.codeplex.com/)
