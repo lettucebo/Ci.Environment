@@ -42,7 +42,7 @@
     - [[工具介紹]C# 快速撰寫註解 - GhostDoc](https://www.dotblogs.com.tw/hatelove/archive/2008/12/31/6580.aspx) By In 91
   - [StyleCop](https://stylecop.codeplex.com/)
     - 先至[StyleCop官網](https://stylecop.codeplex.com/)下載並安裝
-    - 下載[設定檔](http://1drv.ms/1S6WfFV)後，放置於 **C:\Program Files (x86)\StyleCop 4.7** 下
+    - 下載[設定檔](https://1drv.ms/u/s!Ap3bK3_gDbufvlgWUXWOzL7_PLBU)後，放置於 **C:\Program Files (x86)\StyleCop 4.7** 下
     - [保哥線上講堂：利用 StyleCop 撰寫一致的 C# 程式碼風格](http://www.slideshare.net/WillHuangTW/stylecop)
   - [TGIT](https://visualstudiogallery.msdn.microsoft.com/132a30d8-f318-4a53-8386-2c9fe52d77a1)
   - [NuGet Packager](https://visualstudiogallery.msdn.microsoft.com/daf5c6db-386b-4994-bdd7-b6cd52f11b72)
