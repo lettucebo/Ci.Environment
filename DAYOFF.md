@@ -21,7 +21,15 @@
 
 ## Step2. 新增日曆
 
-使用公司的 MAIL 行事曆，根據要請假的日期新增活動，標題：{名字}-{假別}，並邀請 **work@creatidea.com.tw**
+使用公司的 Google 行事曆，根據要請假的日期新增活動。
+
+標題：{名字}-{假別}
+
+![行事曆](http://imgur.com/vPGfkUY.png)
+
+並邀請 **work@creatidea.com.tw** 方便大家可以知道
+
+![行事曆](http://imgur.com/XiBO5ih.png)
 
 ## Step3. 請假系統 KEY 單
 
