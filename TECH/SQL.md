@@ -49,7 +49,7 @@
     <tr>
         <td>Id</td>
         <td>uniqueidentifier</td>
-        <td>(newid())</td>
+        <td>(newsequentialid())</td>
         <td>否</td>
         <td>每個資料表的主鍵</td>
     </tr>
