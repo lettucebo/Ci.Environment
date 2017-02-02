@@ -102,7 +102,8 @@
 <hr/>
 
 #### 特殊規則
-  * Action 回傳之 Model 變數均命名為：model
+   Action 回傳之 Model 變數均命名為：model
+  
     ``` csharp
       public ActionResult Index(ViewModel model)
       {
@@ -114,7 +115,7 @@
 ### ASP.NET MVC 命名
 
 #### Controller
-  * Controller 均使用單數命名
+   Controller 均使用單數命名
     ``` csharp
       public class AccountController : BaseController
       {
