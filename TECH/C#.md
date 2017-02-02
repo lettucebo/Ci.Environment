@@ -68,7 +68,7 @@
   * 私有全域變數(Private Global Variable)
     * 使用底線加上 camelCasting 命名法(第一個單字字首小寫，其他單字字首大寫)
     ```csharp
-    private int _dataCount;
+    private int dataCount;
     ```
   * 私有變數(Local Variable)
     * 使用 camelCasting 命名法(第一個單字字首小寫，其他單字字首大寫)
