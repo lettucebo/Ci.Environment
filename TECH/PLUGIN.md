@@ -1,6 +1,13 @@
-# `非以下列表之套件，使用前請與主管討論後方可使用`
+# 程式開發相關使用套件列表
 
-### CSharp
+<hr/>
+
+因為現在針對每種不同目的都有多種套件可以使用，讓開發人員自行選擇的話，會導致風格不同，以至於後續維護會非常的麻煩
+
+因此在這邊規範一些常用功能必須使用那些套件
+
+<hr/>
+
 * Excel處理
   * EPPLUS
     * 以此套為準
@@ -14,10 +21,6 @@
 
 
 * 錯誤紀錄模組
-  * Elmah.MVC
-    * ELMAH on MS SQL Server
-    * ELMAH on MySQL
-    * ELMAH on XML Log
   * Application Insights
     * 紀錄 Client 端資訊
     * 紀錄 Server 端資訊
@@ -40,6 +43,7 @@
     * <a href="http://www.wuleba.com/25734.html" target="_blank">ASP.NET MVC 5使用X.PagedList.Mvc進行分頁教程</a>   
 
 <hr/>
+
 ### Javascript
 * Javascript 提醒視窗
    * bootbox
@@ -47,6 +51,7 @@
    * fancyBox
 
 <hr/>
+
 ### CSS
 * CSS 框架
   * Bootstrap 
