@@ -63,12 +63,15 @@ PPT: <https://1drv.ms/p/s!Ap3bK3_gDbufvWEUylkVu0KlT5w1>
   - PPT: <https://1drv.ms/p/s!Ap3bK3_gDbufvkP-rJwXj_Og1LUA>
 
 ## Entity Framework
+
 PPT: <https://1drv.ms/p/s!Ap3bK3_gDbufuBFH-on-nhV4GVI0>
 
 ## Office
+
 PPT: <https://1drv.ms/p/s!Ap3bK3_gDbufvgAuXqUknbvkH8tk>
 
 ## Trello
+
 PPT: <https://1drv.ms/p/s!Ap3bK3_gDbufvWVBeUt79G-8eM6i>
 ---
 
