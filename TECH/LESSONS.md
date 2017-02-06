@@ -59,7 +59,7 @@ PPT: <https://1drv.ms/p/s!Ap3bK3_gDbufyHW_40do5hnBduF0>
 ## VS
 PPT: <https://1drv.ms/p/s!Ap3bK3_gDbufvWEUylkVu0KlT5w1>
 
-- 相關套件
+- 開發套件規範
   - PPT: <https://1drv.ms/p/s!Ap3bK3_gDbufvkP-rJwXj_Og1LUA>
 
 ## Entity Framework
