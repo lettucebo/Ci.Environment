@@ -42,19 +42,35 @@
 ## IIS
 
 ## GIT
+- GIT Basic
+- VSTS
+- CI, CD
 
 ## AZURE
 
-1. WEB APP
-2. SQL DATABASE
-3. VIRTUAL MACHINE
-4. MANAGE
-5. APPLICATION INSIGHT
-6. POWER BI
+- WEB APP
+
+PPT: <https://1drv.ms/p/s!Ap3bK3_gDbufyHW_40do5hnBduF0>
+
+- SQL DATABASE
+- VIRTUAL MACHINE
+- MANAGE
+- APPLICATION INSIGHT
+- POWER BI
 
 ## VS
+PPT: <https://1drv.ms/p/s!Ap3bK3_gDbufvWEUylkVu0KlT5w1>
+
+- 相關套件
+  - PPT: <https://1drv.ms/p/s!Ap3bK3_gDbufvkP-rJwXj_Og1LUA>
 
 ## Entity Framework
+PPT: <https://1drv.ms/p/s!Ap3bK3_gDbufuBFH-on-nhV4GVI0>
+
+## Office
+PPT: <https://1drv.ms/p/s!Ap3bK3_gDbufvgAuXqUknbvkH8tk>
+
+## Trello
 
 ---
 
