@@ -68,7 +68,7 @@
   * 私有全域變數(Private Global Variable)
     * 使用底線加上 camelCasting 命名法(第一個單字字首小寫，其他單字字首大寫)
     ```csharp
-    private int _dataCount;
+    private int dataCount;
     ```
   * 私有變數(Local Variable)
     * 使用 camelCasting 命名法(第一個單字字首小寫，其他單字字首大寫)
@@ -102,7 +102,8 @@
 <hr/>
 
 #### 特殊規則
-  * Action 回傳之 Model 變數均命名為：model
+   Action 回傳之 Model 變數均命名為：model
+  
     ``` csharp
       public ActionResult Index(ViewModel model)
       {
@@ -114,7 +115,7 @@
 ### ASP.NET MVC 命名
 
 #### Controller
-  * Controller 均使用單數命名
+   Controller 均使用單數命名
     ``` csharp
       public class AccountController : BaseController
       {
