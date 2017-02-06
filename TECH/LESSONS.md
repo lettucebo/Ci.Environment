@@ -1,7 +1,5 @@
 # 開發部基礎教育訓練
 
----
-
 ## 物件導向
 
 ### 物件導向特性
@@ -71,7 +69,7 @@ PPT: <https://1drv.ms/p/s!Ap3bK3_gDbufuBFH-on-nhV4GVI0>
 PPT: <https://1drv.ms/p/s!Ap3bK3_gDbufvgAuXqUknbvkH8tk>
 
 ## Trello
-
+PPT: <https://1drv.ms/p/s!Ap3bK3_gDbufvWVBeUt79G-8eM6i>
 ---
 
 ## 其他
