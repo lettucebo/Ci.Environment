@@ -147,3 +147,5 @@
 ### 5. 其他
  - 使用T-SQL 匯出 DB Schema (表格名稱.欄位名稱.資料型別.長度.預設值.是否允許空值.欄位描述) 
    - <http://alvisprogramming.blogspot.tw/2014/12/t-sql-db-schema.html>
+ - LinQ Extended Joins
+   - <https://www.codeproject.com/Articles/488643/LinQ-Extended-Joins>
