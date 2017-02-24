@@ -36,3 +36,12 @@ ASP.NET MVC 是微軟新一代的 ASP.NET 開發框架，有別於傳統 ASP.NET
 ### SQL
 
 在企業系統開發中，資料庫佔有關鍵的一席之地，無論你學習甚麼框架、甚麼語言，在大多數的情況下，你需要面對資料庫的議題，而在 .NET 的世界中，SQL Server 在企業界又占有一定程度的市場佔有率，所以 SQL Server 也是一個非學不可的技術之一。
+
+- [Database Training and Fundamentals – Microsoft Virtual Academy](https://www.microsoftvirtualacademy.com/en-us/training-courses/database-fundamentals-8243)
+    - 這套學習課程針對「完全的初學者」提供了鉅細靡遺的教學，從概念到工具無一不談，幾乎可以符合初學者的一切需要，只可惜只有英文字幕，但還是建議初學者認真學習。
+- [SQL Server Courses: SQL Server Online Training – Microsoft Virtual Academy](http://www.microsoftvirtualacademy.com/product-training/sql-server)
+    - 這裡整理了微軟虛擬學院(MVA)所有 SQL Server 的相關課程，當然也包括許多繁體中文的課程可以學習，不容錯過！
+
+## 參考來源
+
+- [Visual Studio / C# / ASP.NET MVC / SQL Server 新手上路之學習資源整理](http://blog.miniasp.com/post/2015/07/02/Learning-Resources-for-CSharp-Visual-Studio-ASP-NET-MVC-SQL-Server.aspx)
