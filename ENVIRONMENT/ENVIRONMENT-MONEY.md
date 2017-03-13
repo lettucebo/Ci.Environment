@@ -16,6 +16,61 @@
 ### 文字編輯器
 
 - [Visual Studio Code](https://code.visualstudio.com)
+  - VSCode推薦擴充套件推薦
+    - [Auto Close Tag](https://marketplace.visualstudio.com/items?itemName=formulahendry.auto-close-tag) 自動閉合HTML標籤
+    - [Auto Rename Tag](https://marketplace.visualstudio.com/items?itemName=formulahendry.auto-rename-tag) 修改HTML標籤時，自動修改相對應的標籤
+    - [Bookmarks](https://marketplace.visualstudio.com/items?itemName=alefragnani.Bookmarks) 添加程式碼行書籤
+    - [Color Highlight](https://marketplace.visualstudio.com/items?itemName=naumovs.color-highlight) 顏色值在程式碼中高亮顯示
+    - [Document This](https://marketplace.visualstudio.com/items?itemName=joelday.docthis) 註解文件產生器
+    - [File Peek](https://marketplace.visualstudio.com/items?itemName=abierbaum.vscode-file-peek) 根據檔案路徑文字，快速定位到檔案
+    - [Guides](https://marketplace.visualstudio.com/items?itemName=SirTori.indenticator) 高亮縮進基準線
+    - [Indenticator](https://marketplace.visualstudio.com/items?itemName=SirTori.indenticator) 縮排線高亮
+    - [Output Colorizer](https://marketplace.visualstudio.com/items?itemName=IBM.output-colorizer) 彩色输出訊息
+    - [Path Intellisense](https://marketplace.visualstudio.com/items?itemName=christian-kohler.path-intellisense) 另一个路径完成提示
+    - [Prettify JSON](https://marketplace.visualstudio.com/items?itemName=mohsen1.prettify-json) 格式化JSON
+    - [Settings Sync](https://marketplace.visualstudio.com/items?itemName=Shan.code-settings-sync) VSCode設置同步到Gist
+    - [TypeScript Import](https://marketplace.visualstudio.com/items?itemName=kevinmcgowan.TypeScriptImport) TypeScript 自動 Import
+    - [Version Lens](https://marketplace.visualstudio.com/items?itemName=pflannery.vscode-versionlens) package.json 文件顯示模組當前版本和最新版本
+
+    - [vscode-icons](https://marketplace.visualstudio.com/items?itemName=robertohuertasm.vscode-icons) 檔案圖示，方便定位檔案
+
+
+附錄：VSCode選項配置
+```
+{
+    "editor.tabSize": 2,
+    "files.associations": {
+        "*.vue": "vue"
+    },
+    "eslint.autoFixOnSave": true,
+    "eslint.options": {
+        "extensions": [
+            ".js",
+            ".vue"
+        ]
+    },
+    "eslint.validate": [
+        "javascript",
+        "javascriptreact",
+        "vue",
+        "vue-html"
+    ],
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/bower_components": true,
+        "**/dist": true
+    },
+    "emmet.syntaxProfiles": {
+        "javascript": "jsx",
+        "vue": "html",
+        "vue-html": "html"
+    },
+    "extensions.autoUpdate": true,
+    "editor.renderWhitespace": "boundary",
+    "editor.cursorBlinking": "smooth",
+    "workbench.welcome.enabled": true
+}
+```
 - [MarkDown Edit](http://markdownedit.com/)
 
 ### 開發工具
