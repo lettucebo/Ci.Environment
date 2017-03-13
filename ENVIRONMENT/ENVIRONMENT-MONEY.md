@@ -16,61 +16,59 @@
 ### 文字編輯器
 
 - [Visual Studio Code](https://code.visualstudio.com)
-  - VSCode推薦擴充套件推薦
-    - [Auto Close Tag](https://marketplace.visualstudio.com/items?itemName=formulahendry.auto-close-tag) 自動閉合HTML標籤
-    - [Auto Rename Tag](https://marketplace.visualstudio.com/items?itemName=formulahendry.auto-rename-tag) 修改HTML標籤時，自動修改相對應的標籤
-    - [Bookmarks](https://marketplace.visualstudio.com/items?itemName=alefragnani.Bookmarks) 添加程式碼行書籤
-    - [Color Highlight](https://marketplace.visualstudio.com/items?itemName=naumovs.color-highlight) 顏色值在程式碼中高亮顯示
-    - [Document This](https://marketplace.visualstudio.com/items?itemName=joelday.docthis) 註解文件產生器
-    - [File Peek](https://marketplace.visualstudio.com/items?itemName=abierbaum.vscode-file-peek) 根據檔案路徑文字，快速定位到檔案
-    - [Guides](https://marketplace.visualstudio.com/items?itemName=SirTori.indenticator) 高亮縮進基準線
-    - [Indenticator](https://marketplace.visualstudio.com/items?itemName=SirTori.indenticator) 縮排線高亮
-    - [Output Colorizer](https://marketplace.visualstudio.com/items?itemName=IBM.output-colorizer) 彩色输出訊息
-    - [Path Intellisense](https://marketplace.visualstudio.com/items?itemName=christian-kohler.path-intellisense) 另一个路径完成提示
-    - [Prettify JSON](https://marketplace.visualstudio.com/items?itemName=mohsen1.prettify-json) 格式化JSON
-    - [Settings Sync](https://marketplace.visualstudio.com/items?itemName=Shan.code-settings-sync) VSCode設置同步到Gist
-    - [TypeScript Import](https://marketplace.visualstudio.com/items?itemName=kevinmcgowan.TypeScriptImport) TypeScript 自動 Import
-    - [Version Lens](https://marketplace.visualstudio.com/items?itemName=pflannery.vscode-versionlens) package.json 文件顯示模組當前版本和最新版本
+  - VSCode推薦擴充套件推薦
+    - [Auto Close Tag](https://marketplace.visualstudio.com/items?itemName=formulahendry.auto-close-tag) 自動閉合HTML標籤
+    - [Auto Rename Tag](https://marketplace.visualstudio.com/items?itemName=formulahendry.auto-rename-tag) 修改HTML標籤時，自動修改相對應的標籤
+    - [Bookmarks](https://marketplace.visualstudio.com/items?itemName=alefragnani.Bookmarks) 添加程式碼行書籤
+    - [Color Highlight](https://marketplace.visualstudio.com/items?itemName=naumovs.color-highlight) 顏色值在程式碼中高亮顯示
+    - [Document This](https://marketplace.visualstudio.com/items?itemName=joelday.docthis) 註解文件產生器
+    - [File Peek](https://marketplace.visualstudio.com/items?itemName=abierbaum.vscode-file-peek) 根據檔案路徑文字，快速定位到檔案
+    - [Guides](https://marketplace.visualstudio.com/items?itemName=SirTori.indenticator) 高亮縮進基準線
+    - [Indenticator](https://marketplace.visualstudio.com/items?itemName=SirTori.indenticator) 縮排線高亮
+    - [Output Colorizer](https://marketplace.visualstudio.com/items?itemName=IBM.output-colorizer) 彩色输出訊息
+    - [Path Intellisense](https://marketplace.visualstudio.com/items?itemName=christian-kohler.path-intellisense) 另一个路径完成提示
+    - [Prettify JSON](https://marketplace.visualstudio.com/items?itemName=mohsen1.prettify-json) 格式化JSON
+    - [Settings Sync](https://marketplace.visualstudio.com/items?itemName=Shan.code-settings-sync) VSCode設置同步到Gist
+    - [TypeScript Import](https://marketplace.visualstudio.com/items?itemName=kevinmcgowan.TypeScriptImport) TypeScript 自動 Import
+    - [Version Lens](https://marketplace.visualstudio.com/items?itemName=pflannery.vscode-versionlens) package.json 文件顯示模組當前版本和最新版本
+    - [vscode-icons](https://marketplace.visualstudio.com/items?itemName=robertohuertasm.vscode-icons) 檔案圖示，方便定位檔案
 
-    - [vscode-icons](https://marketplace.visualstudio.com/items?itemName=robertohuertasm.vscode-icons) 檔案圖示，方便定位檔案
-
-
-附錄：VSCode選項配置
-```
-{
-    "editor.tabSize": 2,
-    "files.associations": {
-        "*.vue": "vue"
-    },
-    "eslint.autoFixOnSave": true,
-    "eslint.options": {
-        "extensions": [
-            ".js",
-            ".vue"
-        ]
-    },
-    "eslint.validate": [
-        "javascript",
-        "javascriptreact",
-        "vue",
-        "vue-html"
-    ],
-    "search.exclude": {
-        "**/node_modules": true,
-        "**/bower_components": true,
-        "**/dist": true
-    },
-    "emmet.syntaxProfiles": {
-        "javascript": "jsx",
-        "vue": "html",
-        "vue-html": "html"
-    },
-    "extensions.autoUpdate": true,
-    "editor.renderWhitespace": "boundary",
-    "editor.cursorBlinking": "smooth",
-    "workbench.welcome.enabled": true
-}
-```
+    - 附錄：VSCode選項配置
+    ```
+    {
+        "editor.tabSize": 2,
+        "files.associations": {
+            "*.vue": "vue"
+        },
+        "eslint.autoFixOnSave": true,
+        "eslint.options": {
+            "extensions": [
+                ".js",
+                ".vue"
+            ]
+        },
+        "eslint.validate": [
+            "javascript",
+            "javascriptreact",
+            "vue",
+            "vue-html"
+        ],
+        "search.exclude": {
+            "**/node_modules": true,
+            "**/bower_components": true,
+            "**/dist": true
+        },
+        "emmet.syntaxProfiles": {
+            "javascript": "jsx",
+            "vue": "html",
+            "vue-html": "html"
+        },
+        "extensions.autoUpdate": true,
+        "editor.renderWhitespace": "boundary",
+        "editor.cursorBlinking": "smooth",
+        "workbench.welcome.enabled": true
+    }
+    ```
 - [MarkDown Edit](http://markdownedit.com/)
 
 ### 開發工具
@@ -103,10 +101,10 @@
   - [NuGet Packager](https://visualstudiogallery.msdn.microsoft.com/daf5c6db-386b-4994-bdd7-b6cd52f11b72)
   - [Go To Definition](https://visualstudiogallery.msdn.microsoft.com/4b286b9c-4dd5-416b-b143-e31d36dc622b)
   - [ReAttach](https://visualstudiogallery.msdn.microsoft.com/8cccc206-b9de-42ef-8f5a-160ad0f017ae)
-  	- [Visual Studio 擴充套件 - ReAttach](http://kevintsengtw.blogspot.tw/2013/02/visual-studio-reattach.html) By KingKong Bruce
+    - [Visual Studio 擴充套件 - ReAttach](http://kevintsengtw.blogspot.tw/2013/02/visual-studio-reattach.html) By KingKong Bruce
   - [Alive](https://comealive.io/)
-  	- [Alive 推坑文](https://www.facebook.com/91agile/posts/494359890738634) By In91
-  	- [Visual Studio - Alive - Debug at design-time](http://karatejb.blogspot.tw/2015/10/visual-studio-alive-debug-at-design-time.html) By KarateJb
+    - [Alive 推坑文](https://www.facebook.com/91agile/posts/494359890738634) By In91
+    - [Visual Studio - Alive - Debug at design-time](http://karatejb.blogspot.tw/2015/10/visual-studio-alive-debug-at-design-time.html) By KarateJb
   - [WakaTime](https://visualstudiogallery.msdn.microsoft.com/ca0ea1f3-e824-4586-a73e-c8e4a65323d8)
 - [Microsoft SQL Server 2016](http://www.microsoft.com/zh-tw/server-cloud/products/sql-server/)
   - [Redgate SQLPrompt](http://www.red-gate.com/products/sql-development/sql-prompt/) 
@@ -170,6 +168,6 @@
 ### 圖說
 
 - 工作列
-	![工作列](http://i.imgur.com/RLf2nXO.png)
+  ![工作列](http://i.imgur.com/RLf2nXO.png)
 - 開始畫面
   ![開始畫面](http://i.imgur.com/7YUmUYn.png)
