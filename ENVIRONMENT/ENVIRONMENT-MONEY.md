@@ -36,39 +36,14 @@
     - 附錄：VSCode選項配置
     ```
     {
-        "editor.tabSize": 2,
-        "files.associations": {
-            "*.vue": "vue"
-        },
-        "eslint.autoFixOnSave": true,
-        "eslint.options": {
-            "extensions": [
-                ".js",
-                ".vue"
-            ]
-        },
-        "eslint.validate": [
-            "javascript",
-            "javascriptreact",
-            "vue",
-            "vue-html"
-        ],
-        "search.exclude": {
-            "**/node_modules": true,
-            "**/bower_components": true,
-            "**/dist": true
-        },
-        "emmet.syntaxProfiles": {
-            "javascript": "jsx",
-            "vue": "html",
-            "vue-html": "html"
-        },
+        "editor.tabSize": 4,                
         "extensions.autoUpdate": true,
         "editor.renderWhitespace": "boundary",
         "editor.cursorBlinking": "smooth",
         "workbench.welcome.enabled": true
     }
     ```
+    
 - [MarkDown Edit](http://markdownedit.com/)
 
 ### 開發工具
