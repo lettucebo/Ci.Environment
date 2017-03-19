@@ -1,5 +1,14 @@
 # 開發部基礎教育訓練
 
+## 完畢課堂
+
+- 20170317
+  - 必先利其器 01 - 瑞士刀
+    - RDCMan - 遠端桌面連線管理工具
+    - Visual Studio Code - 比 Sublime 更方便的輕量級編輯器
+  - 投影片：<https://doc.co/y9Eabt>
+  - 影片：<https://youtu.be/g6vw6DAwIMI>
+
 ## 物件導向
 
 ### 物件導向特性
