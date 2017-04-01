@@ -32,7 +32,7 @@
     - [TypeScript Import](https://marketplace.visualstudio.com/items?itemName=kevinmcgowan.TypeScriptImport) TypeScript 自動 Import
     - [Version Lens](https://marketplace.visualstudio.com/items?itemName=pflannery.vscode-versionlens) package.json 文件顯示模組當前版本和最新版本
     - [vscode-icons](https://marketplace.visualstudio.com/items?itemName=robertohuertasm.vscode-icons) 檔案圖示，方便定位檔案
-
+    - [Azure Extension Pack](https://marketplace.visualstudio.com/items?itemName=ms-vscode.vscode-azureextensionpack)
     - 附錄：VSCode選項配置
     ```
     {
@@ -48,20 +48,15 @@
 
 ### 開發工具
 
-- [Visual Studio Enterprise 2015](https://www.visualstudio.com/zh-tw/downloads/download-visual-studio-vs.aspx)
-  - 若安裝英文版的人，也可以額外安裝 [Microsoft Visual Studio 2015 語言套件 - 繁體中文](https://www.microsoft.com/zh-tw/download/details.aspx?id=48157)。
+- [Visual Studio Enterprise 2017](https://www.visualstudio.com/)
+  - 若安裝英文版的人，也可以透過安裝中心額外安裝**語言套件 - 繁體中文**。
   - 請先行安裝以下擴充套件與更新：
-    - 下載最新版的 [SQL Server Data Tools](https://msdn.microsoft.com/zh-tw/library/mt204009.aspx) (以下請挑版本安裝)
-      - [Visual Studio 2015 的 SQL Server Data Tools](http://go.microsoft.com/fwlink/?LinkID=619253)
-    - 下載最新版的 [Microsoft Azure SDK](https://azure.microsoft.com/zh-tw/downloads/) ( 最新版: 2.9.5 )
-    - 建議使用 [Web Platform Installer](https://www.microsoft.com/web/downloads/platform.aspx) 進行安裝
-  - [Web Essentials](http://vswebessentials.com/)
-    - [Web Essentials 2015.3](https://visualstudiogallery.msdn.microsoft.com/ee6e6d8c-c837-41fb-886a-6b50ae2d06a2)
-    - [Visual Studio - 提升Web與CSS開發的流暢度](http://blog.kkbruce.net/2011/11/visual-studio-webcss.html) By KingKong Bruce
+    - 下載最新版的 [SQL Server Data Tools](https://msdn.microsoft.com/zh-tw/library/mt204009.aspx)
+    - 下載最新版的 [Microsoft Azure SDK](https://azure.microsoft.com/zh-tw/downloads/)
+      - 建議使用 [Web Platform Installer](https://www.microsoft.com/web/downloads/platform.aspx) 進行安裝
   - [C# Essentials](https://visualstudiogallery.msdn.microsoft.com/a4445ad0-f97c-41f9-a148-eae225dcc8a5)
   - [ReSharper](https://www.jetbrains.com/resharper/)
     - 額外安裝擴充套件
-      - [StyleCop by JetBrains](https://resharper-plugins.jetbrains.com/packages/StyleCop.StyleCop/)
       - [Enhanced Tooltip](https://resharper-plugins.jetbrains.com/packages/JLebosquain.EnhancedTooltip/)
   - [tangible T4 Editor](http://t4-editor.tangible-engineering.com/T4-Editor-Visual-T4-Editing.html)
     - [tangible T4 Editor 2.3.0 plus modeling tools for VS 2015](https://visualstudiogallery.msdn.microsoft.com/784cf592-b797-4d4d-ad33-331fcf63faad)
@@ -77,11 +72,11 @@
   - [Go To Definition](https://visualstudiogallery.msdn.microsoft.com/4b286b9c-4dd5-416b-b143-e31d36dc622b)
   - [ReAttach](https://visualstudiogallery.msdn.microsoft.com/8cccc206-b9de-42ef-8f5a-160ad0f017ae)
     - [Visual Studio 擴充套件 - ReAttach](http://kevintsengtw.blogspot.tw/2013/02/visual-studio-reattach.html) By KingKong Bruce
-  - [Alive](https://comealive.io/)
-    - [Alive 推坑文](https://www.facebook.com/91agile/posts/494359890738634) By In91
-    - [Visual Studio - Alive - Debug at design-time](http://karatejb.blogspot.tw/2015/10/visual-studio-alive-debug-at-design-time.html) By KarateJb
+  - [OzCode](https://www.oz-code.com/)
+    - [OzCode - 最強大的 Visual Studio 偵錯套件](http://blog.kkbruce.net/2015/01/ozcode-best-visualstudio-debugging-tool.html) By KingKong Bruce
+    - [Visual Studio - Alive - Debug at design-time](https://dotblogs.com.tw/echo/2016/10/04/extensionintroduction_visualstudio_ozcode) By KarateJb
   - [WakaTime](https://visualstudiogallery.msdn.microsoft.com/ca0ea1f3-e824-4586-a73e-c8e4a65323d8)
-- [Microsoft SQL Server 2016](http://www.microsoft.com/zh-tw/server-cloud/products/sql-server/)
+- [SQL Server Management Studio 2016](https://msdn.microsoft.com/library/mt238290.aspx)
   - [Redgate SQLPrompt](http://www.red-gate.com/products/sql-development/sql-prompt/) 
 - [Java SE Development Kit](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 - [NuGet Package Explorer](https://npe.codeplex.com/)
@@ -104,13 +99,13 @@
  
 - [Git for Windows](https://git-scm.com/)
 - [TortoiseGit](https://tortoisegit.org/)
-- [GitHub Desktop](https://desktop.github.com/)
 - [GitKraken](http://www.gitkraken.com/)
 
 ### 遠端桌面管理
 - [Remote Desktop Connection Manager](https://www.microsoft.com/en-us/download/details.aspx?id=44989)
   - [介紹好用工具：RDCMan ( 遠端桌面連線管理工具 )](http://blog.miniasp.com/post/2010/07/15/Useful-tool-RDCMan.aspx) By Will保哥
   - [RDCMan 2.7 (遠端桌面連線管理工具) 如何在多台電腦共用已儲存的密碼](http://blog.miniasp.com/post/2014/11/28/RDCMan-27-share-passwords-between-computers.aspx) By Will保哥
+  - [內部教育訓練 - 必先利其器 01 - 瑞士刀](https://github.com/lettucebo/Ci.Convention/blob/master/TECH/LESSONS.md#20170317) By 紙鈔
 - [TeamViewer](https://www.teamviewer.com/zhTW/)
 - [ShowMyPC](https://showmypc.com/)
 
@@ -141,7 +136,7 @@
 - [Autoruns for Windows](https://technet.microsoft.com/en-us/sysinternals/bb963902.aspx)
 
 ### 圖說
-
+僅供參考
 - 工作列
   ![工作列](http://i.imgur.com/RLf2nXO.png)
 - 開始畫面
