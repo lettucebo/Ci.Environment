@@ -105,7 +105,7 @@
 - [Remote Desktop Connection Manager](https://www.microsoft.com/en-us/download/details.aspx?id=44989)
   - [介紹好用工具：RDCMan ( 遠端桌面連線管理工具 )](http://blog.miniasp.com/post/2010/07/15/Useful-tool-RDCMan.aspx) By Will保哥
   - [RDCMan 2.7 (遠端桌面連線管理工具) 如何在多台電腦共用已儲存的密碼](http://blog.miniasp.com/post/2014/11/28/RDCMan-27-share-passwords-between-computers.aspx) By Will保哥
-  - [內部教育訓練 - 必先利其器 01 - 瑞士刀](https://github.com/lettucebo/Ci.Convention/blob/master/TECH/LESSONS.md#20170317) By 紙鈔
+  - [內部教育訓練 - 必先利其器 01 - 瑞士刀](https://github.com/lettucebo/Ci.Convention/blob/master/TECH/LESSONS.md#20170317) By 紙鈔
 - [TeamViewer](https://www.teamviewer.com/zhTW/)
 - [ShowMyPC](https://showmypc.com/)
 
