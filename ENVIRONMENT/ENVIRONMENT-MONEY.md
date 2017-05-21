@@ -134,6 +134,7 @@
 - [PushBullet](https://www.pushbullet.com/)
 - [PicPick](http://ngwin.com/picpick)
 - [Autoruns for Windows](https://technet.microsoft.com/en-us/sysinternals/bb963902.aspx)
+- [Wox](https://github.com/Wox-launcher/Wox)
 
 ### 圖說
 僅供參考
