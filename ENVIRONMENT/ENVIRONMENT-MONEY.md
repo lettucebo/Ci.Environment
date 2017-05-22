@@ -123,7 +123,7 @@
 
 - [Dropbox](https://www.dropbox.com/)
 - [Filezilla](https://filezilla-project.org/)
-- [WinRAR](http://www.rarlab.com/)
+- [7-Zip](http://www.7-zip.org/)
 
 ### 防毒軟體
 
