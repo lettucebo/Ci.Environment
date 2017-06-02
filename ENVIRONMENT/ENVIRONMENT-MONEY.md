@@ -76,7 +76,7 @@
     - [OzCode - 最強大的 Visual Studio 偵錯套件](http://blog.kkbruce.net/2015/01/ozcode-best-visualstudio-debugging-tool.html) By KingKong Bruce
     - [Visual Studio - Alive - Debug at design-time](https://dotblogs.com.tw/echo/2016/10/04/extensionintroduction_visualstudio_ozcode) By KarateJb
   - [WakaTime](https://visualstudiogallery.msdn.microsoft.com/ca0ea1f3-e824-4586-a73e-c8e4a65323d8)
-- [SQL Server Management Studio 2016](https://msdn.microsoft.com/library/mt238290.aspx)
+- [SQL Server Management Studio 17](https://docs.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms)
   - [Redgate SQLPrompt](http://www.red-gate.com/products/sql-development/sql-prompt/) 
 - [Java SE Development Kit](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 - [NuGet Package Explorer](https://npe.codeplex.com/)
