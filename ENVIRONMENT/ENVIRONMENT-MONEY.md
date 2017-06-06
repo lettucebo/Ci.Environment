@@ -33,7 +33,8 @@
     - [Version Lens](https://marketplace.visualstudio.com/items?itemName=pflannery.vscode-versionlens) package.json 文件顯示模組當前版本和最新版本
     - [vscode-icons](https://marketplace.visualstudio.com/items?itemName=robertohuertasm.vscode-icons) 檔案圖示，方便定位檔案
     - [Azure Extension Pack](https://marketplace.visualstudio.com/items?itemName=ms-vscode.vscode-azureextensionpack) 開發或管理所有跟 Azure 相關的服務
-    - 附錄：VSCode選項配置
+    - [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) REST Client 工具
+    - 附錄：VSCode選項配置
     ```
     {
         "editor.tabSize": 4,                
