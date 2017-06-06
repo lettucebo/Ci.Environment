@@ -34,6 +34,7 @@
     - [vscode-icons](https://marketplace.visualstudio.com/items?itemName=robertohuertasm.vscode-icons) 檔案圖示，方便定位檔案
     - [Azure Extension Pack](https://marketplace.visualstudio.com/items?itemName=ms-vscode.vscode-azureextensionpack) 開發或管理所有跟 Azure 相關的服務
     - [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) REST Client 工具
+    - [mssql](https://marketplace.visualstudio.com/items?itemName=ms-mssql.mssql) MSSQL 管理工具
     - 附錄：VSCode選項配置
     ```
     {
