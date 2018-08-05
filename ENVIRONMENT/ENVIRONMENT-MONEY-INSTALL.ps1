@@ -58,8 +58,13 @@ choco install -y potplayer
 
 # choco install -y spotify 
 
+choco install -y cmdermini 
+
 ## File Explorer show hidden file and file extensions
 $explorerKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
 Set-ItemProperty $explorerKey Hidden 1
 Set-ItemProperty $explorerKey HideFileExt 0
 Stop-Process -processname explorer
+
+## Enable Microsoft-Windows-Subsystem-Linux
+Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
