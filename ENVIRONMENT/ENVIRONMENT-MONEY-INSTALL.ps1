@@ -56,9 +56,11 @@ choco install -y teamviewer
 
 choco install -y potplayer 
 
-# choco install -y spotify 
+choco install -y spotify 
 
 choco install -y cmdermini 
+
+choco install -y docker-for-windows --version 18.06.0.19101-edge --pre
 
 ## File Explorer show hidden file and file extensions
 $explorerKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
@@ -70,4 +72,4 @@ Stop-Process -processname explorer
 Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 
 # Enable Telnet Client
-dism /online /Enable-Feature /FeatureName:TelnetClient
+Enable-WindowsOptionalFeature -Online -FeatureName TelnetClient
