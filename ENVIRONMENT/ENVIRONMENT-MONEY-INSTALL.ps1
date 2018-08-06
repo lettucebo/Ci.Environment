@@ -28,7 +28,7 @@ Write-Output("Start install VSCode");
 choco install vscode -y --params "/NoDesktopIcon"
 Write-Output("Complete install VSCode");
 
-# choco install -y firefox-dev --pre 
+choco install -y firefox --params "l=en-US"
 
 ## install 7zip
 Write-Output("Start install 7zip");
