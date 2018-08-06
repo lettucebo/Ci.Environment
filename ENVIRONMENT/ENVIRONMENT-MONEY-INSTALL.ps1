@@ -1,3 +1,5 @@
+## Notice need to set Set-ExecutionPolicy Unrestricted first
+
 Write-Output(Get-Date);
 
 ## check admin right
