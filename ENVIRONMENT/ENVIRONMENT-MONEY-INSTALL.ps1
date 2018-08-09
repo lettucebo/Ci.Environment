@@ -32,6 +32,8 @@ Write-Output("Complete install VSCode");
 
 choco install -y firefox --params "l=en-US"
 
+choco install -y googlechrome
+
 ## install 7zip
 Write-Output("Start install 7zip");
 choco install -y 7zip.install
@@ -39,8 +41,6 @@ Write-Output("Complete install 7zip");
 
 ## install jre8
 choco install -y jdk8
-
-# choco install -y typora
 
 choco install -y sql-server-management-studio 
 
@@ -57,8 +57,6 @@ choco install -y filezilla
 choco install -y teamviewer 
 
 choco install -y potplayer 
-
-choco install -y spotify 
 
 choco install -y cmdermini 
 
