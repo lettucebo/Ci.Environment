@@ -64,6 +64,8 @@ choco install -y docker-for-windows --version 18.06.0.19101-edge --pre
 
 choco install -y typora
 
+choco install -y telegram.install
+
 ## File Explorer show hidden file and file extensions
 $explorerKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
 Set-ItemProperty $explorerKey Hidden 1
