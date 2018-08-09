@@ -76,15 +76,12 @@
   - [OzCode](https://www.oz-code.com/)
     - [OzCode - 最強大的 Visual Studio 偵錯套件](http://blog.kkbruce.net/2015/01/ozcode-best-visualstudio-debugging-tool.html) By KingKong Bruce
     - [Visual Studio - Alive - Debug at design-time](https://dotblogs.com.tw/echo/2016/10/04/extensionintroduction_visualstudio_ozcode) By KarateJb
-  - [WakaTime](https://visualstudiogallery.msdn.microsoft.com/ca0ea1f3-e824-4586-a73e-c8e4a65323d8)
 - [SQL Server Management Studio 17](https://docs.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms)
-  - [Redgate SQLPrompt](http://www.red-gate.com/products/sql-development/sql-prompt/) 
+  - [Redgate SQLToolbelt](https://www.red-gate.com/products/sql-development/sql-toolbelt/index) 
 - [Java SE Development Kit](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
-- [NuGet Package Explorer](https://npe.codeplex.com/)
-- [Azure Explorer](http://www.red-gate.com/products/azure-development/azure-explorer/)
+- [NuGet Package Explorer](https://www.microsoft.com/store/productId/9WZDNCRDMDM3/)
 - [OpenSSL](https://slproweb.com/products/Win32OpenSSL.html)
-- [ArcGIS for Desktop](http://www.esri.com/software/arcgis/arcgis-for-desktop)
-- [Adobe Creative Suite 6](https://www.adobe.com/products/cs6.html)
+- [Adobe Creative Cloud](https://www.adobe.com/tw/creativecloud.html)
 - [開發人用字型](http://1drv.ms/1KOWy5U)
   
 ### 文書處理
@@ -100,7 +97,6 @@
  
 - [Git for Windows](https://git-scm.com/)
 - [TortoiseGit](https://tortoisegit.org/)
-- [GitKraken](http://www.gitkraken.com/)
 
 ### 遠端桌面管理
 - [Remote Desktop Connection Manager](https://www.microsoft.com/en-us/download/details.aspx?id=44989)
@@ -108,7 +104,6 @@
   - [RDCMan 2.7 (遠端桌面連線管理工具) 如何在多台電腦共用已儲存的密碼](http://blog.miniasp.com/post/2014/11/28/RDCMan-27-share-passwords-between-computers.aspx) By Will保哥
   - [內部教育訓練 - 必先利其器 01 - 瑞士刀](https://github.com/lettucebo/Ci.Convention/blob/master/TECH/LESSONS.md#20170317) By 紙鈔
 - [TeamViewer](https://www.teamviewer.com/zhTW/)
-- [ShowMyPC](https://showmypc.com/)
 
 ### 通訊軟體
 
