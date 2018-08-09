@@ -10,7 +10,7 @@
 
 ### 瀏覽器
 
-- [Google Chrome](https://www.google.com/intl/zh-TW/chrome/)
+- [Google Chrome 64bit](https://www.google.com/intl/zh-TW/chrome/)
 - [Firefox 64bit](https://www.mozilla.org/en-US/firefox/all/#zh-TW)
 
 ### 文字編輯器
@@ -44,7 +44,8 @@
     }
     ```
     
-- [MarkDown Edit](http://markdownedit.com/)
+- [Typora](https://typora.io/)
+  - [Typora 簡潔容易使用的 Markdown 編輯軟體](https://cms.35g.tw/coding/linux-typora-%E7%B0%A1%E6%BD%94%E5%AE%B9%E6%98%93%E4%BD%BF%E7%94%A8%E7%9A%84markdown-%E7%B7%A8%E8%BC%AF%E8%BB%9F%E9%AB%94/)
 
 ### 開發工具
 
@@ -112,7 +113,9 @@
 ### 通訊軟體
 
 - [Line](http://line.me/zh-hant/)
-- [Skype](http://www.skype.com/zh_TW/)
+- [Telegram](https://telegram.org/)
+- [Messenger For Desktop](https://messengerfordesktop.com/)
+- [WeChat](https://pc.weixin.qq.com/?lang=zh_TW)
  
 ### 影音相關
 
@@ -121,20 +124,18 @@
  
 ### 檔案處理
 
-- [Dropbox](https://www.dropbox.com/)
+- [OneDrive](https://onedrive.live.com/)
 - [Filezilla](https://filezilla-project.org/)
 - [7-Zip](http://www.7-zip.org/)
 
-### 防毒軟體
+### 防毒軟體 - Optional
 
 - [ESET](https://www.eset.tw/)
 
 ### 輔助工具
 
 - [PushBullet](https://www.pushbullet.com/)
-- [PicPick](http://ngwin.com/picpick)
 - [Autoruns for Windows](https://technet.microsoft.com/en-us/sysinternals/bb963902.aspx)
-- [Wox](https://github.com/Wox-launcher/Wox)
 
 ### 圖說
 僅供參考
