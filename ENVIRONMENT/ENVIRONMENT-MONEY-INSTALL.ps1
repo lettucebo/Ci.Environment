@@ -58,7 +58,11 @@ choco install -y teamviewer
 
 choco install -y potplayer 
 
-choco install -y cmdermini 
+choco install -y cmdermini
+
+## add cmder here
+cd C:\Cmder
+.\cmder.exe /REGISTER ALL
 
 choco install -y docker-for-windows --version 18.06.0.19101-edge --pre
 
