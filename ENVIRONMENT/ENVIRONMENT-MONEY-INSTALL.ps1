@@ -66,6 +66,8 @@ choco install -y typora
 
 choco install -y telegram.install
 
+choco install -y  nodejs.install
+
 ## File Explorer show hidden file and file extensions
 $explorerKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
 Set-ItemProperty $explorerKey Hidden 1
