@@ -2,7 +2,9 @@
 
 ## 實作環境說明
 
-為了能讓大家的環境基本上都差不多能在課堂上順利地進行實作，請於開工前把需要的軟體全部安裝好，以下是安裝的相關軟體與安裝步驟與說明，如果安裝過程有遇到任何問題，請向**紙鈔**諮詢。
+為了能讓大家的環境可以快入速上手，請於開工前把需要的軟體全部安裝好，以下是安裝的相關軟體與安裝步驟與說明，如果安裝過程有遇到任何問題，請向**紙鈔**諮詢。
+
+可用 [Chocolatey](https://chocolatey.org/) 進行快速無腦自動化安裝，使用 Script: [ENVIRONMENT-MONEY-INSTALL.ps1](https://github.com/lettucebo/Ci.Convention/blob/master/ENVIRONMENT/ENVIRONMENT-MONEY-INSTALL.ps1)
 
 ### 作業系統
 
