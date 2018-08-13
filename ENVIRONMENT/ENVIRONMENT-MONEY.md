@@ -82,6 +82,7 @@
   - [Redgate SQLToolbelt](https://www.red-gate.com/products/sql-development/sql-toolbelt/index)
 - [Java SE Development Kit](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 - [Node.js](https://nodejs.org/en/)
+- [Python](https://www.python.org/)
 - [NuGet Package Explorer](https://www.microsoft.com/store/productId/9WZDNCRDMDM3/)
 - [OpenSSL](https://slproweb.com/products/Win32OpenSSL.html)
 - [Adobe Creative Cloud](https://www.adobe.com/tw/creativecloud.html)
