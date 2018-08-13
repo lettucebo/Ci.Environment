@@ -26,7 +26,7 @@
     - [Indenticator](https://marketplace.visualstudio.com/items?itemName=SirTori.indenticator) 縮排線高亮
     - [Output Colorizer](https://marketplace.visualstudio.com/items?itemName=IBM.output-colorizer) 彩色输出訊息
     - [Path Intellisense](https://marketplace.visualstudio.com/items?itemName=christian-kohler.path-intellisense) 另一个路径完成提示
-    - [Beautify](https://marketplace.visualstudio.com/items?itemName=HookyQR.beautify) 格式化 javascript, JSON, CSS, Sass 與 HTML 
+    - [Beautify](https://marketplace.visualstudio.com/items?itemName=HookyQR.beautify) 格式化 javascript, JSON, CSS, Sass 與 HTML 
     - [Settings Sync](https://marketplace.visualstudio.com/items?itemName=Shan.code-settings-sync) VSCode設置同步到Gist
     - [TypeScript Import](https://marketplace.visualstudio.com/items?itemName=kevinmcgowan.TypeScriptImport) TypeScript 自動 Import
     - [Version Lens](https://marketplace.visualstudio.com/items?itemName=pflannery.vscode-versionlens) package.json 文件顯示模組當前版本和最新版本
