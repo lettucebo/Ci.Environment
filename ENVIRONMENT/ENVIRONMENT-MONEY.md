@@ -33,7 +33,7 @@
     - [vscode-icons](https://marketplace.visualstudio.com/items?itemName=robertohuertasm.vscode-icons) 檔案圖示，方便定位檔案
     - [Azure Extension Pack](https://marketplace.visualstudio.com/items?itemName=ms-vscode.vscode-azureextensionpack) 開發或管理所有跟 Azure 相關的服務
     - [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) REST Client 工具
-    - [mssql](https://marketplace.visualstudio.com/items?itemName=ms-mssql.mssql) MSSQL 管理工具
+    - [mssql](https://marketplace.visualstudio.com/items?itemName=ms-mssql.mssql) MSSQL 管理工具
       - [使用 Visual Studio Code 來建立和執行 SQL Server 的 TRANSACT-SQL 指令碼](https://docs.microsoft.com/zh-tw/sql/linux/sql-server-linux-develop-use-vscode?view=sql-server-2017)
       - [[VS Code][SQL Server] Visual Studio Code 連線 MS SQL Server 並執行 SQL 語法](http://dog0416.blogspot.com/2018/01/sql-server-visual-studio-code-ms-sql.html)
     - [MySQL](https://marketplace.visualstudio.com/items?itemName=formulahendry.vscode-mysql) MySQL 管理工具
