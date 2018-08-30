@@ -74,7 +74,9 @@ choco install -y nodejs.install
 
 choco install -y python
 
-choco install -y jetbrainstoolbox 
+choco install -y jetbrainstoolbox
+
+choco install -y spotify --version 1.0.88.353
 
 ## File Explorer show hidden file and file extensions
 $explorerKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
