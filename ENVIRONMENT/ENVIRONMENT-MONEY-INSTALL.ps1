@@ -78,6 +78,8 @@ choco install -y jetbrainstoolbox
 
 choco install -y spotify --version 1.0.88.353
 
+choco install -y office365business
+
 ## File Explorer show hidden file and file extensions
 $explorerKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
 Set-ItemProperty $explorerKey Hidden 1
