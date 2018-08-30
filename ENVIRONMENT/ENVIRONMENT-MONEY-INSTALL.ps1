@@ -74,6 +74,8 @@ choco install -y nodejs.install
 
 choco install -y python
 
+choco install -y jetbrainstoolbox 
+
 ## File Explorer show hidden file and file extensions
 $explorerKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
 Set-ItemProperty $explorerKey Hidden 1
@@ -200,3 +202,58 @@ code --install-extension octref.vetur
 code --install-extension ms-vsliveshare.vsliveshare
 code --install-extension robertohuertasm.vscode-icons
 code --install-extension dotjoshjohnson.xml
+
+$vs2017Url = "https://aka.ms/vs/15/release/vs_enterprise.exe";
+$vs2017Exe = "$PSScriptRoot\vs_enterprise.exe";
+$start_time = Get-Date
+
+Invoke-WebRequest -Uri $vs2017Url -OutFile $vs2017Exe
+Write-Output "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, at $vs2017Exe"
+
+Write-Output "Stast install VS2017";
+
+& $vs2017Exe `
+--addProductLang En-us `
+--add Microsoft.VisualStudio.Workload.Azure `
+--add Microsoft.VisualStudio.Workload.ManagedDesktop `
+--add Microsoft.VisualStudio.Workload.NetWeb `
+--add Microsoft.VisualStudio.Workload.NetCoreTools `
+--add Microsoft.VisualStudio.Workload.NetCrossPlat `
+--add Microsoft.VisualStudio.Workload.Universal `
+--add Microsoft.VisualStudio.Workload.VisualStudioExtension `
+--add Microsoft.VisualStudio.Component.LinqToSql `
+--add Microsoft.VisualStudio.Component.TestTools.CodedUITest `
+--add Microsoft.VisualStudio.Component.TestTools.FeedbackClient `
+--add Microsoft.VisualStudio.Component.TestTools.MicrosoftTestManager `
+--add Microsoft.VisualStudio.Component.TypeScript.3.0 `
+--add Microsoft.VisualStudio.Component.Windows10SDK.17134 `
+--add Microsoft.Net.Component.4.6.2.SDK `
+--add Microsoft.Net.Component.4.6.2.TargetingPack `
+--add Microsoft.Net.Component.4.7.SDK `
+--add Microsoft.Net.Component.4.7.TargetingPack `
+--add Microsoft.Net.Component.4.7.1.SDK `
+--add Microsoft.Net.Component.4.7.1.TargetingPack `
+--add Microsoft.Net.Component.4.7.2.SDK `
+--add Microsoft.Net.Component.4.7.2.TargetingPack `
+--add Microsoft.VisualStudio.Component.Azure.Storage.AzCopy `
+--add Microsoft.VisualStudio.Component.Git `
+--add Microsoft.VisualStudio.Component.DiagnosticTools `
+--add Microsoft.VisualStudio.Component.AppInsights.Tools `
+--add Microsoft.VisualStudio.Component.DependencyValidation.Enterprise `
+--add Microsoft.VisualStudio.Component.TestTools.WebLoadTest `
+--add Microsoft.VisualStudio.Component.Windows10SDK.IpOverUsb `
+--add Microsoft.VisualStudio.Component.CodeMap `
+--add Microsoft.VisualStudio.Component.ClassDesigner `
+--add Microsoft.VisualStudio.Component.TestTools.Core `
+--add Microsoft.ComponentGroup.Blend `
+--add Component.MDD.Linux.GCC.arm `
+--add Component.Android.Emulator `
+--add Component.GitHub.VisualStudio `
+--add Component.Redgate.ReadyRoll `
+--add Component.Redgate.SQLPrompt.VsPackage `
+--add Component.Redgate.SQLSearch.VSExtension `
+--add Component.Dotfuscator `
+--includeRecommended `
+--wait --passive --norestart
+
+Write-Output "Finish install VS2017";
