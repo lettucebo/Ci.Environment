@@ -5,36 +5,31 @@ Write-Output(Get-Date);
 Set-ExecutionPolicy -ExecutionPolicy UnRestricted
 
 ## check admin right
-
-If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
-{
+If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Write-Warning "You do not have Administrator rights to run this script!`nPlease re-run this script as an Administrator!"
     Break
 }
 
 ## Set Windows 10 Feature
+Write-Host "Set Windows 10 Feature" -ForegroundColor Green
 # Unpin Quick Access Documents and Pictures
-$quickDocPath = "C:\Users\"+$env:UserName + "\Documents"
-$quickPicPath = "C:\Users\"+$env:UserName + "\Pictures"
+$quickDocPath = "C:\Users\" + $env:UserName + "\Documents"
+$quickPicPath = "C:\Users\" + $env:UserName + "\Pictures"
 
 $QuickAccess = New-Object -ComObject shell.application 
 $TargetObject = $QuickAccess.Namespace("shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}").Items() | where {$_.Path -eq "$quickDocPath"} 
-If ($TargetObject -eq $null) 
-{ 
+If ($TargetObject -eq $null) { 
     Write-Warning "Documents Path is not pinned to Quick Access." 
 } 
-Else 
-{ 
+Else { 
     $TargetObject.InvokeVerb("unpinfromhome") 
 } 
 
 $TargetObject = $QuickAccess.Namespace("shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}").Items() | where {$_.Path -eq "$quickPicPath"} 
-If ($TargetObject -eq $null) 
-{ 
+If ($TargetObject -eq $null) { 
     Write-Warning "Pictures Path is not pinned to Quick Access." 
 } 
-Else 
-{ 
+Else { 
     $TargetObject.InvokeVerb("unpinfromhome") 
 }
 
@@ -66,86 +61,51 @@ Get-AppxPackage Microsoft.ZuneMusic | Remove-AppxPackage
 Get-AppxPackage getstarted | Remove-AppxPackage
 
 ## install chocolatey
-Write-Output("Start install chocolatey");
+Write-Host "Install Chocolatey and Packages" -ForegroundColor Green
 Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-Write-Output("Complete install chocolatey");
 
-## install Microsoft .NET Framework 4.7.1
-Write-Output("Start install Microsoft .NET Framework 4.7.1");
 choco install -y dotnet4.7.1
-Write-Output("Complete install chocolatey");
-
-## install .NET Core SDK
-Write-Output("Start install .NET Core SDK");
 choco install -y dotnetcore-sdk
-Write-Output("Complete install .NET Core SDK");
-
-## install VSCode
-Write-Output("Start install VSCode");
 choco install vscode -y --params "/NoDesktopIcon"
-Write-Output("Complete install VSCode");
-
 choco install -y firefox --params "l=en-US"
-
 choco install -y googlechrome
-
-## install 7zip
-Write-Output("Start install 7zip");
 choco install -y 7zip.install
-Write-Output("Complete install 7zip");
-
-## install jre8
 choco install -y jdk8 -params "both=true"
-
 choco install -y sql-server-management-studio 
-
 choco install -y git.install  --params "/NoShellIntegration"
-
 choco install -y tortoisegit
-
 choco install -y rdcman
-
 choco install -y flashplayerplugin 
-
 choco install -y filezilla 
-
 choco install -y teamviewer 
-
 choco install -y potplayer 
-
 choco install -y cmdermini
-
 choco install -y microsoft-teams.install
+choco install -y docker-for-windows --version 18.06.0.19101-edge --pre
+choco install -y typora
+choco install -y telegram.install
+choco install -y nodejs.install
+choco install -y python
+choco install -y jetbrainstoolbox
+choco install -y spotify --version 1.0.88.353
+choco install -y office365business
 
-## add cmder here
+## Add Cmder Here
+Write-Host "Add Cmder Here" -ForegroundColor Green
 $cmderCmd = @'
 cmd.exe /C 
 C:\tools\cmdermini\cmder.exe /REGISTER ALL
 '@
 Invoke-Expression -Command:$cmderCmd
 
-choco install -y docker-for-windows --version 18.06.0.19101-edge --pre
-
-choco install -y typora
-
-choco install -y telegram.install
-
-choco install -y nodejs.install
-
-choco install -y python
-
-choco install -y jetbrainstoolbox
-
-choco install -y spotify --version 1.0.88.353
-
-choco install -y office365business
-
 ## File Explorer show hidden file and file extensions
+Write-Host "File Explorer show hidden file and file extensions" -ForegroundColor Green
 $explorerKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
 Set-ItemProperty $explorerKey Hidden 1
 Set-ItemProperty $explorerKey HideFileExt 0
 
 ## Remove Folders from This PC
+Write-Host "Remove Folders from This PC" -ForegroundColor Green
 $regPath1 = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\'
 $regPath2 = 'HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\'
 
@@ -167,8 +127,9 @@ Write-Host "Remove Desktop From This PC" -ForegroundColor Yellow
 If (Get-Item -Path $regPath1$desktopItem -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$desktopItem -Recurse
     Remove-Item -Path $regPath2$desktopItem -Recurse
-} Else  {
-    Write-Host "Desktop key does not exist `n" -ForegroundColor Red
+}
+Else {
+    Write-Warning "Desktop key does not exist `n"
 }
 
 # Remove Documents From This PC
@@ -178,8 +139,9 @@ If (Get-Item -Path $regPath1$documentsItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath2$documentsItem1 -Recurse
     Remove-Item -Path $regPath1$documentsItem2 -Recurse
     Remove-Item -Path $regPath2$documentsItem2 -Recurse
-} Else  {
-    Write-Host "Documents key does not exist `n" -ForegroundColor Red
+}
+Else {
+    Write-Warning "Documents key does not exist `n"
 }
 
 # Remove Downloads From This PC
@@ -189,8 +151,9 @@ If (Get-Item -Path $regPath1$downloadsItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath2$downloadsItem1 -Recurse
     Remove-Item -Path $regPath1$downloadsItem2 -Recurse
     Remove-Item -Path $regPath2$downloadsItem2 -Recurse
-} Else  {
-    Write-Host "Downloads key does not exist `n" -ForegroundColor Red
+}
+Else {
+    Write-Warning "Downloads key does not exist `n"
 }
 
 # Remove Music From This PC
@@ -200,8 +163,9 @@ If (Get-Item -Path $regPath1$musicItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath2$musicItem1 -Recurse
     Remove-Item -Path $regPath1$musicItem2 -Recurse
     Remove-Item -Path $regPath2$musicItem2 -Recurse
-} Else  {
-    Write-Host "Music key does not exist `n" -ForegroundColor Red
+}
+Else {
+    Write-Warning "Music key does not exist `n"
 }
 
 # Remove Pictures From This PC
@@ -211,8 +175,9 @@ If (Get-Item -Path $regPath1$picturesItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath2$picturesItem1 -Recurse
     Remove-Item -Path $regPath1$picturesItem2 -Recurse
     Remove-Item -Path $regPath2$picturesItem2 -Recurse
-} Else  {
-    Write-Host "Pictures key does not exist `n" -ForegroundColor Red
+}
+Else {
+    Write-Warning "Pictures key does not exist `n"
 }
 
 # Remove Videos From This PC
@@ -222,8 +187,9 @@ If (Get-Item -Path $regPath1$videosItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath2$videosItem1 -Recurse
     Remove-Item -Path $regPath1$videosItem2 -Recurse
     Remove-Item -Path $regPath2$videosItem2 -Recurse
-} Else  {
-    Write-Host "Videos key does not exist `n" -ForegroundColor Red
+}
+Else {
+    Write-Warning "Videos key does not exist `n"
 }
 
 # Remove 3D Objects From This PC
@@ -231,19 +197,23 @@ Write-Host "Remove 3DObjects From This PC" -ForegroundColor Yellow
 If (Get-Item -Path $regPath1$3dObjectsItem -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$3dObjectsItem -Recurse
     Remove-Item -Path $regPath2$3dObjectsItem -Recurse
-} Else  {
-    Write-Host "3DObjects key does not exist `n" -ForegroundColor Red
+}
+Else {
+    Write-Warning "3DObjects key does not exist `n"
 }
 
 Stop-Process -processname explorer
 
 ## Enable Microsoft-Windows-Subsystem-Linux
+Write-Host "Enable Microsoft-Windows-Subsystem-Linux" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 
 # Enable Telnet Client
+Write-Host "Enable Telnet Client" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -FeatureName TelnetClient
 
 # Install VSCode Extensions
+Write-Host "Install VSCode Extensions" -ForegroundColor Green
 $codeExtensionCmd = @'
 cmd.exe /C 
 code --install-extension formulahendry.vscode-mysql
@@ -272,6 +242,7 @@ code --install-extension ritwickdey.liveserver
 Invoke-Expression -Command:$codeExtensionCmd
 
 ## Install Developer Font
+Write-Host "Install Developer Font" -ForegroundColor Green
 $fontUrl = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%217415&authkey=AG0Y5D8cspzzmIM";
 $fontFile = "$PSScriptRoot\YaHei.ttf";
 Invoke-WebRequest -Uri $fontUrl -OutFile $fontFile
@@ -279,9 +250,10 @@ Invoke-WebRequest -Uri $fontUrl -OutFile $fontFile
 $FONTS = 0x14
 $objShell = New-Object -ComObject Shell.Application
 $objFolder = $objShell.Namespace($FONTS)
-$objFolder.CopyHere($fontFile,0x10)
+$objFolder.CopyHere($fontFile, 0x10)
 
 ## Instal VS 2017
+Write-Host "Instal VS 2017" -ForegroundColor Green
 $vs2017Url = "https://aka.ms/vs/15/release/vs_enterprise.exe";
 $vs2017Exe = "$PSScriptRoot\vs_enterprise.exe";
 $start_time = Get-Date
@@ -290,47 +262,45 @@ Invoke-WebRequest -Uri $vs2017Url -OutFile $vs2017Exe
 Write-Output "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, at $vs2017Exe"
 
 & $vs2017Exe `
---addProductLang En-us `
---add Microsoft.VisualStudio.Workload.Azure `
---add Microsoft.VisualStudio.Workload.ManagedDesktop `
---add Microsoft.VisualStudio.Workload.NetWeb `
---add Microsoft.VisualStudio.Workload.NetCoreTools `
---add Microsoft.VisualStudio.Workload.NetCrossPlat `
---add Microsoft.VisualStudio.Workload.Universal `
---add Microsoft.VisualStudio.Workload.VisualStudioExtension `
---add Microsoft.VisualStudio.Component.LinqToSql `
---add Microsoft.VisualStudio.Component.TestTools.CodedUITest `
---add Microsoft.VisualStudio.Component.TestTools.FeedbackClient `
---add Microsoft.VisualStudio.Component.TestTools.MicrosoftTestManager `
---add Microsoft.VisualStudio.Component.TypeScript.3.0 `
---add Microsoft.VisualStudio.Component.Windows10SDK.17134 `
---add Microsoft.Net.Component.4.6.2.SDK `
---add Microsoft.Net.Component.4.6.2.TargetingPack `
---add Microsoft.Net.Component.4.7.SDK `
---add Microsoft.Net.Component.4.7.TargetingPack `
---add Microsoft.Net.Component.4.7.1.SDK `
---add Microsoft.Net.Component.4.7.1.TargetingPack `
---add Microsoft.Net.Component.4.7.2.SDK `
---add Microsoft.Net.Component.4.7.2.TargetingPack `
---add Microsoft.VisualStudio.Component.Azure.Storage.AzCopy `
---add Microsoft.VisualStudio.Component.Git `
---add Microsoft.VisualStudio.Component.DiagnosticTools `
---add Microsoft.VisualStudio.Component.AppInsights.Tools `
---add Microsoft.VisualStudio.Component.DependencyValidation.Enterprise `
---add Microsoft.VisualStudio.Component.TestTools.WebLoadTest `
---add Microsoft.VisualStudio.Component.Windows10SDK.IpOverUsb `
---add Microsoft.VisualStudio.Component.CodeMap `
---add Microsoft.VisualStudio.Component.ClassDesigner `
---add Microsoft.VisualStudio.Component.TestTools.Core `
---add Microsoft.ComponentGroup.Blend `
---add Component.MDD.Linux.GCC.arm `
---add Component.Android.Emulator `
---add Component.GitHub.VisualStudio `
---add Component.Redgate.ReadyRoll `
---add Component.Redgate.SQLPrompt.VsPackage `
---add Component.Redgate.SQLSearch.VSExtension `
---add Component.Dotfuscator `
---includeRecommended `
---wait --passive --norestart
-
-Write-Output "Finish install VS2017";
+    --addProductLang En-us `
+    --add Microsoft.VisualStudio.Workload.Azure `
+    --add Microsoft.VisualStudio.Workload.ManagedDesktop `
+    --add Microsoft.VisualStudio.Workload.NetWeb `
+    --add Microsoft.VisualStudio.Workload.NetCoreTools `
+    --add Microsoft.VisualStudio.Workload.NetCrossPlat `
+    --add Microsoft.VisualStudio.Workload.Universal `
+    --add Microsoft.VisualStudio.Workload.VisualStudioExtension `
+    --add Microsoft.VisualStudio.Component.LinqToSql `
+    --add Microsoft.VisualStudio.Component.TestTools.CodedUITest `
+    --add Microsoft.VisualStudio.Component.TestTools.FeedbackClient `
+    --add Microsoft.VisualStudio.Component.TestTools.MicrosoftTestManager `
+    --add Microsoft.VisualStudio.Component.TypeScript.3.0 `
+    --add Microsoft.VisualStudio.Component.Windows10SDK.17134 `
+    --add Microsoft.Net.Component.4.6.2.SDK `
+    --add Microsoft.Net.Component.4.6.2.TargetingPack `
+    --add Microsoft.Net.Component.4.7.SDK `
+    --add Microsoft.Net.Component.4.7.TargetingPack `
+    --add Microsoft.Net.Component.4.7.1.SDK `
+    --add Microsoft.Net.Component.4.7.1.TargetingPack `
+    --add Microsoft.Net.Component.4.7.2.SDK `
+    --add Microsoft.Net.Component.4.7.2.TargetingPack `
+    --add Microsoft.VisualStudio.Component.Azure.Storage.AzCopy `
+    --add Microsoft.VisualStudio.Component.Git `
+    --add Microsoft.VisualStudio.Component.DiagnosticTools `
+    --add Microsoft.VisualStudio.Component.AppInsights.Tools `
+    --add Microsoft.VisualStudio.Component.DependencyValidation.Enterprise `
+    --add Microsoft.VisualStudio.Component.TestTools.WebLoadTest `
+    --add Microsoft.VisualStudio.Component.Windows10SDK.IpOverUsb `
+    --add Microsoft.VisualStudio.Component.CodeMap `
+    --add Microsoft.VisualStudio.Component.ClassDesigner `
+    --add Microsoft.VisualStudio.Component.TestTools.Core `
+    --add Microsoft.ComponentGroup.Blend `
+    --add Component.MDD.Linux.GCC.arm `
+    --add Component.Android.Emulator `
+    --add Component.GitHub.VisualStudio `
+    --add Component.Redgate.ReadyRoll `
+    --add Component.Redgate.SQLPrompt.VsPackage `
+    --add Component.Redgate.SQLSearch.VSExtension `
+    --add Component.Dotfuscator `
+    --includeRecommended `
+    --wait --passive --norestart
