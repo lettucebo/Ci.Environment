@@ -2,6 +2,8 @@
 
 Write-Output(Get-Date);
 
+Set-ExecutionPolicy -ExecutionPolicy UnRestricted
+
 ## check admin right
 
 If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
@@ -215,6 +217,16 @@ code --install-extension dotjoshjohnson.xml
 '@
 Invoke-Expression -Command:$codeExtensionCmd
 
+## Install Developer Font
+$fontUrl = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%217415&authkey=AG0Y5D8cspzzmIM";
+$fontFile = "$PSScriptRoot\YaHei.ttf";
+Invoke-WebRequest -Uri $fontUrl -OutFile $fontFile
+
+$FONTS = 0x14
+$objShell = New-Object -ComObject Shell.Application
+$objFolder = $objShell.Namespace($FONTS)
+$objFolder.CopyHere($fontFile,0x10)
+
 ## Instal VS 2017
 $vs2017Url = "https://aka.ms/vs/15/release/vs_enterprise.exe";
 $vs2017Exe = "$PSScriptRoot\vs_enterprise.exe";
@@ -222,8 +234,6 @@ $start_time = Get-Date
 
 Invoke-WebRequest -Uri $vs2017Url -OutFile $vs2017Exe
 Write-Output "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, at $vs2017Exe"
-
-Write-Output "Stast install VS2017";
 
 & $vs2017Exe `
 --addProductLang En-us `
