@@ -40,7 +40,7 @@ choco install -y 7zip.install
 Write-Output("Complete install 7zip");
 
 ## install jre8
-choco install -y jdk8
+choco install -y jdk8 -params "both=true"
 
 choco install -y sql-server-management-studio 
 
