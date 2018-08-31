@@ -12,6 +12,59 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     Break
 }
 
+## Set Windows 10 Feature
+# Unpin Quick Access Documents and Pictures
+$quickDocPath = "C:\Users\"+$env:UserName + "\Documents"
+$quickPicPath = "C:\Users\"+$env:UserName + "\Pictures"
+
+$QuickAccess = New-Object -ComObject shell.application 
+$TargetObject = $QuickAccess.Namespace("shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}").Items() | where {$_.Path -eq "$quickDocPath"} 
+If ($TargetObject -eq $null) 
+{ 
+    Write-Warning "Documents Path is not pinned to Quick Access." 
+} 
+Else 
+{ 
+    $TargetObject.InvokeVerb("unpinfromhome") 
+} 
+
+$TargetObject = $QuickAccess.Namespace("shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}").Items() | where {$_.Path -eq "$quickPicPath"} 
+If ($TargetObject -eq $null) 
+{ 
+    Write-Warning "Pictures Path is not pinned to Quick Access." 
+} 
+Else 
+{ 
+    $TargetObject.InvokeVerb("unpinfromhome") 
+}
+
+# Reference: https://gist.github.com/NickCraver/7ebf9efbfd0c3eab72e9
+# Change Explorer home screen back to "This PC"
+Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name LaunchTo -Type DWord -Value 1
+# Disable Quick Access: Recent Files
+Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer -Name ShowRecent -Type DWord -Value 0
+# Disable Quick Access: Frequent Folders
+Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer -Name ShowFrequent -Type DWord -Value 0
+# Disable P2P Update downlods outside of local network
+Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config -Name DODownloadMode -Type DWord -Value 1
+Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization -Name SystemSettingsDownloadMode -Type DWord -Value 3
+# Be gone, heathen!
+Get-AppxPackage king.com.CandyCrushSaga | Remove-AppxPackage
+# Bing Weather, News, Sports, and Finance (Money):
+Get-AppxPackage Microsoft.BingNews | Remove-AppxPackage
+Get-AppxPackage Microsoft.BingSports | Remove-AppxPackage
+Get-AppxPackage Microsoft.BingFinance | Remove-AppxPackage
+# Xbox:
+Get-AppxPackage Microsoft.XboxApp | Remove-AppxPackage
+# Windows Phone Companion
+Get-AppxPackage Microsoft.WindowsPhone | Remove-AppxPackage
+# People
+Get-AppxPackage Microsoft.People | Remove-AppxPackage
+# Groove Music
+Get-AppxPackage Microsoft.ZuneMusic | Remove-AppxPackage
+# Get Started   
+Get-AppxPackage getstarted | Remove-AppxPackage
+
 ## install chocolatey
 Write-Output("Start install chocolatey");
 Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
