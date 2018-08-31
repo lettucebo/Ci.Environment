@@ -60,6 +60,8 @@ choco install -y potplayer
 
 choco install -y cmdermini
 
+choco install -y microsoft-teams.install
+
 ## add cmder here
 $cmderCmd = @'
 cmd.exe /C 
