@@ -184,6 +184,8 @@ Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-L
 Enable-WindowsOptionalFeature -Online -FeatureName TelnetClient
 
 # Install VSCode Extensions
+$codeExtensionCmd = @'
+cmd.exe /C 
 code --install-extension formulahendry.vscode-mysql
 code --install-extension ms-mssql.mssql
 code --install-extension formulahendry.auto-close-tag
@@ -201,12 +203,14 @@ code --install-extension esbenp.prettier-vscode
 code --install-extension humao.rest-client
 code --install-extension robinbentley.sass-indented
 code --install-extension wayou.vscode-todo-highlight
-code --install-extension rbbit.typescript-hero
 code --install-extension octref.vetur
 code --install-extension ms-vsliveshare.vsliveshare
 code --install-extension robertohuertasm.vscode-icons
 code --install-extension dotjoshjohnson.xml
+'@
+Invoke-Expression -Command:$codeExtensionCmd
 
+## Instal VS 2017
 $vs2017Url = "https://aka.ms/vs/15/release/vs_enterprise.exe";
 $vs2017Exe = "$PSScriptRoot\vs_enterprise.exe";
 $start_time = Get-Date
