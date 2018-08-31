@@ -214,6 +214,7 @@ code --install-extension octref.vetur
 code --install-extension ms-vsliveshare.vsliveshare
 code --install-extension robertohuertasm.vscode-icons
 code --install-extension dotjoshjohnson.xml
+code --install-extension ritwickdey.liveserver
 '@
 Invoke-Expression -Command:$codeExtensionCmd
 
