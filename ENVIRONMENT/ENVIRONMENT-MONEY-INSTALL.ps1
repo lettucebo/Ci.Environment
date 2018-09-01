@@ -90,6 +90,7 @@ choco install -y jetbrainstoolbox
 choco install -y spotify --version 1.0.88.353
 choco install -y office365business
 choco install -y androidstudio
+choco install -y snagit
 
 ## Add Cmder Here
 Write-Host "Add Cmder Here" -ForegroundColor Green
