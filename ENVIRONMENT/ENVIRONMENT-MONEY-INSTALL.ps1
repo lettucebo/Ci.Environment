@@ -66,7 +66,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.We
 
 choco install -y dotnet4.7.1
 choco install -y dotnetcore-sdk
-choco install vscode -y --params "/NoDesktopIcon"
+choco install -y vscode --params "/NoDesktopIcon"
 choco install -y firefox --params "l=en-US"
 choco install -y googlechrome
 choco install -y 7zip.install
