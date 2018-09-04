@@ -91,7 +91,8 @@ choco install -y spotify --version 1.0.88.353
 choco install -y office365business
 choco install -y androidstudio
 choco install -y snagit
-choco install -y josm 
+choco install -y josm
+choco install microsoftazurestorageexplorer
 
 ## Add Cmder Here
 Write-Host "Add Cmder Here" -ForegroundColor Green
