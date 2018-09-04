@@ -93,6 +93,7 @@ choco install -y androidstudio
 choco install -y snagit
 choco install -y josm
 choco install microsoftazurestorageexplorer
+choco install sqltoolbelt
 
 ## Add Cmder Here
 Write-Host "Add Cmder Here" -ForegroundColor Green
