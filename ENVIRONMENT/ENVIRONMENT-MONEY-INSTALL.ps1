@@ -92,8 +92,9 @@ choco install -y office365business
 choco install -y androidstudio
 choco install -y snagit
 choco install -y josm
-choco install microsoftazurestorageexplorer
-choco install sqltoolbelt
+choco install -y microsoftazurestorageexplorer
+choco install -y sqltoolbelt
+choco install -y linqpad
 
 ## Add Cmder Here
 Write-Host "Add Cmder Here" -ForegroundColor Green
