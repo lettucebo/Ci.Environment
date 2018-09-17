@@ -181,39 +181,39 @@ Stop-Process -processname explorer
 
 ## Enable IIS
 Write-Host "Enable IIS" -ForegroundColor Green
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServerRole
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServer
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-CommonHttpFeatures
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpErrors
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpRedirect
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-ApplicationDevelopment
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-NetFxExtensibility45
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-HealthAndDiagnostics
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpLogging
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-LoggingLibraries
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-RequestMonitor
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpTracing
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-Security
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-RequestFiltering
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-URLAuthorization
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-IPSecurity
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-Performance
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServerManagementTools
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-IIS6ManagementCompatibility
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-Metabase
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-ManagementConsole
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-BasicAuthentication
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-WindowsAuthentication
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-StaticContent
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-DefaultDocument
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebSockets
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-ApplicationInit
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-NetFxExtensibility45
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-ASPNET45
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-ISAPIExtensions
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-ISAPIFilter
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpCompressionStatic
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-ManagementService
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-WebServerRole
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-WebServer
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-CommonHttpFeatures
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-HttpErrors
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-HttpRedirect
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-ApplicationDevelopment
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-NetFxExtensibility45
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-HealthAndDiagnostics
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-HttpLogging
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-LoggingLibraries
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-RequestMonitor
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-HttpTracing
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-Security
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-RequestFiltering
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-URLAuthorization
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-IPSecurity
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-Performance
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-WebServerManagementTools
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-IIS6ManagementCompatibility
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-Metabase
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-ManagementConsole
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-BasicAuthentication
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-WindowsAuthentication
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-StaticContent
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-DefaultDocument
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-WebSockets
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-ApplicationInit
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-NetFxExtensibility45
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-ASPNET45
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-ISAPIExtensions
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-ISAPIFilter
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-HttpCompressionStatic
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName IIS-ManagementService
 
 ## Install WebDeploy
 Write-Host "Install WebDeploy" -ForegroundColor Green
@@ -223,7 +223,7 @@ Write-Host "Install WebDeploy" -ForegroundColor Green
 
 # Enable Telnet Client
 Write-Host "Enable Telnet Client" -ForegroundColor Green
-Enable-WindowsOptionalFeature -Online -FeatureName TelnetClient
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName TelnetClient
 
 # Install VSCode Extensions
 Write-Host "Install VSCode Extensions" -ForegroundColor Green

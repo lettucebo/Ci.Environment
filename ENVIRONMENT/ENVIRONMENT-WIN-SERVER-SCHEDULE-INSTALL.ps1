@@ -60,7 +60,6 @@ choco install -y dotnet4.7.2
 choco install -y vscode --params "/NoDesktopIcon"
 choco install -y googlechrome
 choco install -y 7zip.install
-choco install -y jdk8 -params "both=true"
 choco install -y cmdermini
 
 ## Add Cmder Here
@@ -220,12 +219,3 @@ $FONTS = 0x14
 $objShell = New-Object -ComObject Shell.Application
 $objFolder = $objShell.Namespace($FONTS)
 $objFolder.CopyHere($fontFile, 0x10)
-
-## Install Tomcat
-Write-Host "Install Tomcat" -ForegroundColor Green
-$tomcatUrl = "http://apache.stu.edu.tw/tomcat/tomcat-8/v8.5.34/bin/apache-tomcat-8.5.34.exe";
-$tomcatFile = "$PSScriptRoot\apache-tomcat-8.5.34.exe";
-Invoke-WebRequest -Uri $tomcatUrl -OutFile $tomcatFile
-& $tomcatFile `
-#    /S /D=D:\Tomcat
-

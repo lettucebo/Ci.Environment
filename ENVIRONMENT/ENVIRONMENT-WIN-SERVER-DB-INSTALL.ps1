@@ -179,7 +179,7 @@ Stop-Process -processname explorer
 
 # Enable Telnet Client
 Write-Host "Enable Telnet Client" -ForegroundColor Green
-Enable-WindowsOptionalFeature -Online -FeatureName TelnetClient
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName TelnetClient
 
 # Install VSCode Extensions
 Write-Host "Install VSCode Extensions" -ForegroundColor Green
