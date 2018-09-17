@@ -210,7 +210,7 @@ Enable-WindowsOptionalFeature -Online -FeatureName IIS-ASPNET45
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-ISAPIExtensions
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-ISAPIFilter
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpCompressionStatic
-Enable-WindowsOptionalFeature -Online -FeatureName IIS-Web-Mgmt-Service
+Enable-WindowsOptionalFeature -Online -FeatureName Web-Mgmt-Service
 
 # Enable Telnet Client
 Write-Host "Enable Telnet Client" -ForegroundColor Green
