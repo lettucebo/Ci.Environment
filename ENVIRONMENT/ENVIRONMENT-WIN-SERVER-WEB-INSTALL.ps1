@@ -63,6 +63,7 @@ choco install -y googlechrome
 choco install -y 7zip.install
 choco install -y jdk8 -params "both=true"
 choco install -y cmdermini
+choco install -y webpi 
 
 ## Add Cmder Here
 Write-Host "Add Cmder Here" -ForegroundColor Green
@@ -213,6 +214,10 @@ Enable-WindowsOptionalFeature -Online -FeatureName IIS-ISAPIExtensions
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-ISAPIFilter
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpCompressionStatic
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-ManagementService
+
+## Install WebDeploy
+Write-Host "Install WebDeploy" -ForegroundColor Green
+& "C:\Program Files\Microsoft\Web Platform Installer\WebPICMD.exe" /Install /Products:WDeploy36,WDeploy36NoSMO,WDeploy36PS
 
 # Enable Telnet Client
 Write-Host "Enable Telnet Client" -ForegroundColor Green
