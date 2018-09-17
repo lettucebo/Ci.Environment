@@ -194,6 +194,8 @@ Enable-WindowsOptionalFeature -Online -FeatureName IIS-RequestMonitor
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpTracing
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-Security
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-RequestFiltering
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-URLAuthorization
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-IPSecurity
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-Performance
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServerManagementTools
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-IIS6ManagementCompatibility
@@ -210,7 +212,7 @@ Enable-WindowsOptionalFeature -Online -FeatureName IIS-ASPNET45
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-ISAPIExtensions
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-ISAPIFilter
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpCompressionStatic
-Enable-WindowsOptionalFeature -Online -FeatureName Web-Mgmt-Service
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-ManagementService
 
 # Enable Telnet Client
 Write-Host "Enable Telnet Client" -ForegroundColor Green
