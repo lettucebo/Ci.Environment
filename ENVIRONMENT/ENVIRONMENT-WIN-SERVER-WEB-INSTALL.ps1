@@ -218,7 +218,8 @@ Enable-WindowsOptionalFeature -Online -FeatureName IIS-ManagementService
 ## Install WebDeploy
 Write-Host "Install WebDeploy" -ForegroundColor Green
 & "C:\Program Files\Microsoft\Web Platform Installer\WebPICMD.exe" `
-    /AcceptEULA /Products:"WDeploy36,WDeploy36NoSMO,WDeploy36PS"
+    /Install /SuppressReboot /AcceptEULA `
+    /Products:"WDeploy36,WDeploy36NoSMO,WDeploy36PS"
 
 # Enable Telnet Client
 Write-Host "Enable Telnet Client" -ForegroundColor Green
