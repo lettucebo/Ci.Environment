@@ -45,12 +45,10 @@ Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryO
 Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization -Name SystemSettingsDownloadMode -Type DWord -Value 3
 # Be gone, heathen!
 Get-AppxPackage king.com.CandyCrushSaga | Remove-AppxPackage
-# Bing Weather, News, Sports, and Finance (Money):
+# Bing News, Sports, and Finance (Money):
 Get-AppxPackage Microsoft.BingNews | Remove-AppxPackage
 Get-AppxPackage Microsoft.BingSports | Remove-AppxPackage
 Get-AppxPackage Microsoft.BingFinance | Remove-AppxPackage
-# Xbox:
-Get-AppxPackage Microsoft.XboxApp | Remove-AppxPackage
 # Windows Phone Companion
 Get-AppxPackage Microsoft.WindowsPhone | Remove-AppxPackage
 # People
