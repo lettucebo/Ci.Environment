@@ -232,25 +232,14 @@ cmd.exe /C
 code --install-extension formulahendry.vscode-mysql
 code --install-extension ms-mssql.mssql
 code --install-extension formulahendry.auto-close-tag
-code --install-extension ms-azuretools.vscode-azureappservice
-code --install-extension vsciot-vscode.azure-iot-edge
-code --install-extension vsciot-vscode.azure-iot-toolkit
 code --install-extension coenraads.bracket-pair-colorizer
 code --install-extension ms-vscode.csharp
-code --install-extension peterjausovec.vscode-docker
-code --install-extension joelday.docthis
 code --install-extension sirtori.indenticator
-code --install-extension zhuangtongfa.material-theme
-code --install-extension ms-vscode.powershell
 code --install-extension esbenp.prettier-vscode
 code --install-extension humao.rest-client
-code --install-extension robinbentley.sass-indented
 code --install-extension wayou.vscode-todo-highlight
-code --install-extension octref.vetur
-code --install-extension ms-vsliveshare.vsliveshare
 code --install-extension robertohuertasm.vscode-icons
 code --install-extension dotjoshjohnson.xml
-code --install-extension ritwickdey.liveserver
 '@
 Invoke-Expression -Command:$codeExtensionCmd
 
