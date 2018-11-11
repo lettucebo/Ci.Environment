@@ -210,11 +210,11 @@ Stop-Process -processname explorer
 
 ## Enable Microsoft-Windows-Subsystem-Linux
 Write-Host "Enable Microsoft-Windows-Subsystem-Linux" -ForegroundColor Green
-Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Windows-Subsystem-Linux
 
 # Enable Telnet Client
 Write-Host "Enable Telnet Client" -ForegroundColor Green
-Enable-WindowsOptionalFeature -Online -FeatureName TelnetClient
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName TelnetClient
 
 # Install VSCode Extensions
 Write-Host "Install VSCode Extensions" -ForegroundColor Green
