@@ -218,6 +218,9 @@ Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName TelnetClient
 
 # Install VSCode Extensions
 Write-Host "Install VSCode Extensions" -ForegroundColor Green
+
+refreshenv
+
 $codeExtensionCmd = @'
 cmd.exe /C 
 code --install-extension ms-mssql.mssql
