@@ -93,6 +93,7 @@ choco install -y josm
 choco install -y microsoftazurestorageexplorer
 choco install -y sqltoolbelt
 choco install -y linqpad
+choco install -y spotify
 
 ## Add Cmder Here
 Write-Host "Add Cmder Here" -ForegroundColor Green
