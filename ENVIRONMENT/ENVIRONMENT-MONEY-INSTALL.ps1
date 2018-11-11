@@ -217,6 +217,10 @@ Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Windows-
 Write-Host "Enable Telnet Client" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName TelnetClient
 
+# Enable Hyper-V
+Write-Host "Enable Hyper-V" -ForegroundColor Green
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Hyper-V -All
+
 # Install VSCode Extensions
 Write-Host "Install VSCode Extensions" -ForegroundColor Green
 
