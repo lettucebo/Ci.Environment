@@ -78,14 +78,13 @@ choco install -y filezilla
 choco install -y teamviewer 
 choco install -y potplayer 
 choco install -y cmdermini
-choco install -y microsoft-teams.install
 choco install -y docker-for-windows --version 18.06.0.19101-edge --pre
 choco install -y typora
 choco install -y telegram.install
 choco install -y nodejs.install
 choco install -y python
 choco install -y jetbrainstoolbox
-choco install -y spotify --version 1.0.88.353
+choco install -y spotify --version 1.0.92.390
 choco install -y office365business
 choco install -y androidstudio
 choco install -y snagit
@@ -93,7 +92,6 @@ choco install -y josm
 choco install -y microsoftazurestorageexplorer
 choco install -y sqltoolbelt
 choco install -y linqpad
-choco install -y spotify
 
 ## Add Cmder Here
 Write-Host "Add Cmder Here" -ForegroundColor Green
