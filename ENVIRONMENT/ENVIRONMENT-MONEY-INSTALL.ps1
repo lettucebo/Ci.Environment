@@ -258,6 +258,7 @@ $objFolder = $objShell.Namespace($FONTS)
 $objFolder.CopyHere($fontFile, 0x10)
 
 ## Instal VS 2017
+# https://docs.microsoft.com/en-us/visualstudio/install/workload-and-component-ids?view=vs-2017
 Write-Host "Instal VS 2017" -ForegroundColor Green
 $vs2017Url = "https://aka.ms/vs/15/release/vs_enterprise.exe";
 $vs2017Exe = "$PSScriptRoot\vs_enterprise.exe";
