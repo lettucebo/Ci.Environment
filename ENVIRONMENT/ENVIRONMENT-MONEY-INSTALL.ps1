@@ -250,12 +250,49 @@ Invoke-Expression -Command:$codeExtensionCmd
 Write-Host "Install Developer Font" -ForegroundColor Green
 $fontUrl = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%217415&authkey=AG0Y5D8cspzzmIM";
 $fontFile = "$PSScriptRoot\YaHei.ttf";
+$fontNoto1Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509534&authkey=AFqECC5M2atUmQg";
+$fontNoto1File = "$PSScriptRoot\Noto1.ttf";
+$fontNoto2Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509535&authkey=APg9nfCQ3sG6W7U";
+$fontNoto2File = "$PSScriptRoot\Noto2.ttf";
+$fontNoto3Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509536&authkey=AMurwiFnjth4CT8";
+$fontNoto3File = "$PSScriptRoot\Noto3.ttf";
+$fontNoto4Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509528&authkey=ALOQTLb5JjJkVX8";
+$fontNoto4File = "$PSScriptRoot\Noto4.ttf";
+$fontNoto5Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509529&authkey=AKNEXWDCKSoUToM";
+$fontNoto5File = "$PSScriptRoot\Noto5.ttf";
+$fontNoto6Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509530&authkey=ABAf0aUvGHedV0s";
+$fontNoto6File = "$PSScriptRoot\Noto6.ttf";
+$fontNoto7Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509531&authkey=AE2MeCJFBgo8ohQ";
+$fontNoto7File = "$PSScriptRoot\Noto7.ttf";
+$fontNoto8Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509532&authkey=AOMqBGMUrzgkSu0";
+$fontNoto8File = "$PSScriptRoot\Noto8.ttf";
+$fontNoto9Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509533&authkey=AFSaDqjAXk3rf2A";
+$fontNoto9File = "$PSScriptRoot\Noto9.ttf";
+
 Invoke-WebRequest -Uri $fontUrl -OutFile $fontFile
+Invoke-WebRequest -Uri $fontNoto1Url -OutFile $fontNoto1File
+Invoke-WebRequest -Uri $fontNoto2Url -OutFile $fontNoto2File
+Invoke-WebRequest -Uri $fontNoto3Url -OutFile $fontNoto3File
+Invoke-WebRequest -Uri $fontNoto4Url -OutFile $fontNoto4File
+Invoke-WebRequest -Uri $fontNoto5Url -OutFile $fontNoto5File
+Invoke-WebRequest -Uri $fontNoto6Url -OutFile $fontNoto6File
+Invoke-WebRequest -Uri $fontNoto7Url -OutFile $fontNoto7File
+Invoke-WebRequest -Uri $fontNoto8Url -OutFile $fontNoto8File
+Invoke-WebRequest -Uri $fontNoto9Url -OutFile $fontNoto9File
 
 $FONTS = 0x14
 $objShell = New-Object -ComObject Shell.Application
 $objFolder = $objShell.Namespace($FONTS)
 $objFolder.CopyHere($fontFile, 0x10)
+$objFolder.CopyHere($fontNoto1File, 0x10)
+$objFolder.CopyHere($fontNoto2File, 0x10)
+$objFolder.CopyHere($fontNoto3File, 0x10)
+$objFolder.CopyHere($fontNoto4File, 0x10)
+$objFolder.CopyHere($fontNoto5File, 0x10)
+$objFolder.CopyHere($fontNoto6File, 0x10)
+$objFolder.CopyHere($fontNoto7File, 0x10)
+$objFolder.CopyHere($fontNoto8File, 0x10)
+$objFolder.CopyHere($fontNoto9File, 0x10)
 
 ## Instal VS 2017
 # https://docs.microsoft.com/en-us/visualstudio/install/workload-and-component-ids?view=vs-2017
