@@ -77,7 +77,7 @@ choco install -y flashplayerplugin
 choco install -y filezilla 
 choco install -y teamviewer 
 choco install -y potplayer 
-choco install -y cmdermini
+choco install -y cmder
 choco install -y docker-for-windows --version 18.06.0.19101-edge --pre
 choco install -y typora
 choco install -y telegram.install
