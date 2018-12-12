@@ -269,15 +269,25 @@ $fontNoto8File = "$PSScriptRoot\Noto8.ttf";
 $fontNoto9Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509533&authkey=AFSaDqjAXk3rf2A";
 $fontNoto9File = "$PSScriptRoot\Noto9.ttf";
 
+Write-Host "Download fontFile..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontUrl -OutFile $fontFile
+Write-Host "Download fontNoto1File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto1Url -OutFile $fontNoto1File
+Write-Host "Download fontNoto2File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto2Url -OutFile $fontNoto2File
+Write-Host "Download fontNoto3File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto3Url -OutFile $fontNoto3File
+Write-Host "Download fontNoto4File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto4Url -OutFile $fontNoto4File
+Write-Host "Download fontNoto5File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto5Url -OutFile $fontNoto5File
+Write-Host "Download fontNoto6File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto6Url -OutFile $fontNoto6File
+Write-Host "Download fontNoto7File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto7Url -OutFile $fontNoto7File
+Write-Host "Download fontNoto8File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto8Url -OutFile $fontNoto8File
+Write-Host "Download fontNoto9File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto9Url -OutFile $fontNoto9File
 
 $FONTS = 0x14
