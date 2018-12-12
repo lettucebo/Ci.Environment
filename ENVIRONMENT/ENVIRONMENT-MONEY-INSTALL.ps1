@@ -97,7 +97,7 @@ choco install -y linqpad
 Write-Host "Add Cmder Here" -ForegroundColor Green
 $cmderCmd = @'
 cmd.exe /C 
-C:\tools\cmdermini\cmder.exe /REGISTER ALL
+C:\tools\Cmder\cmder.exe /REGISTER ALL
 '@
 Invoke-Expression -Command:$cmderCmd
 
