@@ -92,7 +92,7 @@ choco install -y josm
 choco install -y microsoftazurestorageexplorer
 choco install -y sqltoolbelt
 choco install -y linqpad
-choco install -y fiddler
+choco install -y wireshark
 
 ## Add Cmder Here
 Write-Host "Add Cmder Here" -ForegroundColor Green
