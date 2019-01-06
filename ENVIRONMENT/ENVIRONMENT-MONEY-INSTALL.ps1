@@ -89,6 +89,7 @@ choco install -y microsoftazurestorageexplorer
 choco install -y sqltoolbelt
 choco install -y linqpad
 choco install -y markdown-edit
+choco install -y authy-desktop
 choco install -y wireshark
 
 ## Add Cmder Here
