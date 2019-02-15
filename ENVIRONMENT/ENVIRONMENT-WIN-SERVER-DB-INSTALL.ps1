@@ -52,25 +52,6 @@ Set-ItemProperty -Path $UserKey -Name "IsInstalled" -Value 0
 Stop-Process -Name Explorer
 Write-Host "IE Enhanced Security Configuration (ESC) has been disabled." -ForegroundColor Green
 
-## install chocolatey
-Write-Host "Install Chocolatey and Packages" -ForegroundColor Green
-Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-
-choco install -y dotnet4.7.2
-choco install -y vscode --params "/NoDesktopIcon"
-choco install -y googlechrome
-choco install -y 7zip.install
-choco install -y cmdermini
-choco install -y sql-server-management-studio
-
-## Add Cmder Here
-Write-Host "Add Cmder Here" -ForegroundColor Green
-$cmderCmd = @'
-cmd.exe /C 
-C:\tools\cmdermini\cmder.exe /REGISTER ALL
-'@
-Invoke-Expression -Command:$cmderCmd
-
 ## File Explorer show hidden file and file extensions
 Write-Host "File Explorer show hidden file and file extensions" -ForegroundColor Green
 $explorerKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
@@ -184,6 +165,25 @@ Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName TelnetClient
 # Enable Telnet Client
 Write-Host "Enable .NET Framework 2.0 & 3.5" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName NetFx3
+
+## install chocolatey
+Write-Host "Install Chocolatey and Packages" -ForegroundColor Green
+Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+
+choco install -y dotnet4.7.2
+choco install -y vscode --params "/NoDesktopIcon"
+choco install -y googlechrome
+choco install -y 7zip.install
+choco install -y cmdermini
+choco install -y sql-server-management-studio
+
+## Add Cmder Here
+Write-Host "Add Cmder Here" -ForegroundColor Green
+$cmderCmd = @'
+cmd.exe /C 
+C:\tools\cmdermini\cmder.exe /REGISTER ALL
+'@
+Invoke-Expression -Command:$cmderCmd
 
 # Install VSCode Extensions
 Write-Host "Install VSCode Extensions" -ForegroundColor Green
