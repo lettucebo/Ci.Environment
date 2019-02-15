@@ -181,6 +181,10 @@ Stop-Process -processname explorer
 Write-Host "Enable Telnet Client" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName TelnetClient
 
+# Enable Telnet Client
+Write-Host "Enable .NET Framework 2.0 & 3.5" -ForegroundColor Green
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName NetFx3
+
 # Install VSCode Extensions
 Write-Host "Install VSCode Extensions" -ForegroundColor Green
 $codeExtensionCmd = @'
