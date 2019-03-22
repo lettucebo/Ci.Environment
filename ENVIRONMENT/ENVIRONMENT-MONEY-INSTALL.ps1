@@ -62,7 +62,7 @@ Get-AppxPackage getstarted | Remove-AppxPackage
 Write-Host "Install Chocolatey and Packages" -ForegroundColor Green
 Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
-choco install -y dotnet4.7.1
+choco install -y dotnet4.7.2
 choco install -y dotnetcore-sdk
 choco install -y vscode --params "/NoDesktopIcon"
 choco install -y firefox --params "l=en-US"
@@ -74,23 +74,20 @@ choco install -y git.install  --params "/NoShellIntegration"
 choco install -y tortoisegit
 choco install -y rdcman
 choco install -y flashplayerplugin 
-choco install -y filezilla 
-choco install -y teamviewer 
+choco install -y filezilla  
 choco install -y potplayer 
 choco install -y cmder
 choco install -y docker-desktop
 choco install -y telegram.install
 choco install -y nodejs.install
-choco install -y python
 choco install -y jetbrainstoolbox
-choco install -y spotify --version 1.0.92.390
+choco install -y spotify
 choco install -y snagit
 choco install -y microsoftazurestorageexplorer
 choco install -y sqltoolbelt
 choco install -y linqpad
 choco install -y markdown-edit
-choco install -y authy-desktop
-choco install -y wireshark
+choco install -y azure-cli
 
 ## Add Cmder Here
 Write-Host "Add Cmder Here" -ForegroundColor Green
