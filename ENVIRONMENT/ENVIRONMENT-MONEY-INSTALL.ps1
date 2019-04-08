@@ -69,7 +69,6 @@ choco install -y firefox --params "l=en-US"
 choco install -y googlechrome
 choco install -y 7zip.install
 choco install -y jdk8 -params "both=true"
-choco install -y sql-server-management-studio 
 choco install -y git.install  --params "/NoShellIntegration"
 choco install -y tortoisegit
 choco install -y rdcman
@@ -234,7 +233,6 @@ code --install-extension esbenp.prettier-vscode
 code --install-extension humao.rest-client
 code --install-extension robinbentley.sass-indented
 code --install-extension wayou.vscode-todo-highlight
-code --install-extension octref.vetur
 code --install-extension ms-vsliveshare.vsliveshare
 code --install-extension robertohuertasm.vscode-icons
 code --install-extension dotjoshjohnson.xml
@@ -301,22 +299,21 @@ $objFolder.CopyHere($fontNoto8File, 0x10)
 $objFolder.CopyHere($fontNoto9File, 0x10)
 
 ## Instal VS 2017
-# https://docs.microsoft.com/en-us/visualstudio/install/workload-and-component-ids?view=vs-2017
-Write-Host "Instal VS 2017" -ForegroundColor Green
-$vs2017Url = "https://aka.ms/vs/15/release/vs_enterprise.exe";
-$vs2017Exe = "$PSScriptRoot\vs_enterprise.exe";
+# https://docs.microsoft.com/en-us/visualstudio/install/workload-and-component-ids?view=vs-2019
+Write-Host "Instal VS 2019" -ForegroundColor Green
+$vs2019Url = "https://aka.ms/vs/16/release/vs_enterprise.exe";
+$vs2019Exe = "$PSScriptRoot\vs_enterprise.exe";
 $start_time = Get-Date
 
-Invoke-WebRequest -Uri $vs2017Url -OutFile $vs2017Exe
-Write-Output "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, at $vs2017Exe"
+Invoke-WebRequest -Uri $vs2019Url -OutFile $vs2019Exe
+Write-Output "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, at $vs2019Exe"
 
-& $vs2017Exe `
+& $vs2019Exe `
     --addProductLang En-us `
     --add Microsoft.VisualStudio.Workload.Azure `
     --add Microsoft.VisualStudio.Workload.ManagedDesktop `
     --add Microsoft.VisualStudio.Workload.NetWeb `
     --add Microsoft.VisualStudio.Workload.NetCoreTools `
-    --add Microsoft.VisualStudio.Workload.NetCrossPlat `
     --add Microsoft.VisualStudio.Workload.Universal `
     --add Microsoft.VisualStudio.Workload.VisualStudioExtension `
     --add Microsoft.VisualStudio.Component.LinqToSql `
@@ -325,6 +322,8 @@ Write-Output "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, a
     --add Microsoft.VisualStudio.Component.TestTools.MicrosoftTestManager `
     --add Microsoft.VisualStudio.Component.TypeScript.3.0 `
     --add Microsoft.VisualStudio.Component.Windows10SDK.17134 `
+    --add Microsoft.Net.Component.4.5.2.SDK `
+    --add Microsoft.Net.Component.4.5.2.TargetingPack `
     --add Microsoft.Net.Component.4.6.2.SDK `
     --add Microsoft.Net.Component.4.6.2.TargetingPack `
     --add Microsoft.Net.Component.4.7.SDK `
