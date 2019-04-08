@@ -85,7 +85,6 @@ choco install -y snagit
 choco install -y microsoftazurestorageexplorer
 choco install -y sqltoolbelt
 choco install -y linqpad
-choco install -y markdown-edit
 choco install -y azure-cli
 choco install -y line
 
