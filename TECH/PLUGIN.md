@@ -42,6 +42,11 @@
     * <a href="https://github.com/kpi-ua/X.PagedList" target="_blank">官方網站</a>
     * <a href="http://www.wuleba.com/25734.html" target="_blank">ASP.NET MVC 5使用X.PagedList.Mvc進行分頁教程</a>   
 
+* Email 寄送
+   * FluentEmail
+     * https://www.nuget.org/packages?q=FluentEmail
+     * https://github.com/lukencode/FluentEmail
+
 <hr/>
 
 ### Javascript
