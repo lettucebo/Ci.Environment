@@ -229,15 +229,13 @@ Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName TelnetClient
 Write-Host "Install VSCode Extensions" -ForegroundColor Green
 $codeExtensionCmd = @'
 cmd.exe /C 
-code --install-extension formulahendry.vscode-mysql
-code --install-extension ms-mssql.mssql
+code --install-extension zhuangtongfa.material-theme
 code --install-extension formulahendry.auto-close-tag
 code --install-extension coenraads.bracket-pair-colorizer
 code --install-extension ms-vscode.csharp
 code --install-extension sirtori.indenticator
 code --install-extension esbenp.prettier-vscode
 code --install-extension humao.rest-client
-code --install-extension wayou.vscode-todo-highlight
 code --install-extension robertohuertasm.vscode-icons
 code --install-extension dotjoshjohnson.xml
 '@
