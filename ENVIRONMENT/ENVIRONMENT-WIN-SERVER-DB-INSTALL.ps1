@@ -175,7 +175,7 @@ choco install -y vscode --params "/NoDesktopIcon"
 choco install -y googlechrome
 choco install -y 7zip.install
 choco install -y cmdermini
-choco install -y sql-server-management-studio
+choco install -y azure-data-studio
 
 ## Add Cmder Here
 Write-Host "Add Cmder Here" -ForegroundColor Green
@@ -190,6 +190,7 @@ Write-Host "Install VSCode Extensions" -ForegroundColor Green
 $codeExtensionCmd = @'
 cmd.exe /C 
 code --install-extension ms-mssql.mssql
+code --install-extension formulahendry.vscode-mysql
 code --install-extension sirtori.indenticator
 code --install-extension zhuangtongfa.material-theme
 code --install-extension esbenp.prettier-vscode
