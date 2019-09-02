@@ -88,6 +88,8 @@ choco install -y sqltoolbelt
 choco install -y linqpad
 choco install -y azure-cli
 choco install -y line
+choco install -y skype
+choco install -y microsoft-teams.install
 
 ## Add Cmder Here
 Write-Host "Add Cmder Here" -ForegroundColor Green
