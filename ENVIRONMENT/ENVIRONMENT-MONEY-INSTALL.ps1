@@ -90,6 +90,11 @@ choco install -y azure-cli
 choco install -y line
 choco install -y skype
 choco install -y microsoft-teams.install
+choco install -y slack
+choco install -y adobereader
+choco install -y flashplayerplugin
+choco install -y teamviewer
+choco install -y office365business
 
 ## Add Cmder Here
 Write-Host "Add Cmder Here" -ForegroundColor Green
