@@ -80,15 +80,12 @@ choco install -y docker-desktop
 choco install -y telegram.install
 choco install -y nodejs.install
 choco install -y nvm.portable
-choco install -y spotify
 choco install -y snagit
 choco install -y microsoftazurestorageexplorer
 choco install -y linqpad
 choco install -y azure-cli
 choco install -y line
-choco install -y skype
 choco install -y microsoft-teams.install
-choco install -y slack
 choco install -y adobereader
 choco install -y flashplayerplugin
 choco install -y teamviewer
@@ -307,10 +304,11 @@ $objFolder.CopyHere($fontNoto7File, 0x10)
 $objFolder.CopyHere($fontNoto8File, 0x10)
 $objFolder.CopyHere($fontNoto9File, 0x10)
 
-## Instal VS 2017
+## Instal VS 2019 Preview
 # https://docs.microsoft.com/en-us/visualstudio/install/workload-and-component-ids?view=vs-2019
 Write-Host "Instal VS 2019" -ForegroundColor Green
-$vs2019Url = "https://aka.ms/vs/16/release/vs_enterprise.exe";
+#$vs2019Url = "https://aka.ms/vs/16/release/vs_enterprise.exe";
+$vs2019Url = "https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=enterprise&ch=pre&rel=16";
 $vs2019Exe = "$PSScriptRoot\vs_enterprise.exe";
 $start_time = Get-Date
 
@@ -341,6 +339,8 @@ Write-Output "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, a
     --add Microsoft.Net.Component.4.7.1.TargetingPack `
     --add Microsoft.Net.Component.4.7.2.SDK `
     --add Microsoft.Net.Component.4.7.2.TargetingPack `
+    --add Microsoft.Net.Component.4.8.SDK `
+    --add Microsoft.Net.Component.4.8.TargetingPack `
     --add Microsoft.VisualStudio.Component.Azure.Storage.AzCopy `
     --add Microsoft.VisualStudio.Component.Git `
     --add Microsoft.VisualStudio.Component.DiagnosticTools `
@@ -352,12 +352,6 @@ Write-Output "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, a
     --add Microsoft.VisualStudio.Component.ClassDesigner `
     --add Microsoft.VisualStudio.Component.TestTools.Core `
     --add Microsoft.ComponentGroup.Blend `
-    --add Component.MDD.Linux.GCC.arm `
-    --add Component.Android.Emulator `
     --add Component.GitHub.VisualStudio `
-    --add Component.Redgate.ReadyRoll `
-    --add Component.Redgate.SQLPrompt.VsPackage `
-    --add Component.Redgate.SQLSearch.VSExtension `
-    --add Component.Dotfuscator `
     --includeRecommended `
     --wait --passive --norestart
