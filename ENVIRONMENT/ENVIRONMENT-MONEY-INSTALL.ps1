@@ -310,8 +310,7 @@ $objFolder.CopyHere($fontNoto9File, 0x10)
 ## Instal VS 2019 Preview
 # https://docs.microsoft.com/en-us/visualstudio/install/workload-and-component-ids?view=vs-2019
 Write-Host "Instal VS 2019" -ForegroundColor Green
-#$vs2019Url = "https://aka.ms/vs/16/release/vs_enterprise.exe";
-$vs2019Url = "https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=enterprise&ch=pre&rel=16";
+$vs2019Url = "https://aka.ms/vs/16/release/vs_enterprise.exe";
 $vs2019Exe = "$PSScriptRoot\vs_enterprise.exe";
 $start_time = Get-Date
 
