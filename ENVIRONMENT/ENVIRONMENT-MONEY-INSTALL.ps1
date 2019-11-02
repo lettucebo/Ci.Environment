@@ -220,6 +220,9 @@ Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName TelnetClient
 Write-Host "Enable Hyper-V" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Hyper-V -All
 
+# Refresh EnvironmentVariable
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+
 # Install VSCode Extensions
 Write-Host "Install VSCode Extensions" -ForegroundColor Green
 
