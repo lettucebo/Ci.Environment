@@ -255,7 +255,6 @@ choco install -y potplayer
 choco install -y cmder
 choco install -y docker-desktop
 choco install -y telegram.install
-choco install -y nodejs.install
 choco install -y nvm.portable
 choco install -y snagit
 choco install -y microsoftazurestorageexplorer
@@ -433,6 +432,10 @@ code --install-extension dotjoshjohnson.xml
 code --install-extension ritwickdey.liveserver
 '@
 Invoke-Expression -Command:$codeExtensionCmd
+
+# Install nodejs using nvm
+$nvmCmd = 'nvm install 10.17.0'
+Invoke-Expression -Command:$nvmCmd
 
 ## Install Developer Font
 Write-Host "Install Developer Font" -ForegroundColor Green
