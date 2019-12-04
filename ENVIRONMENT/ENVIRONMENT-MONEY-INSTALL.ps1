@@ -434,7 +434,11 @@ code --install-extension ritwickdey.liveserver
 Invoke-Expression -Command:$codeExtensionCmd
 
 # Install nodejs using nvm
-$nvmCmd = 'nvm install 10.17.0'
+$nvmCmd = @'
+cmd.exe /C 
+nvm install 10.17.0
+nvm use 10.17.0
+'@
 Invoke-Expression -Command:$nvmCmd
 
 ## Install Developer Font
