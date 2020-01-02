@@ -269,6 +269,7 @@ choco install -y office365business
 choco install -y line
 choco install -y sql-server-management-studio
 choco install -y microsoft-edge-insider-dev
+choco install -y microsoft-windows-terminal
 
 ## Add Cmder Here
 Write-Host "Add Cmder Here" -ForegroundColor Green
