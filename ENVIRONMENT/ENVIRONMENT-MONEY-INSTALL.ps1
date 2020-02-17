@@ -240,7 +240,6 @@ Write-Host "Install Chocolatey and Packages" -ForegroundColor Green
 Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
 choco install -y dotnet4.8
-choco install -y dotnetcore-sdk
 choco install -y vscode --params "/NoDesktopIcon"
 choco install -y firefox-dev --pre --params "l=en-US"
 choco install -y googlechrome
@@ -270,6 +269,17 @@ choco install -y line
 choco install -y sql-server-management-studio
 choco install -y microsoft-edge-insider-dev
 choco install -y microsoft-windows-terminal
+
+# Install .Net Core SDK
+Write-Host "Install .Net Core SDK" -ForegroundColor Green
+$dotnetCoreUrl = "https://dotnetwebsite.azurewebsites.net/download/dotnet-core/scripts/v1/dotnet-install.ps1";
+$dotnetCorePs1 = "$PSScriptRoot\dotnet-install.ps1";
+Invoke-WebRequest -Uri $dotnetCoreUrl -OutFile $dotnetCorePs1
+
+& $dotnetCorePs1 -Channel 3.1
+& $dotnetCorePs1 -Channel 3.0
+& $dotnetCorePs1 -Channel 2.2
+& $dotnetCorePs1 -Channel 2.1
 
 ## Add Cmder Here
 Write-Host "Add Cmder Here" -ForegroundColor Green
