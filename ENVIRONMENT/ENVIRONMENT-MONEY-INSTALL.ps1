@@ -393,6 +393,9 @@ Else {
     Write-Warning "3DObjects key does not exist `n"
 }
 
+## Set Show Taskbar buttons on where window is open
+Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name MMTaskbarMode -Value 2
+
 Stop-Process -processname explorer
 
 ## Enable Microsoft-Windows-Subsystem-Linux
