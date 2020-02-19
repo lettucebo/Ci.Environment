@@ -396,6 +396,9 @@ Else {
 ## Set Show Taskbar buttons on where window is open
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name MMTaskbarMode -Value 2
 
+## Disable Use sign-in info to auto finish setting up device after update or restart for All Users
+Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name DisableAutomaticRestartSignOn -Value 1
+
 Stop-Process -processname explorer
 
 ## Enable Microsoft-Windows-Subsystem-Linux
