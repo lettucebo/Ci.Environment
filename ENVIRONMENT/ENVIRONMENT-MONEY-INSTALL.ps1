@@ -399,6 +399,9 @@ Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\
 ## Disable Use sign-in info to auto finish setting up device after update or restart for All Users
 Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name DisableAutomaticRestartSignOn -Value 1
 
+## Hide Search on Taskbar
+Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Search -Name SearchboxTaskbarMode -Value 0
+
 Stop-Process -processname explorer
 
 ## Enable Microsoft-Windows-Subsystem-Linux
