@@ -34,16 +34,14 @@ Else {
 }
 
 ## Download and Setup the language
+Write-Host "Setup the language" -ForegroundColor Green
 $UserLanguageList = New-WinUserLanguageList -Language "en-US"
 $UserLanguageList.Add("zh-TW")
 $UserLanguageList[0].Handwriting = 1
 $UserLanguageList[1].Handwriting = 1
 Set-WinUserLanguageList -LanguageList $UserLanguageList -Force
-
 Set-WinSystemLocale en-US
-Set-WinUserLanguageList en-US
 Set-WinUILanguageOverride en-US
-
 
 # Reference: https://gist.github.com/NickCraver/7ebf9efbfd0c3eab72e9
 # Change Explorer home screen back to "This PC"
