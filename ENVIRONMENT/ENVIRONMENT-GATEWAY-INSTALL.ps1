@@ -277,6 +277,9 @@ Write-Host "Install WebDeploy" -ForegroundColor Green
     /Install /SuppressReboot /AcceptEULA `
     /Products:"WDeploy36,WDeploy36NoSMO,WDeploy36PS"
 
+## .NET Core runtime with hosting bundle must have IIS already installed
+choco install -y dotnetcore-windowshosting
+
 # Refresh EnvironmentVariable
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
