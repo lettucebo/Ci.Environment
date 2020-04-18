@@ -80,7 +80,7 @@ choco install -y tortoisegit
 choco install -y sql-server-management-studio
 choco install -y microsoft-windows-terminal
 choco install -y cmder
-choco install -y redis
+choco install -y redis-64
 choco install -y redis-desktop-manager
 choco install -y sql-server-express -ia "/IACCEPTSQLSERVERLICENSETERMS /Q /ACTION=install /INSTANCEID=SQLEXPRESS /INSTANCENAME=SQLEXPRESS /UPDATEENABLED=TRUE /TCPEnabled=1 /SECURITYMODE=SQL /SAPWD=P@ssw0rd"
 
@@ -99,6 +99,10 @@ cmd.exe /C
 C:\tools\Cmder\cmder.exe /REGISTER ALL
 '@
 Invoke-Expression -Command:$cmderCmd
+
+## Add Redis to Windows Service
+Write-Host "Add Redis to Windows Service" -ForegroundColor Green
+redis-server --service-install
 
 ## Set Dark Mode
 Write-Host "Set to Dark Mode" -ForegroundColor Green
