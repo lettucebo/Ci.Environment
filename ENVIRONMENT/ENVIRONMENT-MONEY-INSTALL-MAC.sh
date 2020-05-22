@@ -30,6 +30,7 @@ brew cask install docker
 brew cask install adobe-acrobat-reader 
 brew cask install teamviewer
 brew cask install obs
+brew cask install scroll-reverser
 
 # Install .NET Core SDK
 # https://dot.net/v1/dotnet-install.sh
