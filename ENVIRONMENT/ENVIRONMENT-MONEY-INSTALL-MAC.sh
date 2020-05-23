@@ -37,5 +37,7 @@ brew cask install telegram
 brew cask install xmind-zen
 
 # Install .NET Core SDK
-# https://dot.net/v1/dotnet-install.sh
-
+curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 3.1
+curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 3.0
+curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 2.2
+curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 2.1
