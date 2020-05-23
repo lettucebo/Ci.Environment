@@ -36,6 +36,7 @@ brew cask install the-unarchiver
 brew cask install telegram
 brew cask install xmind-zen
 brew cask install smcfancontrol
+brew cask install rider
 
 # Install .NET Core SDK
 curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 3.1
