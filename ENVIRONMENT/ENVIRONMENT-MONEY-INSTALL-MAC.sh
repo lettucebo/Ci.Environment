@@ -32,6 +32,9 @@ brew cask install teamviewer
 brew cask install obs
 brew cask install scroll-reverser
 brew cask install onedrive
+brew cask install the-unarchiver
+brew cask install telegram
+brew cask install xmind-zen
 
 # Install .NET Core SDK
 # https://dot.net/v1/dotnet-install.sh
