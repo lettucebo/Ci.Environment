@@ -26,7 +26,7 @@ brew cask install visual-studio
 brew cask install visual-studio-code
 brew cask install azure-data-studio   
 brew cask install filezilla
-brew cask install docker
+brew cask install docker-edge
 brew cask install adobe-acrobat-reader 
 brew cask install teamviewer
 brew cask install obs
