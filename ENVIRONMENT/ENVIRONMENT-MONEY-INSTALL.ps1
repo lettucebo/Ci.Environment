@@ -71,10 +71,8 @@ choco install -y jdk8 -params "both=true"
 choco install -y git.install  --params "/NoShellIntegration"
 choco install -y tortoisegit
 choco install -y rdcman
-choco install -y flashplayerplugin
 choco install -y filezilla
 choco install -y potplayer
-choco install -y cmder
 choco install -y docker-desktop
 choco install -y telegram.install
 choco install -y nvm.portable
@@ -85,17 +83,16 @@ choco install -y azure-cli
 choco install -y line
 choco install -y microsoft-teams.install
 choco install -y adobereader
-choco install -y flashplayerplugin
 choco install -y teamviewer
 choco install -y office365business
-choco install -y line
 choco install -y sql-server-management-studio
 choco install -y microsoft-edge-insider-dev
 choco install -y microsoft-windows-terminal
+choco install -y powershell-preview
 
 # Install .Net Core SDK
 Write-Host "Install .Net Core SDK" -ForegroundColor Green
-$dotnetCoreUrl = "https://dotnetwebsite.azurewebsites.net/download/dotnet-core/scripts/v1/dotnet-install.ps1";
+$dotnetCoreUrl = "https://dot.net/v1/dotnet-install.ps1";
 $dotnetCorePs1 = "$PSScriptRoot\dotnet-install.ps1";
 Invoke-WebRequest -Uri $dotnetCoreUrl -OutFile $dotnetCorePs1
 
@@ -103,14 +100,6 @@ Invoke-WebRequest -Uri $dotnetCoreUrl -OutFile $dotnetCorePs1
 & $dotnetCorePs1 -Channel 3.0
 & $dotnetCorePs1 -Channel 2.2
 & $dotnetCorePs1 -Channel 2.1
-
-## Add Cmder Here
-Write-Host "Add Cmder Here" -ForegroundColor Green
-$cmderCmd = @'
-cmd.exe /C 
-C:\tools\Cmder\cmder.exe /REGISTER ALL
-'@
-Invoke-Expression -Command:$cmderCmd
 
 ## File Explorer show hidden file and file extensions
 Write-Host "File Explorer show hidden file and file extensions" -ForegroundColor Green
@@ -232,8 +221,13 @@ Write-Host "Enable Microsoft-Windows-Subsystem-Linux" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Windows-Subsystem-Linux
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlatform
 
+## Install WSL2 Kernel udpate
+# https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi
+# $arguments = "/i `"$webDeployInstallerFilePath`" /quiet"
+# Start-Process msiexec.exe -ArgumentList $arguments -Wait
+
 ## Set wsl default version to 2
-#wsl --set-default-version 2
+wsl --set-default-version 2
 
 # Enable Telnet Client
 Write-Host "Enable Telnet Client" -ForegroundColor Green
@@ -283,6 +277,9 @@ nvm install 10.17.0
 nvm use 10.17.0
 '@
 Invoke-Expression -Command:$nvmCmd
+
+## Windows Terminal Here
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lextm/windowsterminal-shell/master/install.ps1')) -ArgumentList "mini"
 
 ## Install Developer Font
 Write-Host "Install Developer Font" -ForegroundColor Green
