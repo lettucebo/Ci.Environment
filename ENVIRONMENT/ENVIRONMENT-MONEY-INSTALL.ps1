@@ -70,7 +70,6 @@ choco install -y 7zip.install
 choco install -y jdk8 -params "both=true"
 choco install -y git.install  --params "/NoShellIntegration"
 choco install -y tortoisegit
-choco install -y rdcman
 choco install -y filezilla
 choco install -y potplayer
 choco install -y docker-desktop
@@ -89,6 +88,17 @@ choco install -y sql-server-management-studio
 choco install -y microsoft-edge-insider-dev
 choco install -y microsoft-windows-terminal
 choco install -y powershell-preview
+
+# Install RdcMan
+$packageNameRdcMan = 'rdcman'
+$installerTypeRdcMan = 'MSI'
+$32BitUrlRdcMan = 'https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21926608&authkey=AJCptTDx15-h2sE'
+$checksumRdcMan = '6E29F25C5E7F5EC587D07642A344B05429472A75B4F73177CD6AAC63BE61A455'
+$checksumTypeRdcMan = 'sha256'
+$silentArgsRdcMan = '/quiet'
+$validExitCodesRdcMan = @(0,3010)
+
+Install-ChocolateyPackage $packageNameRdcMan $installerTypeRdcMan $silentArgsRdcMan $32BitUrlRdcMan -checksum $checksumRdcMan -checksumType $checksumTypeRdcMan -validExitCodes $validExitCodesRdcMan
 
 # Install .Net Core SDK
 Write-Host "Install .Net Core SDK" -ForegroundColor Green
