@@ -2,12 +2,12 @@
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 
 # Install cask
-brew tap caskroom/cask
+brew tap homebrew/cask-cask
 
 # Install software
 brew install node
-brew instakk nvm
-brew instakk git
+brew install nvm
+brew install git
 brew install azure-cli
 
 # Install cask software
