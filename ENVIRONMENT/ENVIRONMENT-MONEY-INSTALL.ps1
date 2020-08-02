@@ -388,8 +388,11 @@ Write-Output "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, a
     --add Microsoft.VisualStudio.Component.TestTools.MicrosoftTestManager `
     --add Microsoft.VisualStudio.Component.TypeScript.3.0 `
     --add Microsoft.VisualStudio.Component.Windows10SDK.17134 `
+    --add Microsoft.Net.Component.3.5.DeveloperTools `
     --add Microsoft.Net.Component.4.5.2.SDK `
     --add Microsoft.Net.Component.4.5.2.TargetingPack `
+    --add Microsoft.Net.Component.4.6.1.SDK `
+    --add Microsoft.Net.Component.4.6.1.TargetingPack `
     --add Microsoft.Net.Component.4.6.2.SDK `
     --add Microsoft.Net.Component.4.6.2.TargetingPack `
     --add Microsoft.Net.Component.4.7.SDK `
@@ -400,6 +403,11 @@ Write-Output "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, a
     --add Microsoft.Net.Component.4.7.2.TargetingPack `
     --add Microsoft.Net.Component.4.8.SDK `
     --add Microsoft.Net.Component.4.8.TargetingPack `
+    --add Microsoft.Net.Core.Component.SDK.2.2 `
+    --add Microsoft.Net.Core.Component.SDK.3.0 `
+    --add Microsoft.NetCore.ComponentGroup.DevelopmentTools.2.1 `
+    --add Microsoft.NetCore.ComponentGroup.Web.2.1 `
+    --add Microsoft.VisualStudio.Web.Mvc4.ComponentGroup `
     --add Microsoft.VisualStudio.Component.Azure.Storage.AzCopy `
     --add Microsoft.VisualStudio.Component.Git `
     --add Microsoft.VisualStudio.Component.DiagnosticTools `
