@@ -57,6 +57,19 @@ Get-AppxPackage Microsoft.People | Remove-AppxPackage
 Get-AppxPackage Microsoft.ZuneMusic | Remove-AppxPackage
 # Get Started   
 Get-AppxPackage getstarted | Remove-AppxPackage
+# Mobile Plan
+Get-AppxPackage Microsoft.OneConnect | Remove-AppxPackage
+# Calendar and Mail
+Get-AppxPackage *windowscommunicationsapps* | Remove-AppxPackage
+Get-AppxPackage *officehub* | Remove-AppxPackage
+Get-AppxPackage *skypeapp* | Remove-AppxPackage
+Get-AppxPackage *windowsmaps* | Remove-AppxPackage
+Get-AppxPackage *zunemusic* | Remove-AppxPackage
+Get-AppxPackage *bingfinance* | Remove-AppxPackage
+Get-AppxPackage *bingnews* | Remove-AppxPackage
+Get-AppxPackage *people* | Remove-AppxPackage
+Get-AppxPackage *bingsports* | Remove-AppxPackage
+Get-AppxPackage *xboxapp* | Remove-AppxPackage
 
 ## install chocolatey
 Write-Host "Install Chocolatey and Packages" -ForegroundColor Green
