@@ -43,6 +43,8 @@ Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer 
 # Disable P2P Update downlods outside of local network
 Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config -Name DODownloadMode -Type DWord -Value 1
 Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization -Name SystemSettingsDownloadMode -Type DWord -Value 3
+
+## Uninstll built-in APPs
 # Be gone, heathen!
 Get-AppxPackage king.com.CandyCrushSaga | Remove-AppxPackage
 # Bing News, Sports, and Finance (Money):
