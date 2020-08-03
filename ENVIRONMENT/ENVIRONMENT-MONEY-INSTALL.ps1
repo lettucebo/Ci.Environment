@@ -116,7 +116,14 @@ $validExitCodesRdcMan = @(0,3010)
 
 Install-ChocolateyPackage $packageNameRdcMan $installerTypeRdcMan $silentArgsRdcMan $32BitUrlRdcMan -checksum $checksumRdcMan -checksumType $checksumTypeRdcMan -validExitCodes $validExitCodesRdcMan
 
-# Install .Net Core SDK
+## Install Little Big Mouse
+# https://github.com/mgth/LittleBigMouse
+$lbmUrl = "https://github.com/mgth/LittleBigMouse/releases/download/4.2.7124.42685/LittleBigMouse_4.2.7124.42685.exe";
+$lbmFile = "$PSScriptRoot\LittleBigMouse_4.2.7124.42685.exe";
+Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
+Start-Process -Wait -FilePath $lbmFile -ArgumentList "/S" -PassThru
+
+## Install .Net Core SDK
 Write-Host "Install .Net Core SDK" -ForegroundColor Green
 $dotnetCoreUrl = "https://dot.net/v1/dotnet-install.ps1";
 $dotnetCorePs1 = "$PSScriptRoot\dotnet-install.ps1";
