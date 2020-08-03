@@ -314,6 +314,9 @@ Invoke-Expression -Command:$nvmCmd
 ## Windows Terminal Here
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lextm/windowsterminal-shell/master/install.ps1')) -ArgumentList "mini"
 
+## Install .NET Core Tools
+dotnet tool install --global dotnet-ef
+
 ## Install Developer Font
 Write-Host "Install Developer Font" -ForegroundColor Green
 $fontUrl = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%217415&authkey=AG0Y5D8cspzzmIM";
