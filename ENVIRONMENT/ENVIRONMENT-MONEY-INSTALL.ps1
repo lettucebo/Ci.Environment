@@ -100,9 +100,10 @@ choco install -y adobereader
 choco install -y teamviewer
 choco install -y office365business
 choco install -y sql-server-management-studio
-choco install -y microsoft-edge-insider-dev
+choco install -y microsoft-edge
 choco install -y microsoft-windows-terminal
 choco install -y powershell-preview
+choco install -y spotify
 
 # Install RdcMan
 $packageNameRdcMan = 'rdcman'
