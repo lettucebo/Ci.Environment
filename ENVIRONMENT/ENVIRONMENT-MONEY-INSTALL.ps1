@@ -121,7 +121,7 @@ Install-ChocolateyPackage $packageNameRdcMan $installerTypeRdcMan $silentArgsRdc
 $lbmUrl = "https://github.com/mgth/LittleBigMouse/releases/download/4.2.7124.42685/LittleBigMouse_4.2.7124.42685.exe";
 $lbmFile = "$PSScriptRoot\LittleBigMouse_4.2.7124.42685.exe";
 Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
-Start-Process -Wait -FilePath $lbmFile -ArgumentList "/S" -PassThru
+Start-Process -FilePath $lbmFile -ArgumentList "/S" -PassThru
 
 ## Install .Net Core SDK
 Write-Host "Install .Net Core SDK" -ForegroundColor Green
@@ -255,9 +255,9 @@ Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Windows-
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlatform
 
 ## Install WSL2 Kernel udpate
-# https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi
-# $arguments = "/i `"$webDeployInstallerFilePath`" /quiet"
-# Start-Process msiexec.exe -ArgumentList $arguments -Wait
+$wslUpdateFile = "$PSScriptRoot\wsl_update_x64.msi";
+Invoke-WebRequest -Uri "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi" -OutFile $wslUpdateFile
+Start-Process msiexec -ArgumentList "/i $wslUpdateFile /qn /norestart /l*v install.log " -Wait -PassThru
 
 ## Set wsl default version to 2
 wsl --set-default-version 2
