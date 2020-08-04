@@ -306,7 +306,10 @@ nvm use 10.17.0
 Invoke-Expression -Command:$nvmCmd
 
 ## Windows Terminal Here
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lextm/windowsterminal-shell/master/install.ps1')) -ArgumentList "mini"
+# https://github.com/lextm/windowsterminal-shell
+$terminalHereFile = "$PSScriptRoot\hereInstall.ps1";
+Invoke-WebRequest -Uri "https://github.com/lextm/windowsterminal-shell/raw/master/install.ps1" -OutFile $terminalHereFile
+.$terminalHereFile mini
 
 ## Install .NET Core Tools
 dotnet tool install --global dotnet-ef
