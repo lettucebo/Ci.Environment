@@ -105,16 +105,10 @@ choco install -y microsoft-windows-terminal
 choco install -y powershell-preview
 choco install -y spotify
 
-# Install RdcMan
-$packageNameRdcMan = 'rdcman'
-$installerTypeRdcMan = 'MSI'
-$32BitUrlRdcMan = 'https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21926608&authkey=AJCptTDx15-h2sE'
-$checksumRdcMan = '6E29F25C5E7F5EC587D07642A344B05429472A75B4F73177CD6AAC63BE61A455'
-$checksumTypeRdcMan = 'sha256'
-$silentArgsRdcMan = '/quiet'
-$validExitCodesRdcMan = @(0,3010)
-
-Install-ChocolateyPackage $packageNameRdcMan $installerTypeRdcMan $silentArgsRdcMan $32BitUrlRdcMan -checksum $checksumRdcMan -checksumType $checksumTypeRdcMan -validExitCodes $validExitCodesRdcMan
+## Install RdcMan
+$rdcManFile = "$PSScriptRoot\rdcman.msi";
+Invoke-WebRequest -Uri "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21926608&authkey=AJCptTDx15-h2sE" -OutFile $rdcManFile
+Start-Process msiexec -ArgumentList "/i $rdcManFile /qn /norestart /l*v install.log " -Wait -PassThru
 
 ## Install Little Big Mouse
 # https://github.com/mgth/LittleBigMouse
