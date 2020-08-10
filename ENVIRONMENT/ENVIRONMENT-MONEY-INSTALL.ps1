@@ -127,10 +127,10 @@ $dotnetCoreUrl = "https://dot.net/v1/dotnet-install.ps1";
 $dotnetCorePs1 = "$PSScriptRoot\dotnet-install.ps1";
 Invoke-WebRequest -Uri $dotnetCoreUrl -OutFile $dotnetCorePs1
 
-& $dotnetCorePs1 -Channel 3.1
-& $dotnetCorePs1 -Channel 3.0
-& $dotnetCorePs1 -Channel 2.2
-& $dotnetCorePs1 -Channel 2.1
+& $dotnetCorePs1 -Channel 3.1 -InstallDir $env:ProgramFiles\dotnet
+& $dotnetCorePs1 -Channel 3.0 -InstallDir $env:ProgramFiles\dotnet
+& $dotnetCorePs1 -Channel 2.2 -InstallDir $env:ProgramFiles\dotnet
+& $dotnetCorePs1 -Channel 2.1 -InstallDir $env:ProgramFiles\dotnet
 
 ## File Explorer show hidden file and file extensions
 Write-Host "File Explorer show hidden file and file extensions" -ForegroundColor Green
