@@ -314,6 +314,9 @@ Invoke-WebRequest -Uri "https://github.com/lextm/windowsterminal-shell/raw/maste
 ## Install .NET Core Tools
 dotnet tool install --global dotnet-ef
 
+## Install Azure CLI Extensions
+az extension add -n azure-cli-ml
+
 ## Install Developer Font
 Write-Host "Install Developer Font" -ForegroundColor Green
 $fontUrl = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%217415&authkey=AG0Y5D8cspzzmIM";
