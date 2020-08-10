@@ -120,6 +120,8 @@ Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
 Start-Process -FilePath $lbmFile -ArgumentList "/S" -PassThru
 
 ## Install .Net Core SDK
+# https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script
+# https://github.com/dotnet/docs/issues/19796
 Write-Host "Install .Net Core SDK" -ForegroundColor Green
 $dotnetCoreUrl = "https://dot.net/v1/dotnet-install.ps1";
 $dotnetCorePs1 = "$PSScriptRoot\dotnet-install.ps1";
