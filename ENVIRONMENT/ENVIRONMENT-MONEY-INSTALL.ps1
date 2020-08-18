@@ -311,9 +311,13 @@ Invoke-Expression -Command:$nvmCmd
 
 ## Windows Terminal Here
 # https://github.com/lextm/windowsterminal-shell
-$terminalHereFile = "$PSScriptRoot\hereInstall.ps1";
+Start-Process -FilePath "C:\Program Files\PowerShell\7-preview\pwsh.exe" -argument '-nologo -noprofile -executionpolicy bypass -command $terminalHereFile = "$PSScriptRoot\hereInstall.ps1";
 Invoke-WebRequest -Uri "https://github.com/lextm/windowsterminal-shell/raw/master/install.ps1" -OutFile $terminalHereFile
-.$terminalHereFile mini
+.$terminalHereFile mini'
+
+#$terminalHereFile = "$PSScriptRoot\hereInstall.ps1";
+#Invoke-WebRequest -Uri "https://github.com/lextm/windowsterminal-shell/raw/master/install.ps1" -OutFile $terminalHereFile
+#.$terminalHereFile mini
 
 ## Install .NET Core Tools
 dotnet tool install --global dotnet-ef
