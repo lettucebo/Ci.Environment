@@ -103,7 +103,6 @@ choco install -y sql-server-management-studio
 choco install -y microsoft-edge
 choco install -y microsoft-windows-terminal
 choco install -y powershell-preview
-choco install -y spotify
 choco install -y terraform
 choco install -y python
 
