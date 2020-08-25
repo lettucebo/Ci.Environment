@@ -310,9 +310,7 @@ Invoke-Expression -Command:$nvmCmd
 
 ## Windows Terminal Here
 # https://github.com/lextm/windowsterminal-shell
-Start-Process -FilePath "C:\Program Files\PowerShell\7-preview\pwsh.exe" -argument '-nologo -noprofile -executionpolicy bypass -command $terminalHereFile = "$PSScriptRoot\hereInstall.ps1";
-Invoke-WebRequest -Uri "https://github.com/lextm/windowsterminal-shell/raw/master/install.ps1" -OutFile $terminalHereFile
-.$terminalHereFile mini'
+Start-Process -FilePath "C:\Program Files\PowerShell\7-preview\pwsh.exe" -argument '-nologo -noprofile -executionpolicy bypass -command $terminalHereFile = "$PSScriptRoot\hereInstall.ps1"; Invoke-WebRequest -Uri "https://github.com/lextm/windowsterminal-shell/raw/master/install.ps1" -OutFile $terminalHereFile; .$terminalHereFile mini'
 
 #$terminalHereFile = "$PSScriptRoot\hereInstall.ps1";
 #Invoke-WebRequest -Uri "https://github.com/lextm/windowsterminal-shell/raw/master/install.ps1" -OutFile $terminalHereFile
