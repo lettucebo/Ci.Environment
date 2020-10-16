@@ -111,6 +111,12 @@ $rdcManFile = "$PSScriptRoot\rdcman.msi";
 Invoke-WebRequest -Uri "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21926608&authkey=AJCptTDx15-h2sE" -OutFile $rdcManFile
 Start-Process msiexec -ArgumentList "/i $rdcManFile /qn /norestart /l*v install.log " -Wait -PassThru
 
+## Install Redis Desktop Manager
+$rdmFile = "$PSScriptRoot\rdm.exe";
+Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2020.4/redis-desktop-manager-2020.4.0.exe" -OutFile $rdmFile
+# Start-Process msiexec -ArgumentList "/i $rdmFile /qn /norestart /l*v install.log " -Wait -PassThru
+Start-Process -FilePath $rdmFile -ArgumentList "/S" -PassThru
+
 ## Install Little Big Mouse
 # https://github.com/mgth/LittleBigMouse
 $lbmUrl = "https://github.com/mgth/LittleBigMouse/releases/download/4.2.7124.42685/LittleBigMouse_4.2.7124.42685.exe";
