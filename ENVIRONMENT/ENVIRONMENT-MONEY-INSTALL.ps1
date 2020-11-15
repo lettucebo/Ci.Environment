@@ -257,6 +257,9 @@ Write-Host "Enable Microsoft-Windows-Subsystem-Linux" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Windows-Subsystem-Linux
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlatform
 
+Write-Host "Add Windows Optional Features" -ForegroundColor Green
+Add-WindowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0
+
 ## Install WSL2 Kernel udpate
 $wslUpdateFile = "$PSScriptRoot\wsl_update_x64.msi";
 Invoke-WebRequest -Uri "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi" -OutFile $wslUpdateFile
