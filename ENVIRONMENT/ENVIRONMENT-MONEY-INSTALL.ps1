@@ -85,22 +85,17 @@ choco install -y 7zip.install
 choco install -y jdk8 -params "both=true"
 choco install -y git.install  --params "/NoShellIntegration"
 choco install -y tortoisegit
-choco install -y filezilla
 choco install -y potplayer
 choco install -y docker-desktop
-choco install -y telegram.install
 choco install -y nvm.portable
 choco install -y snagit
 choco install -y microsoftazurestorageexplorer
-choco install -y linqpad
 choco install -y azure-cli
 choco install -y line
 choco install -y microsoft-teams.install
 choco install -y adobereader
 choco install -y teamviewer
-choco install -y office365business
 choco install -y sql-server-management-studio
-choco install -y microsoft-edge
 choco install -y microsoft-windows-terminal
 choco install -y powershell-preview
 choco install -y terraform
@@ -136,6 +131,15 @@ Invoke-WebRequest -Uri $dotnetCoreUrl -OutFile $dotnetCorePs1
 & $dotnetCorePs1 -Channel 3.0 -InstallDir $env:ProgramFiles\dotnet
 & $dotnetCorePs1 -Channel 2.2 -InstallDir $env:ProgramFiles\dotnet
 & $dotnetCorePs1 -Channel 2.1 -InstallDir $env:ProgramFiles\dotnet
+
+## Install Azure PowerShell
+Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
+if ($PSVersionTable.PSEdition -eq 'Desktop' -and (Get-Module -Name AzureRM -ListAvailable)) {
+    Write-Warning -Message ('Az module not installed. Having both the AzureRM and ' +
+      'Az modules installed at the same time is not supported.')
+} else {
+    Install-Module -Name Az -AllowClobber -Scope CurrentUser
+}
 
 ## File Explorer show hidden file and file extensions
 Write-Host "File Explorer show hidden file and file extensions" -ForegroundColor Green
