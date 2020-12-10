@@ -133,7 +133,10 @@ Invoke-WebRequest -Uri $dotnetCoreUrl -OutFile $dotnetCorePs1
 
 ## Install PowerShell 7
 # https://github.com/PowerShell/PowerShell/releases/download/v7.1.0/PowerShell-7.1.0-win-x64.msi
-# msiexec.exe /package PowerShell-7.0.3-win-x64.msi /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1
+$ps7Url = "https://github.com/PowerShell/PowerShell/releases/download/v7.1.0/PowerShell-7.1.0-win-x64.msi";
+$ps7Msi = "$PSScriptRoot\PowerShell-7.1.0-win-x64.msi";
+Invoke-WebRequest -Uri $ps7Url -OutFile $ps7Msi
+msiexec.exe /package $ps7Msi /quiet ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1
 
 
 ## Install Azure PowerShell
