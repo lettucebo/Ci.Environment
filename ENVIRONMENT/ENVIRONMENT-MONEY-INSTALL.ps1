@@ -97,7 +97,6 @@ choco install -y adobereader
 choco install -y teamviewer
 choco install -y sql-server-management-studio
 choco install -y microsoft-windows-terminal
-choco install -y powershell-preview
 choco install -y terraform
 choco install -y python
 
@@ -131,6 +130,11 @@ Invoke-WebRequest -Uri $dotnetCoreUrl -OutFile $dotnetCorePs1
 & $dotnetCorePs1 -Channel 3.0 -InstallDir $env:ProgramFiles\dotnet
 & $dotnetCorePs1 -Channel 2.2 -InstallDir $env:ProgramFiles\dotnet
 & $dotnetCorePs1 -Channel 2.1 -InstallDir $env:ProgramFiles\dotnet
+
+## Install PowerShell 7
+# https://github.com/PowerShell/PowerShell/releases/download/v7.1.0/PowerShell-7.1.0-win-x64.msi
+# msiexec.exe /package PowerShell-7.0.3-win-x64.msi /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1
+
 
 ## Install Azure PowerShell
 Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
