@@ -126,6 +126,7 @@ $dotnetCoreUrl = "https://dot.net/v1/dotnet-install.ps1";
 $dotnetCorePs1 = "$PSScriptRoot\dotnet-install.ps1";
 Invoke-WebRequest -Uri $dotnetCoreUrl -OutFile $dotnetCorePs1
 
+& $dotnetCorePs1 -Channel 5.0 -InstallDir $env:ProgramFiles\dotnet
 & $dotnetCorePs1 -Channel 3.1 -InstallDir $env:ProgramFiles\dotnet
 & $dotnetCorePs1 -Channel 3.0 -InstallDir $env:ProgramFiles\dotnet
 & $dotnetCorePs1 -Channel 2.2 -InstallDir $env:ProgramFiles\dotnet
