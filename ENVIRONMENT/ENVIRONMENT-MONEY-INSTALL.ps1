@@ -260,6 +260,7 @@ Else {
 }
 
 ## Let me set a different input method for each app window
+# https://social.technet.microsoft.com/Forums/ie/en-US/c6e76806-3b64-47e6-876e-ffbbc7438784/the-option-let-me-set-a-different-input-method-for-each-app-window?forum=w8itprogeneral
 Write-Host "Enable Let me set a different input method for each app window" -ForegroundColor Green
 $prefMask = (Get-ItemProperty -Path 'HKCU:\Control Panel\Desktop' -Name 'UserPreferencesMask').UserPreferencesMask
 if (($prefMask[4] -band 0x80) -eq 0) {
