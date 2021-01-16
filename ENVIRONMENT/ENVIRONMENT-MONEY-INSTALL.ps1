@@ -259,6 +259,13 @@ Else {
     Write-Warning "3DObjects key does not exist `n"
 }
 
+## Let me set a different input method for each app window
+Write-Host "Enable Let me set a different input method for each app window" -ForegroundColor Green
+$prefMask = (Get-ItemProperty -Path 'HKCU:\Control Panel\Desktop' -Name 'UserPreferencesMask').UserPreferencesMask
+if (($prefMask[4] -band 0x80) -eq 0) {
+  $prefMask[4] = ($prefMask[4] -bor 0x80)
+  New-ItemProperty -Path 'HKCU:\Control Panel\Desktop' -Name 'UserPreferencesMask' -Value $prefMask -PropertyType ([Microsoft.Win32.RegistryValueKind]::Binary) -Force | Out-Null
+
 ## Set Show Taskbar buttons on where window is open
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name MMTaskbarMode -Value 2
 
