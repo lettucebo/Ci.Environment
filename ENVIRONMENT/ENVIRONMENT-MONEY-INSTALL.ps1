@@ -88,7 +88,7 @@ choco install -y tortoisegit
 choco install -y potplayer
 choco install -y docker-desktop
 choco install -y nvm.portable
-choco install -y snagit
+#choco install -y snagit
 choco install -y microsoftazurestorageexplorer
 choco install -y azure-cli
 choco install -y line
@@ -101,11 +101,13 @@ choco install -y terraform
 choco install -y python
 
 ## Install RdcMan
+Write-Host "Install RdcMan" -ForegroundColor Green
 $rdcManFile = "$PSScriptRoot\rdcman.msi";
 Invoke-WebRequest -Uri "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21926608&authkey=AJCptTDx15-h2sE" -OutFile $rdcManFile
 Start-Process msiexec -ArgumentList "/i $rdcManFile /qn /norestart /l*v install.log " -Wait -PassThru
 
 ## Install Redis Desktop Manager
+Write-Host "Install Redis Desktop Manager" -ForegroundColor Green
 $rdmFile = "$PSScriptRoot\rdm.exe";
 Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2020.4/redis-desktop-manager-2020.4.0.exe" -OutFile $rdmFile
 # Start-Process msiexec -ArgumentList "/i $rdmFile /qn /norestart /l*v install.log " -Wait -PassThru
@@ -113,6 +115,7 @@ Start-Process -FilePath $rdmFile -ArgumentList "/S" -PassThru
 
 ## Install Little Big Mouse
 # https://github.com/mgth/LittleBigMouse
+Write-Host "Install Little Big Mouse" -ForegroundColor Green
 $lbmUrl = "https://github.com/mgth/LittleBigMouse/releases/download/4.2.7124.42685/LittleBigMouse_4.2.7124.42685.exe";
 $lbmFile = "$PSScriptRoot\LittleBigMouse_4.2.7124.42685.exe";
 Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
@@ -134,6 +137,7 @@ Invoke-WebRequest -Uri $dotnetCoreUrl -OutFile $dotnetCorePs1
 
 ## Install PowerShell 7
 # https://github.com/PowerShell/PowerShell/releases/download/v7.1.0/PowerShell-7.1.0-win-x64.msi
+Write-Host "Install PowerShell 7" -ForegroundColor Green
 $ps7Url = "https://github.com/PowerShell/PowerShell/releases/download/v7.1.0/PowerShell-7.1.0-win-x64.msi";
 $ps7Msi = "$PSScriptRoot\PowerShell-7.1.0-win-x64.msi";
 Invoke-WebRequest -Uri $ps7Url -OutFile $ps7Msi
@@ -141,6 +145,7 @@ msiexec.exe /package $ps7Msi /quiet ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1
 
 
 ## Install Azure PowerShell
+Write-Host "Install Azure PowerShell" -ForegroundColor Green
 Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
 if ($PSVersionTable.PSEdition -eq 'Desktop' -and (Get-Module -Name AzureRM -ListAvailable)) {
     Write-Warning -Message ('Az module not installed. Having both the AzureRM and ' +
