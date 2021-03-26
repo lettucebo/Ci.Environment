@@ -82,7 +82,8 @@ choco install -y vscode --params "/NoDesktopIcon"
 choco install -y firefox-dev --pre --params "l=en-US"
 choco install -y googlechrome
 choco install -y 7zip.install
-choco install -y jdk8 -params "both=true"
+choco install -y openjdk11
+choco install -y openjdk8
 choco install -y git.install  --params "/NoShellIntegration"
 choco install -y tortoisegit
 choco install -y potplayer
