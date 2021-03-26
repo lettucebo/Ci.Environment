@@ -343,6 +343,14 @@ dotnet tool install --global dotnet-ef
 ## Install Azure CLI Extensions
 az extension add -n azure-cli-ml
 
+## Install WinGet
+# todo wait for stable versoin and realiable installation method
+
+## Using WinGet install application
+#winget install Microsoft.Whiteboard
+#winget install 50582LuanNguyen.NuGetPackageExplorer
+
+
 ## Install Developer Font
 Write-Host "Install Developer Font" -ForegroundColor Green
 $fontUrl = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%217415&authkey=AG0Y5D8cspzzmIM";
