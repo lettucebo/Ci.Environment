@@ -43,6 +43,8 @@ Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer 
 # Disable P2P Update downlods outside of local network
 Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config -Name DODownloadMode -Type DWord -Value 1
 Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization -Name SystemSettingsDownloadMode -Type DWord -Value 3
+# Set Alt Tab to open Windows only
+Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name MultiTaskingAltTabFilter -Type DWord -Value 3
 
 ## Uninstll built-in APPs
 # Be gone, heathen!
@@ -90,7 +92,7 @@ choco install -y tortoisegit
 choco install -y potplayer
 choco install -y docker-desktop
 choco install -y nvm.portable
-choco install -y snagit choco --version=2020.1.5
+#choco install -y snagit choco --version=2020.1.5
 choco install -y microsoftazurestorageexplorer
 choco install -y azure-cli
 choco install -y line
