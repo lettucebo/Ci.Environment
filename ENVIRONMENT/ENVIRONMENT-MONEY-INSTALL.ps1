@@ -302,12 +302,19 @@ Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Windows-
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlatform
 
 ## Install WSL2 Kernel udpate
+## reference: https://dev.to/smashse/wsl-chocolatey-powershell-winget-1d6p
 $wslUpdateFile = "$PSScriptRoot\wsl_update_x64.msi";
 Invoke-WebRequest -Uri "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi" -OutFile $wslUpdateFile
-Start-Process msiexec -ArgumentList "/i $wslUpdateFile /qn /norestart /l*v install.log " -Wait -PassThru
+msiexec.exe /package $wslUpdateFile /quiet
 
 ## Set wsl default version to 2
 wsl --set-default-version 2
+
+## Install Ubuntu
+$ubuntuFile = "$PSScriptRoot\ubuntu.appx";
+Invoke-WebRequest -Uri https://aka.ms/wsl-ubuntu-1804 -OutFile $ubuntuFile -UseBasicParsing
+Import-Module Appx -UseWindowsPowerShell
+Add-AppxPackage $ubuntuFile
 
 # Enable Telnet Client
 Write-Host "Enable Telnet Client" -ForegroundColor Green
