@@ -316,6 +316,15 @@ Invoke-WebRequest -Uri https://aka.ms/wsl-ubuntu-1804 -OutFile $ubuntuFile -UseB
 Import-Module Appx -UseWindowsPowerShell
 Add-AppxPackage $ubuntuFile
 
+## Install WinGet
+$wingetFile = "$PSScriptRoot\Winget.appx";
+Invoke-WebRequest -Uri https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.appxbundle -OutFile $wingetFile -UseBasicParsing
+Add-AppxPackage $wingetFile
+
+## Using WinGet install application
+#winget install Microsoft.Whiteboard
+#winget install 50582LuanNguyen.NuGetPackageExplorer
+
 # Enable Telnet Client
 Write-Host "Enable Telnet Client" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName TelnetClient
@@ -345,14 +354,6 @@ Invoke-Expression -Command:$nvmCmd
 
 ## Install .NET Core Tools
 dotnet tool install --global dotnet-ef
-
-## Install WinGet
-# todo wait for stable versoin and realiable installation method
-
-## Using WinGet install application
-#winget install Microsoft.Whiteboard
-#winget install 50582LuanNguyen.NuGetPackageExplorer
-
 
 ## Install Developer Font
 Write-Host "Install Developer Font" -ForegroundColor Green
