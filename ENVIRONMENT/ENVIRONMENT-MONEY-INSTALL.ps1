@@ -108,6 +108,7 @@ choco install -y microsoft-windows-terminal
 choco install -y terraform
 choco install -y python
 choco install -y spotify --ignorechecksum
+choco install -y office365business
 
 ## Install RdcMan
 Write-Host "Install RdcMan" -ForegroundColor Green
