@@ -289,6 +289,9 @@ Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\
 ## Hide Search on Taskbar
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Search -Name SearchboxTaskbarMode -Value 0
 
+## Set Cmd to UTF8 encode
+Set-ItemProperty -Path "HKLM:\Software\Microsoft\Command Processor" -Name Autorun -Type String -Value "chcp 65001>nul"
+
 Stop-Process -processname explorer
 
 ## Enable Microsoft-Windows-Subsystem-Linux
