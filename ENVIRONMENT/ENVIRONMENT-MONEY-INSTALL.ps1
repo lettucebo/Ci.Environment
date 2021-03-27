@@ -72,6 +72,7 @@ Get-AppxPackage *bingnews* | Remove-AppxPackage
 Get-AppxPackage *people* | Remove-AppxPackage
 Get-AppxPackage *bingsports* | Remove-AppxPackage
 Get-AppxPackage *xboxapp* | Remove-AppxPackage
+Get-AppxPackage Microsoft.Getstarted | Remove-AppxPackage
 
 ## Install chocolatey
 Write-Host "Install Chocolatey and Packages" -ForegroundColor Green
