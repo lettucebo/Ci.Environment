@@ -84,7 +84,7 @@ choco install -y googlechrome
 choco install -y 7zip.install
 choco install -y openjdk11
 choco install -y openjdk8
-choco install -y git.install  --params "/NoShellIntegration"
+choco install -y git.install --params "/NoShellIntegration"
 choco install -y tortoisegit
 choco install -y potplayer
 choco install -y docker-desktop
@@ -100,6 +100,7 @@ choco install -y sql-server-management-studio
 choco install -y microsoft-windows-terminal
 choco install -y terraform
 choco install -y python
+choco install -y spotify --ignorechecksum
 
 ## Install RdcMan
 Write-Host "Install RdcMan" -ForegroundColor Green
