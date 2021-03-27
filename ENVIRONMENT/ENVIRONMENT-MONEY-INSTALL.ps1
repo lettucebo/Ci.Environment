@@ -46,6 +46,10 @@ Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryO
 # Set Alt Tab to open Windows only
 Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name MultiTaskingAltTabFilter -Type DWord -Value 3
 
+# Install MediaFeaturePack before install SnagIt
+Write-Host "Add Windows Optional Features" -ForegroundColor Green
+Add-WindowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0
+
 ## Uninstll built-in APPs
 # Be gone, heathen!
 Get-AppxPackage king.com.CandyCrushSaga | Remove-AppxPackage
@@ -288,9 +292,6 @@ Stop-Process -processname explorer
 Write-Host "Enable Microsoft-Windows-Subsystem-Linux" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Windows-Subsystem-Linux
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlatform
-
-Write-Host "Add Windows Optional Features" -ForegroundColor Green
-Add-WindowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0
 
 ## Install WSL2 Kernel udpate
 $wslUpdateFile = "$PSScriptRoot\wsl_update_x64.msi";
