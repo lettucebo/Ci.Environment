@@ -153,6 +153,8 @@ $ps7Msi = "$PSScriptRoot\PowerShell-7.1.1-win-x64.msi";
 Invoke-WebRequest -Uri $ps7Url -OutFile $ps7Msi
 msiexec.exe /package $ps7Msi /quiet ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1
 
+## Install Nuget Provider
+Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
 
 ## Install Azure PowerShell
 Write-Host "Install Azure PowerShell" -ForegroundColor Green
