@@ -292,7 +292,8 @@ Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Search -N
 ## Set Cmd to UTF8 encode
 Set-ItemProperty -Path "HKLM:\Software\Microsoft\Command Processor" -Name Autorun -Type String -Value "chcp 65001>nul"
 
-Stop-Process -processname explorer
+## Set Powershell to UTF8 encode
+Add-Content -Path C:\Users\${env:username}\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1 -Value $('$OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.UTF8Encoding]::UTF8')
 
 ## Enable Microsoft-Windows-Subsystem-Linux
 Write-Host "Enable Microsoft-Windows-Subsystem-Linux" -ForegroundColor Green
@@ -322,16 +323,9 @@ Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Containers-Disposa
 # Refresh EnvironmentVariable
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
-# Install VSCode Extensions
-Write-Host "Install VSCode Extensions" -ForegroundColor Green
-
+## Restart file explorer
+Stop-Process -processname explorer
 refreshenv
-
-$codeExtensionCmd = @'
-cmd.exe /C 
-code --install-extension Shan.code-settings-sync
-'@
-Invoke-Expression -Command:$codeExtensionCmd
 
 # Install nodejs using nvm
 $nvmCmd = @'
@@ -341,19 +335,8 @@ nvm use 10.17.0
 '@
 Invoke-Expression -Command:$nvmCmd
 
-## Windows Terminal Here
-# https://github.com/lextm/windowsterminal-shell
-# Start-Process -FilePath "C:\Program Files\PowerShell\7-preview\pwsh.exe" -argument '-nologo -noprofile -executionpolicy bypass -command $terminalHereFile = "$PSScriptRoot\hereInstall.ps1"; Invoke-WebRequest -Uri "https://github.com/lextm/windowsterminal-shell/raw/master/install.ps1" -OutFile $terminalHereFile; .$terminalHereFile mini'
-
-$terminalHereFile = "$PSScriptRoot\hereInstall.ps1";
-Invoke-WebRequest -Uri "https://github.com/lextm/windowsterminal-shell/raw/master/install.ps1" -OutFile $terminalHereFile
-.$terminalHereFile mini
-
 ## Install .NET Core Tools
 dotnet tool install --global dotnet-ef
-
-## Install Azure CLI Extensions
-az extension add -n azure-cli-ml
 
 ## Install WinGet
 # todo wait for stable versoin and realiable installation method
