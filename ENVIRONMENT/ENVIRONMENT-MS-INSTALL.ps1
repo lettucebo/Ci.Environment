@@ -88,6 +88,7 @@ choco install -y adobereader
 choco install -y flashplayerplugin
 choco install -y teamviewer
 choco install -y microsoft-windows-terminal
+choco install -y office365business
 
 # Install .Net Core SDK
 Write-Host "Install .Net Core SDK" -ForegroundColor Green
