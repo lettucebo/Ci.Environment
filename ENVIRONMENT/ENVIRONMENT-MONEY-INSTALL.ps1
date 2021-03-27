@@ -316,12 +316,7 @@ Invoke-WebRequest -Uri https://aka.ms/wsl-ubuntu-1804 -OutFile $ubuntuFile -UseB
 Import-Module Appx -UseWindowsPowerShell
 Add-AppxPackage $ubuntuFile
 
-## Install WinGet
-$wingetFile = "$PSScriptRoot\Winget.appx";
-Invoke-WebRequest -Uri https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.appxbundle -OutFile $wingetFile -UseBasicParsing
-Add-AppxPackage $wingetFile
-
-## Using WinGet install application
+## Using WinGet install MS Store application
 #winget install Microsoft.Whiteboard
 #winget install 50582LuanNguyen.NuGetPackageExplorer
 
