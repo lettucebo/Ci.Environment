@@ -73,7 +73,7 @@ Get-AppxPackage *people* | Remove-AppxPackage
 Get-AppxPackage *bingsports* | Remove-AppxPackage
 Get-AppxPackage *xboxapp* | Remove-AppxPackage
 
-## install chocolatey
+## Install chocolatey
 Write-Host "Install Chocolatey and Packages" -ForegroundColor Green
 Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
@@ -89,7 +89,7 @@ choco install -y tortoisegit
 choco install -y potplayer
 choco install -y docker-desktop
 choco install -y nvm.portable
-#choco install -y snagit
+choco install -y snagit choco --version=2020.1.5
 choco install -y microsoftazurestorageexplorer
 choco install -y azure-cli
 choco install -y line
