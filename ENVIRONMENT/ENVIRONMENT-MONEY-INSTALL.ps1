@@ -98,7 +98,7 @@ choco install -y tortoisegit
 choco install -y potplayer
 choco install -y docker-desktop
 choco install -y nvm.portable
-#choco install -y snagit --version=2020.1.5
+choco install -y snagit --version=2020.1.5
 choco install -y microsoftazurestorageexplorer
 choco install -y azure-cli
 choco install -y line
