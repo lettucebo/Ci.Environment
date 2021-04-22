@@ -112,19 +112,13 @@ choco install -y python
 choco install -y spotify --ignorechecksum
 choco install -y office365business
 choco install -y bluedis
+choco install -y gpg4win
 
 ## Install RdcMan
 Write-Host "Install RdcMan" -ForegroundColor Green
 $rdcManFile = "$PSScriptRoot\rdcman.msi";
 Invoke-WebRequest -Uri "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21926608&authkey=AJCptTDx15-h2sE" -OutFile $rdcManFile
 Start-Process msiexec -ArgumentList "/i $rdcManFile /qn /norestart /l*v install.log " -Wait -PassThru
-
-## Install Redis Desktop Manager
-#Write-Host "Install Redis Desktop Manager" -ForegroundColor Green
-#$rdmFile = "$PSScriptRoot\rdm.exe";
-#Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2020.4/redis-desktop-manager-2020.4.0.exe" -OutFile $rdmFile
-#Start-Process msiexec -ArgumentList "/i $rdmFile /qn /norestart /l*v install.log " -Wait -PassThru
-#Start-Process -FilePath $rdmFile -ArgumentList "/S" -PassThru
 
 ## Install Little Big Mouse
 # https://github.com/mgth/LittleBigMouse
@@ -479,3 +473,13 @@ Start-Process -FilePath $vs2019Exe -ArgumentList `
 "--passive", `
 "--wait" `
 -Wait -PassThru
+
+## Install Visual Studio Exntension
+$vsixInstallScript = "$PSScriptRoot\install-vsix.ps1";
+Invoke-WebRequest -Uri "https://gist.githubusercontent.com/lettucebo/1c791b21bf56f467254bc85fd70631f4/raw/5dc3ff85b38058208d203383c54d8b7818365566/install-vsix.ps1" -OutFile $vsixInstallScript
+& $vsixInstallScript -PackageName "MikeWard-AnnArbor.VSColorOutput"
+& $vsixInstallScript -PackageName "ErlandR.ReAttach"
+& $vsixInstallScript -PackageName "MadsKristensen.FileIcons"
+& $vsixInstallScript -PackageName "MadsKristensen.ZenCoding"
+& $vsixInstallScript -PackageName "MadsKristensen.EditorConfig"
+& $vsixInstallScript -PackageName "MadsKristensen.Tweaks"
