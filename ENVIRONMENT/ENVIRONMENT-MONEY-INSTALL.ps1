@@ -350,6 +350,10 @@ nvm use 10.17.0
 '@
 Invoke-Expression -Command:$nvmCmd
 
+# Config GIT
+git config --global user.name "Money Yu"
+git config --global user.email abc12207@gmail.com
+
 ## Install .NET Core Tools
 dotnet tool install --global dotnet-ef
 
