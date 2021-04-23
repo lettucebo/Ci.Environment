@@ -313,6 +313,14 @@ Invoke-WebRequest -Uri https://aka.ms/wsl-ubuntu-1804 -OutFile $ubuntuFile -UseB
 Import-Module Appx -UseWindowsPowerShell
 Add-AppxPackage $ubuntuFile
 
+## Setting winget
+# C:\Users\Money\AppData\Local\Packages\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\LocalState\settings.json
+# (Get-Content "C:\Users\Money\AppData\Local\Packages\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\LocalState\settings.json" -Raw) -Replace "// For documentation on these settings, see: https://aka.ms/winget-settings", '
+#     "experimentalFeatures": {
+#         "experimentalMSStore": true
+#     }
+# '
+
 ## Using WinGet install MS Store application
 #winget install Microsoft.Whiteboard
 #winget install 50582LuanNguyen.NuGetPackageExplorer
