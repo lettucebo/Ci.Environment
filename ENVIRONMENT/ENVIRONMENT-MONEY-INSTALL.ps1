@@ -492,3 +492,6 @@ Invoke-WebRequest -Uri "https://gist.githubusercontent.com/lettucebo/1c791b21bf5
 & $vsixInstallScript -PackageName "MadsKristensen.ZenCoding"
 & $vsixInstallScript -PackageName "MadsKristensen.EditorConfig"
 & $vsixInstallScript -PackageName "MadsKristensen.Tweaks"
+
+choco install -y dotpeek
+choco install -y resharper
