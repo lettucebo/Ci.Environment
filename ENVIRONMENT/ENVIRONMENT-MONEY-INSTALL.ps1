@@ -324,6 +324,7 @@ Add-AppxPackage $ubuntuFile
 ## Using WinGet install MS Store application
 #winget install Microsoft.Whiteboard
 #winget install 50582LuanNguyen.NuGetPackageExplorer
+#winget install soroushchehresa.unsplash-wallpapers
 
 # Enable Telnet Client
 Write-Host "Enable Telnet Client" -ForegroundColor Green
