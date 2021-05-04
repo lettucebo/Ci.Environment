@@ -356,7 +356,7 @@ Invoke-Expression -Command:$nvmCmd
 # Config GIT
 git config --global user.name "Money Yu"
 git config --global user.email abc12207@gmail.com
-git config --global user.signingkey 4F65CAF13C53EDAF2BCD9E751FC70B42698B7604
+git config --global user.signingkey 871B1DD4A0830BA9897A6AF37240ACACFF6EDB8D
 git config --global commit.gpgsign true
 git config --global gpg.program "C:\Program Files (x86)\GnuPG\bin\gpg.exe"
 
