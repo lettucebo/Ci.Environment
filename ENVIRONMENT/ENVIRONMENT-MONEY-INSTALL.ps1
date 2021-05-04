@@ -52,6 +52,9 @@ Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\
 Write-Host "Add Windows Optional Features" -ForegroundColor Green
 Add-WindowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0
 
+# Enable .NET Framework 3.5
+Install-WindowsFeature Net-Framework-Core
+
 ## Uninstll built-in APPs
 # Be gone, heathen!
 Get-AppxPackage king.com.CandyCrushSaga | Remove-AppxPackage
@@ -324,7 +327,10 @@ Add-AppxPackage $ubuntuFile
 ## Using WinGet install MS Store application
 #winget install Microsoft.Whiteboard
 #winget install 50582LuanNguyen.NuGetPackageExplorer
-#winget install soroushchehresa.unsplash-wallpapers
+
+# Enable .NET Framework 3.5
+Write-Host "Enable .NET Framework 3.5" -ForegroundColor Green
+Enable-WindowsOptionalFeature –Online –FeatureName NetFx3 –All
 
 # Enable Telnet Client
 Write-Host "Enable Telnet Client" -ForegroundColor Green
