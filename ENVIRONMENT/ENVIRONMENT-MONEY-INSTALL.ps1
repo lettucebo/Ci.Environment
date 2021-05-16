@@ -130,6 +130,13 @@ $lbmFile = "$PSScriptRoot\LittleBigMouse_4.2.7124.42685.exe";
 Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
 Start-Process -FilePath $lbmFile -ArgumentList "/S" -PassThru
 
+## Install Redis Desktop Manager
+Write-Host "Install Redis Desktop Manager" -ForegroundColor Green
+$rdmFile = "$PSScriptRoot\rdm.exe";
+Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2021.3/rdm-2021.3.0.exe" -OutFile $rdmFile
+# Start-Process msiexec -ArgumentList "/i $rdmFile /qn /norestart /l*v install.log " -Wait -PassThru
+Start-Process -FilePath $rdmFile -ArgumentList "/S" -PassThru
+
 ## Install .Net Core SDK
 # https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script
 # https://github.com/dotnet/docs/issues/19796
