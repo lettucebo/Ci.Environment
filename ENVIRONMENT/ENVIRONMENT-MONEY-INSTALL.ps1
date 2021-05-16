@@ -114,7 +114,6 @@ choco install -y terraform
 choco install -y python
 choco install -y spotify --ignorechecksum
 choco install -y office365business
-choco install -y bluedis
 choco install -y gpg4win
 
 ## Install RdcMan
