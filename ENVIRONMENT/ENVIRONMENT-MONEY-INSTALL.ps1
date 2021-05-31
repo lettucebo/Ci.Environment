@@ -371,6 +371,8 @@ git config --global user.email abc12207@gmail.com
 git config --global user.signingkey 871B1DD4A0830BA9897A6AF37240ACACFF6EDB8D
 git config --global commit.gpgsign true
 git config --global gpg.program "C:\Program Files (x86)\GnuPG\bin\gpg.exe"
+## https://blog.puckwang.com/post/2019/sign_git_commit_with_gpg/
+## gpg --import .\pgp-private-keys.asc
 
 ## Install .NET Core Tools
 dotnet tool install --global dotnet-ef
