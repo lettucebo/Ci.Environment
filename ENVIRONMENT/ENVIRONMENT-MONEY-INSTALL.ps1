@@ -48,6 +48,11 @@ Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\
 # Remove Meet Now buttun
 Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer -Name HideSCAMeetNow -Type DWord -Value 1
 
+# Set receive update for other Microsoft product
+$ServiceManager = New-Object -ComObject "Microsoft.Update.ServiceManager"
+$ServiceManager.ClientApplicationID = "My App"
+$NewService = $ServiceManager.AddService2("7971f918-a847-4430-9279-4a52d1efe18d",7,"")
+
 # Install MediaFeaturePack before install SnagIt
 Write-Host "Add Windows Optional Features" -ForegroundColor Green
 Add-WindowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0
