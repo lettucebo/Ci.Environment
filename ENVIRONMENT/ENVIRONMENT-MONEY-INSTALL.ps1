@@ -96,8 +96,8 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.We
 
 choco install -y dotnet4.8
 choco install -y vscode --params "/NoDesktopIcon"
-choco install -y firefox-dev --pre --params "l=en-US"
-choco install -y googlechrome
+#choco install -y firefox-dev --pre --params "l=en-US"
+#choco install -y googlechrome
 choco install -y 7zip.install
 choco install -y openjdk11
 choco install -y openjdk8
@@ -111,16 +111,15 @@ choco install -y microsoftazurestorageexplorer
 choco install -y azure-cli
 choco install -y line
 choco install -y microsoft-teams.install
-choco install -y adobereader
+#choco install -y adobereader
 choco install -y teamviewer
 choco install -y sql-server-management-studio
 choco install -y microsoft-windows-terminal
 choco install -y terraform
 choco install -y python
-choco install -y spotify --ignorechecksum
-choco install -y office365business
+#choco install -y spotify --ignorechecksum
+#choco install -y office365business
 choco install -y gpg4win
-choco install -y gather
 choco install -y jetbrains-rider
 
 ## Install RdcMan
