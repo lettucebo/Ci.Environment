@@ -120,7 +120,7 @@ choco install -y python
 #choco install -y spotify --ignorechecksum
 #choco install -y office365business
 choco install -y gpg4win
-choco install -y jetbrains-rider
+#choco install -y jetbrains-rider
 
 ## Install RdcMan
 Write-Host "Install RdcMan" -ForegroundColor Green
