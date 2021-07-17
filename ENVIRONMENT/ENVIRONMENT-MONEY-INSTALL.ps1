@@ -342,7 +342,7 @@ Add-AppxPackage $ubuntuFile
 
 # Enable .NET Framework 3.5
 Write-Host "Enable .NET Framework 3.5" -ForegroundColor Green
-Enable-WindowsOptionalFeature –Online –FeatureName NetFx3 –All
+Enable-WindowsOptionalFeature –Online –FeatureName NetFx3 –All -NoRestart
 
 # Enable Telnet Client
 Write-Host "Enable Telnet Client" -ForegroundColor Green
