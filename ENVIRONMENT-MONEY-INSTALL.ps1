@@ -317,7 +317,7 @@ Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlat
 ## reference: https://dev.to/smashse/wsl-chocolatey-powershell-winget-1d6p
 $wslUpdateFile = "$PSScriptRoot\wsl_update_x64.msi";
 Invoke-WebRequest -Uri "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi" -OutFile $wslUpdateFile
-msiexec.exe /package $wslUpdateFile /quiet
+Start-Process msiexec -ArgumentList "/i $wslUpdateFile /qn /norestart /l*v install.log " -Wait -PassThru
 
 ## Set wsl default version to 2
 wsl --set-default-version 2
