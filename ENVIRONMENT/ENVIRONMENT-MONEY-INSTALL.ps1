@@ -339,6 +339,7 @@ Add-AppxPackage $ubuntuFile
 ## Using WinGet install MS Store application
 #winget install Microsoft.Whiteboard
 #winget install 50582LuanNguyen.NuGetPackageExplorer
+#winget install Spotify.Spotify
 
 # Enable .NET Framework 3.5
 Write-Host "Enable .NET Framework 3.5" -ForegroundColor Green
