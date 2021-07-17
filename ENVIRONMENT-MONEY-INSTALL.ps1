@@ -139,7 +139,7 @@ Start-Process -FilePath $lbmFile -ArgumentList "/S" -PassThru
 ## Install Redis Desktop Manager
 Write-Host "Install Redis Desktop Manager" -ForegroundColor Green
 $rdmFile = "$PSScriptRoot\rdm.exe";
-Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2021.3/rdm-2021.3.0.exe" -OutFile $rdmFile
+Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2021.7/rdm-2021.7.0.exe" -OutFile $rdmFile
 Start-Process $rdmFile -ArgumentList "/q"
 
 ## Install .Net Core SDK
@@ -323,7 +323,7 @@ wsl --set-default-version 2
 
 ## Install Ubuntu
 $ubuntuFile = "$PSScriptRoot\ubuntu.appx";
-Invoke-WebRequest -Uri https://aka.ms/wsl-ubuntu-1804 -OutFile $ubuntuFile -UseBasicParsing
+Invoke-WebRequest -Uri https://aka.ms/wsl-ubuntu-2004 -OutFile $ubuntuFile -UseBasicParsing
 Import-Module Appx -UseWindowsPowerShell
 Add-AppxPackage $ubuntuFile
 
@@ -500,6 +500,7 @@ Start-Process -FilePath $vs2019Exe -ArgumentList `
 "--add", "Component.GitHub.VisualStudio", `
 "--includeRecommended", `
 "--passive", `
+"--norestart", `
 "--wait" `
 -Wait -PassThru
 
