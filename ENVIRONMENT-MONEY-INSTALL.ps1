@@ -114,6 +114,7 @@ choco install -y microsoft-teams.install
 #choco install -y adobereader
 choco install -y teamviewer
 choco install -y sql-server-management-studio
+choco install -y azure-functions-core-tools
 choco install -y microsoft-windows-terminal
 choco install -y terraform
 choco install -y python
