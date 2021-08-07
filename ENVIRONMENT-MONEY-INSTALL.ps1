@@ -295,6 +295,10 @@ if (($prefMask[4] -band 0x80) -eq 0) {
   New-ItemProperty -Path 'HKCU:\Control Panel\Desktop' -Name 'UserPreferencesMask' -Value $prefMask -PropertyType ([Microsoft.Win32.RegistryValueKind]::Binary) -Force | Out-Null
 }
 
+## Set PowerPoint export high-resolution
+# https://docs.microsoft.com/zh-tw/office/troubleshoot/powerpoint/change-export-slide-resolution
+New-ItemProperty -Path 'HKCU:\Software\Microsoft\Office\16.0\PowerPoint\Options' -Name 'ExportBitmapResolution' -Value 300 -PropertyType ([Microsoft.Win32.RegistryValueKind]::DWord) -Force | Out-Null
+
 ## Set Show Taskbar buttons on where window is open
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name MMTaskbarMode -Value 2
 
