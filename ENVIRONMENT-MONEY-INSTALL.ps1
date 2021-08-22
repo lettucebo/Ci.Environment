@@ -347,6 +347,9 @@ Add-AppxPackage $ubuntuFile
 #winget install 50582LuanNguyen.NuGetPackageExplorer
 #winget install Spotify.Spotify
 
+# UnSplash
+# nature,water,architecture,travel
+
 # Enable .NET Framework 3.5
 Write-Host "Enable .NET Framework 3.5" -ForegroundColor Green
 Enable-WindowsOptionalFeature –Online –FeatureName NetFx3 –All -NoRestart
