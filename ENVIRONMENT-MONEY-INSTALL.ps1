@@ -375,7 +375,7 @@ $nvmCmd = @'
 cmd.exe /C 
 nvm install 14.17.5
 nvm install 16.7.0
-nvm use 10.17.0
+nvm use 16.7.0
 '@
 Invoke-Expression -Command:$nvmCmd
 
