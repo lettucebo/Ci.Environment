@@ -321,18 +321,21 @@ Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlat
 
 ## Install WSL2 Kernel udpate
 ## reference: https://dev.to/smashse/wsl-chocolatey-powershell-winget-1d6p
-$wslUpdateFile = "$PSScriptRoot\wsl_update_x64.msi";
-Invoke-WebRequest -Uri "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi" -OutFile $wslUpdateFile
-Start-Process msiexec -ArgumentList "/i $wslUpdateFile /qn /norestart /l*v install.log " -Wait -PassThru
+## https://github.com/microsoft/WSL/issues/5014#issuecomment-692432322
+# Download and Install the WSL 2 Update (contains Microsoft Linux kernel)
+& curl.exe -f -o wsl_update_x64.msi "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi"
+powershell -Command "Start-Process msiexec -Wait -ArgumentList '/a ""wsl_update_x64.msi"" /quiet /qn TARGETDIR=""C:\Temp""'"
+Copy-Item -Path "$env:TEMP\System32\lxss" -Destination "C:\System32" -Recurse
+
+# Also install the WSL 2 update with a normal full install
+powershell -Command "Start-Process msiexec -Wait -ArgumentList '/i','wsl_update_x64.msi','/quiet','/qn'"
 
 ## Set wsl default version to 2
 wsl --set-default-version 2
 
-## Install Ubuntu
-$ubuntuFile = "$PSScriptRoot\ubuntu.appx";
-Invoke-WebRequest -Uri https://aka.ms/wsl-ubuntu-2004 -OutFile $ubuntuFile -UseBasicParsing
-Import-Module Appx -UseWindowsPowerShell
-Add-AppxPackage $ubuntuFile
+## Install Ubunut Linux
+curl.exe -L -o Ubuntu_2004_x64.appx https://aka.ms/wslubuntu2004
+powershell Add-AppxPackage Ubuntu_2004_x64.appx
 
 ## Setting winget
 # C:\Users\Money\AppData\Local\Packages\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\LocalState\settings.json
