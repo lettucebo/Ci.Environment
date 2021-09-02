@@ -385,6 +385,10 @@ nvm use 16.7.0
 '@
 Invoke-Expression -Command:$nvmCmd
 
+# Install Azure Artifacts Credential Provider
+## https://github.com/microsoft/artifacts-credprovider
+iex "& { $(irm https://aka.ms/install-artifacts-credprovider.ps1) } -AddNetfx"
+
 # Config GIT
 git config --global user.name "Money Yu"
 git config --global user.email abc12207@gmail.com
