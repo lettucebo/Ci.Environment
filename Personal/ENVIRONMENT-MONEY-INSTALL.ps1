@@ -161,6 +161,15 @@ Invoke-WebRequest -Uri $dotnetCoreUrl -OutFile $dotnetCorePs1
 & $dotnetCorePs1 -Channel 2.2 -InstallDir $env:ProgramFiles\dotnet
 & $dotnetCorePs1 -Channel 2.1 -InstallDir $env:ProgramFiles\dotnet
 
+# Invoke-WebRequest https://aka.ms/dotnet/5.0.4xx/daily/dotnet-sdk-win-x64.exe -outfile $env:temp\dotnet-sdk-5.0.4xx-win-x64.exe
+# Start-Process $env:temp\dotnet-sdk-5.0.4xx-win-x64.exe -ArgumentList '/quiet' -Wait
+
+# Invoke-WebRequest https://dotnetcli.blob.core.windows.net/dotnet/Sdk/release/3.1.4xx/dotnet-sdk-latest-win-x64.exe -outfile $env:temp\dotnet-sdk-3.1.4xx-win-x64.exe
+# Start-Process $env:temp\dotnet-sdk-3.1.4xx-win-x64.exe -ArgumentList '/quiet' -Wait
+
+# Invoke-WebRequest https://dotnetcli.blob.core.windows.net/dotnet/Sdk/release/3.1.4xx/dotnet-sdk-latest-win-x64.exe -outfile $env:temp\dotnet-sdk-3.1.4xx-win-x64.exe
+# Start-Process $env:temp\dotnet-sdk-3.1.4xx-win-x64.exe -ArgumentList '/quiet' -Wait
+
 ## Install PowerShell 7
 # https://github.com/PowerShell/PowerShell/releases
 # iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI"
