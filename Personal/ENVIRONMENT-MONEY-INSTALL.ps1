@@ -345,9 +345,11 @@ Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlat
 ## reference: https://dev.to/smashse/wsl-chocolatey-powershell-winget-1d6p
 ## https://github.com/microsoft/WSL/issues/5014#issuecomment-692432322
 # Download and Install the WSL 2 Update (contains Microsoft Linux kernel)
-& curl.exe -f -o wsl_update_x64.msi "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi"
-powershell -Command "Start-Process msiexec -Wait -ArgumentList '/a ""wsl_update_x64.msi"" /quiet /qn TARGETDIR=""C:\Temp""'"
-Copy-Item -Path "$env:TEMP\System32\lxss" -Destination "C:\System32" -Recurse
+Invoke-WebRequest https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -outfile $env:temp\wsl_update_x64.msi
+Start-Process $env:temp\wsl_update_x64.msi -ArgumentList '/quiet' -Wait
+# & curl.exe -f -o wsl_update_x64.msi "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi"
+# powershell -Command "Start-Process msiexec -Wait -ArgumentList '/a ""wsl_update_x64.msi"" /quiet /qn TARGETDIR=""C:\Temp""'"
+# Copy-Item -Path "$env:TEMP\System32\lxss" -Destination "C:\System32" -Recurse
 
 # Also install the WSL 2 update with a normal full install
 powershell -Command "Start-Process msiexec -Wait -ArgumentList '/i','wsl_update_x64.msi','/quiet','/qn'"
