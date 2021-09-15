@@ -317,14 +317,15 @@ Set-ItemProperty -Path "HKLM:\Software\Microsoft\Command Processor" -Name Autoru
 Add-Content -Path C:\Users\${env:username}\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1 -Value $('$OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.UTF8Encoding]::UTF8')
 
 ## Install and Setup for oh-my-posh
-Install-Module posh-git -Scope CurrentUser -Confirm:$false -Force
-Install-Module oh-my-posh -Scope CurrentUser -Confirm:$false -Force
+# https://www.nerdfonts.com/
+#Install-Module posh-git -Scope CurrentUser -Confirm:$false -Force
+#Install-Module oh-my-posh -Scope CurrentUser -Confirm:$false -Force
 
-@'
-Import-Module posh-git
-Import-Module oh-my-posh
-Set-PoshPrompt -Theme powerlevel10k_rainbow
-'@ | Out-File -Append $PROFILE
+#@'
+#Import-Module posh-git
+#Import-Module oh-my-posh
+#Set-PoshPrompt -Theme powerlevel10k_rainbow
+#'@ | Out-File -Append $PROFILE
 
 ## Enable Microsoft-Windows-Subsystem-Linux
 Write-Host "Enable Microsoft-Windows-Subsystem-Linux" -ForegroundColor Green
