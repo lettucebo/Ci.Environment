@@ -174,8 +174,8 @@ Invoke-WebRequest -Uri $dotnetCoreUrl -OutFile $dotnetCorePs1
 # https://github.com/PowerShell/PowerShell/releases
 # iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI"
 Write-Host "Install PowerShell 7" -ForegroundColor Green
-$ps7Url = "https://github.com/PowerShell/PowerShell/releases/download/v7.1.4/PowerShell-7.1.4-win-x64.msi";
-$ps7Msi = "$PSScriptRoot\PowerShell-7.1.4-win-x64.msi";
+$ps7Url = "https://github.com/PowerShell/PowerShell/releases/download/v7.1.5/PowerShell-7.1.5-win-x64.msi";
+$ps7Msi = "$PSScriptRoot\PowerShell-7.1.5-win-x64.msi";
 Invoke-WebRequest -Uri $ps7Url -OutFile $ps7Msi
 msiexec.exe /package $ps7Msi /quiet ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1
 
