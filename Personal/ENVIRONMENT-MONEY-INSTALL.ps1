@@ -112,16 +112,23 @@ choco install -y line
 choco install -y microsoft-teams.install
 choco install -y teamviewer
 choco install -y sql-server-management-studio
-#choco install -y azure-functions-core-tools
+choco install -y azure-functions-core-tools
 choco install -y microsoft-windows-terminal
 choco install -y terraform
 choco install -y python
 choco install -y gpg4win
-choco install -y azure-functions-core-tools-3
+choco install -y snagit
+
+choco install -y dotnetcore-2.1-sdk
+choco install -y dotnetcore-2.2-sdk
+choco install -y dotnetcore-3.1-sdk
+choco install -y dotnetcore-5.0-sdk
+choco install -y dotnetcore-6.0-sdk
+
+#choco install -y azure-functions-core-tools-3
 #choco install -y jetbrains-rider
 #choco install -y office365business
 #choco install -y spotify --ignorechecksum
-#choco install -y snagit --version=2020.1.5
 #choco install -y firefox-dev --pre --params "l=en-US"
 #choco install -y googlechrome
 
@@ -174,8 +181,8 @@ Invoke-WebRequest -Uri $dotnetCoreUrl -OutFile $dotnetCorePs1
 # https://github.com/PowerShell/PowerShell/releases
 # iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI"
 Write-Host "Install PowerShell 7" -ForegroundColor Green
-$ps7Url = "https://github.com/PowerShell/PowerShell/releases/download/v7.1.5/PowerShell-7.1.5-win-x64.msi";
-$ps7Msi = "$PSScriptRoot\PowerShell-7.1.5-win-x64.msi";
+$ps7Url = "https://github.com/PowerShell/PowerShell/releases/download/v7.2.1/PowerShell-7.2.1-win-x64.msi";
+$ps7Msi = "$PSScriptRoot\PowerShell-7.2.1-win-x64.msi";
 Invoke-WebRequest -Uri $ps7Url -OutFile $ps7Msi
 msiexec.exe /package $ps7Msi /quiet ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1
 
@@ -308,7 +315,7 @@ if (($prefMask[4] -band 0x80) -eq 0) {
 
 ## Set PowerPoint export high-resolution
 # https://docs.microsoft.com/zh-tw/office/troubleshoot/powerpoint/change-export-slide-resolution
-New-ItemProperty -Path 'HKCU:\Software\Microsoft\Office\16.0\PowerPoint\Options' -Name 'ExportBitmapResolution' -Value 300 -PropertyType ([Microsoft.Win32.RegistryValueKind]::DWord) -Force | Out-Null
+[microsoft.win32.registry]::SetValue("HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\PowerPoint\Options", "ExportBitmapResolution", 300)
 
 ## Set Show Taskbar buttons on where window is open
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name MMTaskbarMode -Value 2
@@ -345,8 +352,8 @@ Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlat
 ## reference: https://dev.to/smashse/wsl-chocolatey-powershell-winget-1d6p
 ## https://github.com/microsoft/WSL/issues/5014#issuecomment-692432322
 # Download and Install the WSL 2 Update (contains Microsoft Linux kernel)
-Invoke-WebRequest https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -outfile $env:temp\wsl_update_x64.msi
-Start-Process $env:temp\wsl_update_x64.msi -ArgumentList '/quiet' -Wait
+Invoke-WebRequest https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -outfile $PSScriptRoot\wsl_update_x64.msi
+Start-Process $PSScriptRoot\wsl_update_x64.msi -ArgumentList '/quiet' -Wait
 # & curl.exe -f -o wsl_update_x64.msi "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi"
 # powershell -Command "Start-Process msiexec -Wait -ArgumentList '/a ""wsl_update_x64.msi"" /quiet /qn TARGETDIR=""C:\Temp""'"
 # Copy-Item -Path "$env:TEMP\System32\lxss" -Destination "C:\System32" -Recurse
@@ -358,8 +365,8 @@ powershell -Command "Start-Process msiexec -Wait -ArgumentList '/i','wsl_update_
 wsl --set-default-version 2
 
 ## Install Ubunut Linux
-curl.exe -L -o Ubuntu_2004_x64.appx https://aka.ms/wslubuntu2004
-powershell Add-AppxPackage Ubuntu_2004_x64.appx
+curl.exe -L -o $PSScriptRoot\Ubuntu_2004_x64.appx https://aka.ms/wslubuntu2004
+powershell Add-AppxPackage $PSScriptRoot\Ubuntu_2004_x64.appx
 
 ## Setting winget
 # C:\Users\Money\AppData\Local\Packages\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\LocalState\settings.json
@@ -376,10 +383,6 @@ powershell Add-AppxPackage Ubuntu_2004_x64.appx
 
 # UnSplash
 # nature,water,architecture,travel
-
-# Enable .NET Framework 3.5
-Write-Host "Enable .NET Framework 3.5" -ForegroundColor Green
-Enable-WindowsOptionalFeature –Online –FeatureName NetFx3 –All -NoRestart
 
 # Enable Telnet Client
 Write-Host "Enable Telnet Client" -ForegroundColor Green
