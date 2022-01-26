@@ -60,7 +60,7 @@ Write-Host "Add Windows Optional Features" -ForegroundColor Green
 Add-WindowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0
 
 # Enable .NET Framework 3.5
-Install-WindowsFeature Net-Framework-Core
+Enable-WindowsOptionalFeature -Online -FeatureName "NetFx3"
 
 ## Uninstll built-in APPs
 # Be gone, heathen!
