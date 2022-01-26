@@ -491,18 +491,18 @@ $objFolder.CopyHere($fontNoto7File, 0x10)
 $objFolder.CopyHere($fontNoto8File, 0x10)
 $objFolder.CopyHere($fontNoto9File, 0x10)
 
-## Instal VS 2019
+## Instal VS 2022
 # https://docs.microsoft.com/en-us/visualstudio/install/workload-and-component-ids?view=vs-2019
 # https://developercommunity.visualstudio.com/t/setup-does-not-wait-for-installation-to-complete-w/26668#T-N1137560
-Write-Host "Instal VS 2019" -ForegroundColor Green
-$vs2019Url = "https://aka.ms/vs/16/release/vs_enterprise.exe";
-$vs2019Exe = "$PSScriptRoot\vs_enterprise.exe";
+Write-Host "Instal VS 2022" -ForegroundColor Green
+$vs2022Url = "https://aka.ms/vs/17/release/vs_enterprise.exe";
+$vs2022Exe = "$PSScriptRoot\vs_enterprise.exe";
 $start_time = Get-Date
 
-Invoke-WebRequest -Uri $vs2019Url -OutFile $vs2019Exe
-Write-Output "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, at $vs2019Exe"
+Invoke-WebRequest -Uri $vs2022Url -OutFile $vs2022Exe
+Write-Output "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, at $vs2022Exe"
 
-Start-Process -FilePath $vs2019Exe -ArgumentList `
+Start-Process -FilePath $vs2022Exe -ArgumentList `
 "--addProductLang", "En-us", `
 "--add", "Microsoft.VisualStudio.Workload.Azure", `
 "--add", "Microsoft.VisualStudio.Workload.ManagedDesktop", `
