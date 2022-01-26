@@ -105,7 +105,7 @@ choco install -y git.install --params "/NoShellIntegration"
 choco install -y tortoisegit
 choco install -y potplayer
 choco install -y docker-desktop
-choco install -y nvm.portable
+choco install -y nvm
 choco install -y microsoftazurestorageexplorer
 choco install -y azure-cli
 choco install -y line
@@ -406,9 +406,9 @@ refreshenv
 # Install nodejs using nvm
 $nvmCmd = @'
 cmd.exe /C 
-nvm install 14.17.5
-nvm install 16.7.0
-nvm use 16.7.0
+nvm install 16.13.2
+nvm install 17.4.0
+nvm use 16.13.2
 '@
 Invoke-Expression -Command:$nvmCmd
 
@@ -430,6 +430,7 @@ SETX LC_ALL C.UTF-8 /M
 ## gpg --import .\pgp-private-keys.asc
 
 ## Install .NET Core Tools
+dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
 dotnet tool install --global dotnet-ef
 
 ## Install Developer Font
