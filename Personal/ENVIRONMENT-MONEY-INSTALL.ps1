@@ -177,6 +177,9 @@ Invoke-WebRequest -Uri $dotnetCoreUrl -OutFile $dotnetCorePs1
 # Invoke-WebRequest https://dotnetcli.blob.core.windows.net/dotnet/Sdk/release/3.1.4xx/dotnet-sdk-latest-win-x64.exe -outfile $env:temp\dotnet-sdk-3.1.4xx-win-x64.exe
 # Start-Process $env:temp\dotnet-sdk-3.1.4xx-win-x64.exe -ArgumentList '/quiet' -Wait
 
+# Dell Bluetooth
+# https://www.dell.com/community/XPS/XPS-9310-Bluetooth-lag-with-Logitech-MX-Keys-MX-Master-3/m-p/7795277/highlight/true#M77883
+
 ## Install PowerShell 7
 # https://github.com/PowerShell/PowerShell/releases
 # iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI"
