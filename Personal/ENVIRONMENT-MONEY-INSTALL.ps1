@@ -399,6 +399,9 @@ Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Hyper-V 
 Write-Host "Enable Sandbox" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Containers-DisposableClientVM -All
 
+# Synology VPN Server L2TP/IPSec with PSK
+[microsoft.win32.registry]::SetValue("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\PolicyAgent", "AssumeUDPEncapsulationContextOnSendRule", 2)
+
 # Refresh EnvironmentVariable
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
