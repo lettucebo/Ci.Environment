@@ -119,6 +119,7 @@ choco install -y terraform
 choco install -y python
 choco install -y gpg4win
 choco install -y snagit
+choco install -robo3t
 
 choco install -y dotnetcore-2.1-sdk
 choco install -y dotnetcore-2.2-sdk
