@@ -111,7 +111,6 @@ choco install -y microsoftazurestorageexplorer
 choco install -y azure-cli
 choco install -y line
 choco install -y microsoft-teams.install
-choco install -y teamviewer
 choco install -y sql-server-management-studio
 choco install -y azure-functions-core-tools
 choco install -y microsoft-windows-terminal
@@ -119,7 +118,7 @@ choco install -y terraform
 choco install -y python
 choco install -y gpg4win
 choco install -y snagit
-choco install -robo3t
+choco install -y robo3t
 
 choco install -y dotnetcore-2.1-sdk
 choco install -y dotnetcore-2.2-sdk
@@ -156,20 +155,6 @@ $rdmFile = "$PSScriptRoot\rdm.exe";
 Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2021.7/rdm-2021.7.0.exe" -OutFile $rdmFile
 Start-Process $rdmFile -ArgumentList "/q"
 
-## Install .Net Core SDK
-# https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script
-# https://github.com/dotnet/docs/issues/19796
-Write-Host "Install .Net Core SDK" -ForegroundColor Green
-$dotnetCoreUrl = "https://dot.net/v1/dotnet-install.ps1";
-$dotnetCorePs1 = "$PSScriptRoot\dotnet-install.ps1";
-Invoke-WebRequest -Uri $dotnetCoreUrl -OutFile $dotnetCorePs1
-
-& $dotnetCorePs1 -Channel 5.0 -InstallDir $env:ProgramFiles\dotnet
-& $dotnetCorePs1 -Channel 3.1 -InstallDir $env:ProgramFiles\dotnet
-& $dotnetCorePs1 -Channel 3.0 -InstallDir $env:ProgramFiles\dotnet
-& $dotnetCorePs1 -Channel 2.2 -InstallDir $env:ProgramFiles\dotnet
-& $dotnetCorePs1 -Channel 2.1 -InstallDir $env:ProgramFiles\dotnet
-
 # Invoke-WebRequest https://aka.ms/dotnet/5.0.4xx/daily/dotnet-sdk-win-x64.exe -outfile $env:temp\dotnet-sdk-5.0.4xx-win-x64.exe
 # Start-Process $env:temp\dotnet-sdk-5.0.4xx-win-x64.exe -ArgumentList '/quiet' -Wait
 
@@ -186,8 +171,8 @@ Invoke-WebRequest -Uri $dotnetCoreUrl -OutFile $dotnetCorePs1
 # https://github.com/PowerShell/PowerShell/releases
 # iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI"
 Write-Host "Install PowerShell 7" -ForegroundColor Green
-$ps7Url = "https://github.com/PowerShell/PowerShell/releases/download/v7.2.1/PowerShell-7.2.1-win-x64.msi";
-$ps7Msi = "$PSScriptRoot\PowerShell-7.2.1-win-x64.msi";
+$ps7Url = "https://github.com/PowerShell/PowerShell/releases/download/v7.2.4/PowerShell-7.2.4-win-x64.msi";
+$ps7Msi = "$PSScriptRoot\PowerShell-7.2.4-win-x64.msi";
 Invoke-WebRequest -Uri $ps7Url -OutFile $ps7Msi
 msiexec.exe /package $ps7Msi /quiet ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1
 
