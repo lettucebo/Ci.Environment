@@ -120,6 +120,7 @@ choco install -y gpg4win
 choco install -y snagit
 choco install -y robo3t
 choco install -y office365business
+choco install -y googlechrome
 
 choco install -y dotnetcore-2.1-sdk
 choco install -y dotnetcore-2.2-sdk
@@ -131,7 +132,6 @@ choco install -y dotnetcore-6.0-sdk
 #choco install -y jetbrains-rider
 #choco install -y spotify --ignorechecksum
 #choco install -y firefox-dev --pre --params "l=en-US"
-#choco install -y googlechrome
 
 #choco install -y adobereader
 
