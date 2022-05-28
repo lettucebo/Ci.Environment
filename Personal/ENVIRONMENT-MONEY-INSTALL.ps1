@@ -119,6 +119,7 @@ choco install -y python
 choco install -y gpg4win
 choco install -y snagit
 choco install -y robo3t
+choco install -y office365business
 
 choco install -y dotnetcore-2.1-sdk
 choco install -y dotnetcore-2.2-sdk
@@ -128,7 +129,6 @@ choco install -y dotnetcore-6.0-sdk
 
 #choco install -y azure-functions-core-tools-3
 #choco install -y jetbrains-rider
-#choco install -y office365business
 #choco install -y spotify --ignorechecksum
 #choco install -y firefox-dev --pre --params "l=en-US"
 #choco install -y googlechrome
@@ -152,7 +152,7 @@ Start-Process -FilePath $lbmFile -ArgumentList "/S" -PassThru
 ## Install Redis Desktop Manager
 Write-Host "Install Redis Desktop Manager" -ForegroundColor Green
 $rdmFile = "$PSScriptRoot\rdm.exe";
-Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2021.7/rdm-2021.7.0.exe" -OutFile $rdmFile
+Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2022.3/resp-2022.3.0.exe" -OutFile $rdmFile
 Start-Process $rdmFile -ArgumentList "/q"
 
 # Invoke-WebRequest https://aka.ms/dotnet/5.0.4xx/daily/dotnet-sdk-win-x64.exe -outfile $env:temp\dotnet-sdk-5.0.4xx-win-x64.exe
@@ -399,9 +399,9 @@ refreshenv
 # Install nodejs using nvm
 $nvmCmd = @'
 cmd.exe /C 
-nvm install 16.13.2
-nvm install 17.4.0
-nvm use 16.13.2
+nvm install 16.15.0
+nvm install 18.2.0
+nvm use 16.15.0
 '@
 Invoke-Expression -Command:$nvmCmd
 
