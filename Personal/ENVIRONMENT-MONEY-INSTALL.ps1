@@ -322,8 +322,23 @@ Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Search -N
 ## Set Cmd to UTF8 encode
 Set-ItemProperty -Path "HKLM:\Software\Microsoft\Command Processor" -Name Autorun -Type String -Value "chcp 65001>nul"
 
-## Set Powershell to UTF8 encode
-Add-Content -Path C:\Users\${env:username}\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1 -Value $('$OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.UTF8Encoding]::UTF8')
+## Set Powershell to UTF8 encode and PSReadLine
+$powerhellProfileContent = @"
+Import-Module PSReadLine
+
+$OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.UTF8Encoding]::UTF8
+
+Set-PSReadLineOption -ShowToolTips
+Set-PSReadLineOption -PredictionSource History
+# Shows navigable menu of all options when hitting Tab
+Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
+# Autocompleteion for Arrow keys
+Set-PSReadLineOption -HistorySearchCursorMovesToEnd
+Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
+Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
+"@
+
+Add-Content -Path C:\Users\${env:username}\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1 -Value $powerhellProfileContent
 
 ## Install and Setup for oh-my-posh
 # https://www.nerdfonts.com/
