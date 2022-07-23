@@ -113,7 +113,7 @@ choco install -y nvm
 choco install -y microsoftazurestorageexplorer
 choco install -y azure-cli
 choco install -y line
-choco install -y microsoft-teams.install
+choco install -y microsoft-teams
 choco install -y sql-server-management-studio
 choco install -y azure-functions-core-tools
 choco install -y microsoft-windows-terminal
@@ -124,6 +124,7 @@ choco install -y snagit
 choco install -y robo3t
 choco install -y office365business
 choco install -y googlechrome
+choco install -y powertoys
 
 choco install -y dotnetcore-2.1-sdk
 choco install -y dotnetcore-2.2-sdk
@@ -139,18 +140,18 @@ choco install -y dotnetcore-6.0-sdk
 #choco install -y adobereader
 
 ## Install RdcMan
-Write-Host "Install RdcMan" -ForegroundColor Green
-$rdcManFile = "$PSScriptRoot\rdcman.msi";
-Invoke-WebRequest -Uri "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21926608&authkey=AJCptTDx15-h2sE" -OutFile $rdcManFile
-Start-Process msiexec -ArgumentList "/i $rdcManFile /qn /norestart /l*v install.log " -Wait -PassThru
+# Write-Host "Install RdcMan" -ForegroundColor Green
+# $rdcManFile = "$PSScriptRoot\rdcman.msi";
+# Invoke-WebRequest -Uri "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21926608&authkey=AJCptTDx15-h2sE" -OutFile $rdcManFile
+# Start-Process msiexec -ArgumentList "/i $rdcManFile /qn /norestart /l*v install.log " -Wait -PassThru
 
 ## Install Little Big Mouse
 # https://github.com/mgth/LittleBigMouse
-Write-Host "Install Little Big Mouse" -ForegroundColor Green
-$lbmUrl = "https://github.com/mgth/LittleBigMouse/releases/download/4.2.7124.42685/LittleBigMouse_4.2.7124.42685.exe";
-$lbmFile = "$PSScriptRoot\LittleBigMouse_4.2.7124.42685.exe";
-Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
-Start-Process -FilePath $lbmFile -ArgumentList "/S" -PassThru
+# Write-Host "Install Little Big Mouse" -ForegroundColor Green
+# $lbmUrl = "https://github.com/mgth/LittleBigMouse/releases/download/4.2.7124.42685/LittleBigMouse_4.2.7124.42685.exe";
+# $lbmFile = "$PSScriptRoot\LittleBigMouse_4.2.7124.42685.exe";
+# Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
+# Start-Process -FilePath $lbmFile -ArgumentList "/S" -PassThru
 
 ## Install Redis Desktop Manager
 Write-Host "Install Redis Desktop Manager" -ForegroundColor Green
@@ -158,26 +159,22 @@ $rdmFile = "$PSScriptRoot\rdm.exe";
 Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2022.3/resp-2022.3.0.exe" -OutFile $rdmFile
 Start-Process $rdmFile -ArgumentList "/q"
 
-# Invoke-WebRequest https://aka.ms/dotnet/5.0.4xx/daily/dotnet-sdk-win-x64.exe -outfile $env:temp\dotnet-sdk-5.0.4xx-win-x64.exe
-# Start-Process $env:temp\dotnet-sdk-5.0.4xx-win-x64.exe -ArgumentList '/quiet' -Wait
-
-# Invoke-WebRequest https://dotnetcli.blob.core.windows.net/dotnet/Sdk/release/3.1.4xx/dotnet-sdk-latest-win-x64.exe -outfile $env:temp\dotnet-sdk-3.1.4xx-win-x64.exe
-# Start-Process $env:temp\dotnet-sdk-3.1.4xx-win-x64.exe -ArgumentList '/quiet' -Wait
-
-# Invoke-WebRequest https://dotnetcli.blob.core.windows.net/dotnet/Sdk/release/3.1.4xx/dotnet-sdk-latest-win-x64.exe -outfile $env:temp\dotnet-sdk-3.1.4xx-win-x64.exe
-# Start-Process $env:temp\dotnet-sdk-3.1.4xx-win-x64.exe -ArgumentList '/quiet' -Wait
-
 # Dell Bluetooth
 # https://www.dell.com/community/XPS/XPS-9310-Bluetooth-lag-with-Logitech-MX-Keys-MX-Master-3/m-p/7795277/highlight/true#M77883
 
 ## Install PowerShell 7
-# https://github.com/PowerShell/PowerShell/releases
-# iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI"
 Write-Host "Install PowerShell 7" -ForegroundColor Green
-$ps7Url = "https://github.com/PowerShell/PowerShell/releases/download/v7.2.4/PowerShell-7.2.4-win-x64.msi";
-$ps7Msi = "$PSScriptRoot\PowerShell-7.2.4-win-x64.msi";
-Invoke-WebRequest -Uri $ps7Url -OutFile $ps7Msi
-msiexec.exe /package $ps7Msi /quiet ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1
+# https://github.com/PowerShell/PowerShell/blob/master/tools/install-powershell.ps1-README.md
+iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet"
+# # https://github.com/PowerShell/PowerShell/releases
+# $ps7Url = "https://github.com/PowerShell/PowerShell/releases/download/v7.2.5/PowerShell-7.2.5-win-x64.msi";
+# $ps7Msi = "$PSScriptRoot\PowerShell-7.2.5-win-x64.msi";
+# Invoke-WebRequest -Uri $ps7Url -OutFile $ps7Msi
+# # https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows?view=powershell-7.2#install-the-msi-package-from-the-command-line
+# msiexec.exe /package $ps7Msi /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1
+
+# TODO start with new PowerShell 7 windows and continue
+# start pwsh {.\scriptInNewPSWindow.ps1}
 
 ## Install Nuget Provider
 Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
@@ -322,34 +319,22 @@ Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Search -N
 ## Set Cmd to UTF8 encode
 Set-ItemProperty -Path "HKLM:\Software\Microsoft\Command Processor" -Name Autorun -Type String -Value "chcp 65001>nul"
 
+# Config PowerShell
 ## Set Powershell to UTF8 encode and PSReadLine
 $powerhellProfileContent = @"
 Import-Module PSReadLine
 
 $OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.UTF8Encoding]::UTF8
 
-Set-PSReadLineOption -ShowToolTips
-Set-PSReadLineOption -PredictionSource History
-# Shows navigable menu of all options when hitting Tab
-Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
-# Autocompleteion for Arrow keys
-Set-PSReadLineOption -HistorySearchCursorMovesToEnd
-Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
-Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
+Set-PSReadLineOption -PredictionSource History # 設置預測文本來源為歷史記錄
+Set-PSReadlineKeyHandler -Key Tab -Function Complete # 設置 Tab 鍵補全
+Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete # 設置 Tab 為菜單補全和 Intellisense
+Set-PSReadLineKeyHandler -Key Escape -Function Undo # 設置 Esc 為撤銷
+Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward # 設置向上鍵為後向搜索歷史記錄
+Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward # 設置向下鍵為前向搜索歷史紀錄
 "@
 
-Add-Content -Path C:\Users\${env:username}\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1 -Value $powerhellProfileContent
-
-## Install and Setup for oh-my-posh
-# https://www.nerdfonts.com/
-#Install-Module posh-git -Scope CurrentUser -Confirm:$false -Force
-#Install-Module oh-my-posh -Scope CurrentUser -Confirm:$false -Force
-
-#@'
-#Import-Module posh-git
-#Import-Module oh-my-posh
-#Set-PoshPrompt -Theme powerlevel10k_rainbow
-#'@ | Out-File -Append $PROFILE
+Add-Content -Path C:\Users\${env:username}\Documents\Powershell\Microsoft.PowerShell_profile.ps1 -Value $powerhellProfileContent
 
 ## Enable Microsoft-Windows-Subsystem-Linux
 Write-Host "Enable Microsoft-Windows-Subsystem-Linux" -ForegroundColor Green
