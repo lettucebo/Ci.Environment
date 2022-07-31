@@ -131,6 +131,7 @@ choco install -y office365business
 choco install -y googlechrome
 choco install -y powertoys
 choco install -y mobaxterm
+choco install -y ngrok
 
 choco install -y dotnetcore-2.1-sdk
 choco install -y dotnetcore-2.2-sdk
