@@ -138,8 +138,8 @@ choco install -y microsoft-teams.install
 choco install -y dotnetcore-2.1-sdk
 choco install -y dotnetcore-2.2-sdk
 choco install -y dotnetcore-3.1-sdk
-choco install -y dotnetcore-5.0-sdk
-choco install -y dotnetcore-6.0-sdk
+choco install -y dotnet-5.0-sdk
+choco install -y dotnet-6.0-sdk
 
 #choco install -y azure-functions-core-tools-3
 #choco install -y spotify --ignorechecksum
