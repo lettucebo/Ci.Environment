@@ -366,8 +366,9 @@ wsl --set-default-version 2
 
 ## Download and Install Ubunut Linux
 Write-Host "Download and Install Ubunut Linux" -ForegroundColor Green
-curl.exe -L -o $PSScriptRoot\Ubuntu_2004_x64.appx https://aka.ms/wslubuntu2204
-powershell Add-AppxPackage $PSScriptRoot\Ubuntu_2204_x64.appx
+#curl.exe -L -o $PSScriptRoot\Ubuntu_2004_x64.appx https://aka.ms/wslubuntu2204
+#powershell Add-AppxPackage $PSScriptRoot\Ubuntu_2204_x64.appx
+wsl --install -d Ubuntu
 
 ## Setting winget
 # C:\Users\Money\AppData\Local\Packages\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\LocalState\settings.json
