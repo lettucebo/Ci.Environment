@@ -13,7 +13,6 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     Break
 }
 
-
 ## Install PowerShell 7
 Write-Host "Install PowerShell 7" -ForegroundColor Green
 # https://github.com/PowerShell/PowerShell/blob/master/tools/install-powershell.ps1-README.md
@@ -24,6 +23,10 @@ iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet"
 # Invoke-WebRequest -Uri $ps7Url -OutFile $ps7Msi
 # # https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows?view=powershell-7.2#install-the-msi-package-from-the-command-line
 # msiexec.exe /package $ps7Msi /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1
+Write-Host "Install PowerShell 7 Complete" -ForegroundColor Green
 
 # TODO start with new PowerShell 7 windows and continue
 # start pwsh {.\scriptInNewPSWindow.ps1}
+
+Write-Host -NoNewLine '\r\nPress any key to continue...';
+$null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');

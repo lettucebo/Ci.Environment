@@ -363,9 +363,13 @@ powershell Add-AppxPackage $PSScriptRoot\Ubuntu_2004_x64.appx
 # '
 
 ## Using WinGet install MS Store application
-#winget install Microsoft.Whiteboard
-#winget install 50582LuanNguyen.NuGetPackageExplorer
-#winget install Spotify.Spotify
+winget install Microsoft.Whiteboard --accept-source-agreements
+winget install 50582LuanNguyen.NuGetPackageExplorer --accept-source-agreements
+winget install Spotify.Spotify --accept-source-agreements
+winget install 4DF9E0F8.Netflix_mcm4njqhnhss8 --accept-source-agreements
+winget install 5E8FC25E.XODODOCS_3v3sf0k6w2rec --accept-source-agreements
+winget install Disney.37853FC22B2CE_6rarf9sa4v8jt --accept-source-agreements
+winget install Microsoft.BingWallpaper --accept-source-agreements
 
 # UnSplash
 # nature,water,architecture,travel
@@ -392,14 +396,6 @@ $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";"
 Stop-Process -processname explorer
 refreshenv
 
-# Install nodejs using nvm
-$nvmCmd = @'
-cmd.exe /C 
-nvm install 16.15.0
-nvm install 18.2.0
-nvm use 16.15.0
-'@
-Invoke-Expression -Command:$nvmCmd
 
 # Install Azure Artifacts Credential Provider
 ## https://github.com/microsoft/artifacts-credprovider
@@ -420,6 +416,7 @@ SETX LC_ALL C.UTF-8 /M
 
 ## Install .NET Core Tools
 dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
+dotnet nuget add source https://pkgs.dev.azure.com/creatidea/_packaging/Ci.Nuget/nuget/v3/index.json -n Ci.Nuget
 dotnet tool install --global dotnet-ef
 
 ## Install Developer Font
@@ -427,23 +424,23 @@ Write-Host "Install Developer Font" -ForegroundColor Green
 $fontUrl = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%217415&authkey=AG0Y5D8cspzzmIM";
 $fontFile = "$PSScriptRoot\YaHei.ttf";
 $fontNoto1Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509534&authkey=AFqECC5M2atUmQg";
-$fontNoto1File = "$PSScriptRoot\Noto1.ttf";
+$fontNoto1File = "$PSScriptRoot\Noto1.otf";
 $fontNoto2Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509535&authkey=APg9nfCQ3sG6W7U";
-$fontNoto2File = "$PSScriptRoot\Noto2.ttf";
+$fontNoto2File = "$PSScriptRoot\Noto2.otf";
 $fontNoto3Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509536&authkey=AMurwiFnjth4CT8";
-$fontNoto3File = "$PSScriptRoot\Noto3.ttf";
+$fontNoto3File = "$PSScriptRoot\Noto3.otf";
 $fontNoto4Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509528&authkey=ALOQTLb5JjJkVX8";
-$fontNoto4File = "$PSScriptRoot\Noto4.ttf";
+$fontNoto4File = "$PSScriptRoot\Noto4.otf";
 $fontNoto5Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509529&authkey=AKNEXWDCKSoUToM";
-$fontNoto5File = "$PSScriptRoot\Noto5.ttf";
+$fontNoto5File = "$PSScriptRoot\Noto5.otf";
 $fontNoto6Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509530&authkey=ABAf0aUvGHedV0s";
-$fontNoto6File = "$PSScriptRoot\Noto6.ttf";
+$fontNoto6File = "$PSScriptRoot\Noto6.otf";
 $fontNoto7Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509531&authkey=AE2MeCJFBgo8ohQ";
-$fontNoto7File = "$PSScriptRoot\Noto7.ttf";
+$fontNoto7File = "$PSScriptRoot\Noto7.otf";
 $fontNoto8Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509532&authkey=AOMqBGMUrzgkSu0";
-$fontNoto8File = "$PSScriptRoot\Noto8.ttf";
+$fontNoto8File = "$PSScriptRoot\Noto8.otf";
 $fontNoto9Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509533&authkey=AFSaDqjAXk3rf2A";
-$fontNoto9File = "$PSScriptRoot\Noto9.ttf";
+$fontNoto9File = "$PSScriptRoot\Noto9.otf";
 
 Write-Host "Download fontFile..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontUrl -OutFile $fontFile
@@ -466,9 +463,7 @@ Invoke-WebRequest -Uri $fontNoto8Url -OutFile $fontNoto8File
 Write-Host "Download fontNoto9File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto9Url -OutFile $fontNoto9File
 
-$FONTS = 0x14
-$objShell = New-Object -ComObject Shell.Application
-$objFolder = $objShell.Namespace($FONTS)
+$objFolder = (New-Object -ComObject Shell.Application).Namespace(0x14)
 $objFolder.CopyHere($fontFile, 0x10)
 $objFolder.CopyHere($fontNoto1File, 0x10)
 $objFolder.CopyHere($fontNoto2File, 0x10)
@@ -481,7 +476,7 @@ $objFolder.CopyHere($fontNoto8File, 0x10)
 $objFolder.CopyHere($fontNoto9File, 0x10)
 
 ## Instal VS 2022
-# https://docs.microsoft.com/en-us/visualstudio/install/workload-and-component-ids?view=vs-2019
+# https://docs.microsoft.com/en-us/visualstudio/install/workload-and-component-ids?view=vs-2022
 # https://developercommunity.visualstudio.com/t/setup-does-not-wait-for-installation-to-complete-w/26668#T-N1137560
 Write-Host "Instal VS 2022" -ForegroundColor Green
 $vs2022Url = "https://aka.ms/vs/17/release/vs_enterprise.exe";
@@ -544,6 +539,7 @@ Start-Process -FilePath $vs2022Exe -ArgumentList `
 -Wait -PassThru
 
 ## Install Visual Studio Exntension
+Write-Host "Install Visual Studio Exntension" -ForegroundColor Green
 $vsixInstallScript = "$PSScriptRoot\install-vsix.ps1";
 Invoke-WebRequest -Uri "https://gist.githubusercontent.com/lettucebo/1c791b21bf56f467254bc85fd70631f4/raw/5dc3ff85b38058208d203383c54d8b7818365566/install-vsix.ps1" -OutFile $vsixInstallScript
 & $vsixInstallScript -PackageName "MikeWard-AnnArbor.VSColorOutput"
@@ -554,6 +550,11 @@ Invoke-WebRequest -Uri "https://gist.githubusercontent.com/lettucebo/1c791b21bf5
 & $vsixInstallScript -PackageName "MadsKristensen.Tweaks"
 & $vsixInstallScript -PackageName "MikeWard-AnnArbor.VSColorOutput64"
 
+## Install Developer Tools
+Write-Host "Install Developer Tools" -ForegroundColor Green
 choco install -y dotpeek
 choco install -y resharper
 choco install -y sqltoolbelt --params "/products:'SQL Compare, SQL Data Compare, SQL Prompt, SQL Search, SQL Data Generator, SQL Doc, SQL Dependency Tracker, SQL Backup, SSMS Integration Pack'"
+
+Write-Host -NoNewLine 'Press any key to continue...';
+$null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');

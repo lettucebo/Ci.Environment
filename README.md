@@ -6,6 +6,7 @@ Execute the command
 ``` powershell
 iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Personal/01.ENVIRONMENT-MONEY-INSTALL.ps1'))
 ```
+> **Step 1 must be execute first.**
 
 - Step 2
 ``` powershell
