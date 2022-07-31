@@ -314,18 +314,20 @@ Set-ItemProperty -Path "HKLM:\Software\Microsoft\Command Processor" -Name Autoru
 
 # Config PowerShell
 ## Set Powershell to UTF8 encode and PSReadLine
+##### https://gist.github.com/doggy8088/d3f3925452e2d7b923d01142f755d2ae
+##### https://dotblogs.com.tw/yc421206/2021/08/17/several_packages_to_enhance_posh_Powershell
 $powerhellProfileContent = 
 @"
 Import-Module PSReadLine
 
 $OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.UTF8Encoding]::UTF8
 
-Set-PSReadLineOption -PredictionSource History # 設置預測文本來源為歷史記錄
-Set-PSReadlineKeyHandler -Key Tab -Function Complete # 設置 Tab 鍵補全
-Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete # 設置 Tab 為菜單補全和 Intellisense
-Set-PSReadLineKeyHandler -Key Escape -Function Undo # 設置 Esc 為撤銷
-Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward # 設置向上鍵為後向搜索歷史記錄
-Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward # 設置向下鍵為前向搜索歷史紀錄
+Set-PSReadLineOption -PredictionSource History 
+Set-PSReadlineKeyHandler -Key Tab -Function Complete
+Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
+Set-PSReadLineKeyHandler -Key Escape -Function Undo
+Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
+Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
 "@
 
 Add-Content -Path C:\Users\${env:username}\Documents\Powershell\Microsoft.PowerShell_profile.ps1 -Value $powerhellProfileContent
