@@ -352,8 +352,10 @@ Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlat
 ## https://github.com/microsoft/WSL/issues/5014#issuecomment-692432322
 # Download and Install the WSL 2 Update (contains Microsoft Linux kernel)
 Write-Host "Install WSL2 Kernel udpate" -ForegroundColor Green
-Invoke-WebRequest https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -outfile $PSScriptRoot\wsl_update_x64.msi
-Start-Process $PSScriptRoot\wsl_update_x64.msi -ArgumentList '/quiet' -Wait
+#Invoke-WebRequest https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -outfile $PSScriptRoot\wsl_update_x64.msi
+#Start-Process $PSScriptRoot\wsl_update_x64.msi -ArgumentList '/quiet' -Wait
+##### https://github.com/microsoft/WSL/issues/7857#issuecomment-999935343
+wsl --update
 # & curl.exe -f -o wsl_update_x64.msi "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi"
 # powershell -Command "Start-Process msiexec -Wait -ArgumentList '/a ""wsl_update_x64.msi"" /quiet /qn TARGETDIR=""C:\Temp""'"
 # Copy-Item -Path "$env:TEMP\System32\lxss" -Destination "C:\System32" -Recurse
