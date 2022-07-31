@@ -19,6 +19,7 @@ if($PSversionTable.PsVersion.Major -lt 7){
     Break
 }
 
+Install-Module -Name PSWindowsUpdate
 Import-Module PSWindowsUpdate
 
 Install-WindowsUpdate -AcceptAll -AutoReboot
