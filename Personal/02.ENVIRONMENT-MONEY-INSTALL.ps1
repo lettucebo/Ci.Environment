@@ -133,6 +133,7 @@ choco install -y googlechrome
 choco install -y powertoys
 choco install -y mobaxterm
 choco install -y ngrok
+choco install -y microsoft-teams.install
 
 choco install -y dotnetcore-2.1-sdk
 choco install -y dotnetcore-2.2-sdk
@@ -140,7 +141,6 @@ choco install -y dotnetcore-3.1-sdk
 choco install -y dotnetcore-5.0-sdk
 choco install -y dotnetcore-6.0-sdk
 
-# choco install -y microsoft-teams
 #choco install -y azure-functions-core-tools-3
 #choco install -y spotify --ignorechecksum
 #choco install -y firefox-dev --pre --params "l=en-US"
