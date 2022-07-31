@@ -321,10 +321,11 @@ Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Search -N
 ## Set Cmd to UTF8 encode
 Set-ItemProperty -Path "HKLM:\Software\Microsoft\Command Processor" -Name Autorun -Type String -Value "chcp 65001>nul"
 
-# Config PowerShell
+# Config PowerShell Profile
 ## Set Powershell to UTF8 encode and PSReadLine
 ##### https://gist.github.com/doggy8088/d3f3925452e2d7b923d01142f755d2ae
 ##### https://dotblogs.com.tw/yc421206/2021/08/17/several_packages_to_enhance_posh_Powershell
+Write-Host "Config PowerShell Profile" -ForegroundColor Green
 $powerhellProfileContent = 
 @"
 Import-Module PSReadLine
@@ -350,6 +351,7 @@ Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlat
 ## reference: https://dev.to/smashse/wsl-chocolatey-powershell-winget-1d6p
 ## https://github.com/microsoft/WSL/issues/5014#issuecomment-692432322
 # Download and Install the WSL 2 Update (contains Microsoft Linux kernel)
+Write-Host "Install WSL2 Kernel udpate" -ForegroundColor Green
 Invoke-WebRequest https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -outfile $PSScriptRoot\wsl_update_x64.msi
 Start-Process $PSScriptRoot\wsl_update_x64.msi -ArgumentList '/quiet' -Wait
 # & curl.exe -f -o wsl_update_x64.msi "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi"
@@ -362,7 +364,8 @@ powershell -Command "Start-Process msiexec -Wait -ArgumentList '/i','wsl_update_
 ## Set wsl default version to 2
 wsl --set-default-version 2
 
-## Install Ubunut Linux
+## Download and Install Ubunut Linux
+Write-Host "Download and Install Ubunut Linux" -ForegroundColor Green
 curl.exe -L -o $PSScriptRoot\Ubuntu_2004_x64.appx https://aka.ms/wslubuntu2004
 powershell Add-AppxPackage $PSScriptRoot\Ubuntu_2004_x64.appx
 
