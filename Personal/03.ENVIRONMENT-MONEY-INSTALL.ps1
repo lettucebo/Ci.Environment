@@ -35,8 +35,8 @@ Invoke-WebRequest -Uri "https://gist.githubusercontent.com/lettucebo/1c791b21bf5
 & $vsixInstallScript -PackageName "MadsKristensen.Tweaks"
 & $vsixInstallScript -PackageName "MikeWard-AnnArbor.VSColorOutput64"
 
-choco install -y dotpeek
-choco install -y resharper
+#choco install -y dotpeek
+#choco install -y resharper
 choco install -y dotultimate --params "'/PerMachine /NoCpp /NoTeamCityAddin'"
 choco install -y sqltoolbelt --params "/products:'SQL Compare, SQL Data Compare, SQL Prompt, SQL Search, SQL Data Generator, SQL Doc, SQL Dependency Tracker, SQL Backup, SSMS Integration Pack'"
 
