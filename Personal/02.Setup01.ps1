@@ -438,6 +438,18 @@ SETX LC_ALL C.UTF-8 /M
 ## https://blog.puckwang.com/post/2019/sign_git_commit_with_gpg/
 ## gpg --import .\pgp-private-keys.asc
 
+
+## gpg config
+$env:UserName
+Write-Host "Config PowerShell Profile" -ForegroundColor Green
+$gpgConfContnet = 
+@'
+default-cache-ttl 604800
+max-cache-ttl 604800
+'@
+
+Add-Content -Path C:\Users\${env:username}\AppData\Roaming\gnupg\gpg-agent.conf -Value $gpgConfContnet
+
 ## Install .NET Core Tools
 dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
 dotnet tool install --global dotnet-ef
