@@ -65,13 +65,6 @@ $ServiceManager = New-Object -ComObject "Microsoft.Update.ServiceManager"
 $ServiceManager.ClientApplicationID = "My App"
 $NewService = $ServiceManager.AddService2("7971f918-a847-4430-9279-4a52d1efe18d",7,"")
 
-# Install MediaFeaturePack before install SnagIt
-Write-Host "Add Windows Optional Features" -ForegroundColor Green
-Add-WindowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0
-
-# Enable .NET Framework 3.5
-Enable-WindowsOptionalFeature -Online -FeatureName "NetFx3"
-
 ## Uninstll built-in APPs
 Import-Module Appx -usewindowspowershell
 # Be gone, heathen!
