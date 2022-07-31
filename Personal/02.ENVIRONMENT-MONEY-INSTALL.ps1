@@ -73,40 +73,41 @@ Add-WindowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0
 Enable-WindowsOptionalFeature -Online -FeatureName "NetFx3"
 
 ## Uninstll built-in APPs
+Import-Module Appx -usewindowspowershell
 # Be gone, heathen!
-Get-AppxPackage king.com.CandyCrushSaga | Remove-AppxPackage
+Get-AppxPackage king.com.CandyCrushSaga | Remove-AppxPackage -ErrorAction SilentlyContinue
 # Bing News, Sports, and Finance (Money):
-Get-AppxPackage Microsoft.BingNews | Remove-AppxPackage
-Get-AppxPackage Microsoft.BingSports | Remove-AppxPackage
-Get-AppxPackage Microsoft.BingFinance | Remove-AppxPackage
+Get-AppxPackage Microsoft.BingNews | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage Microsoft.BingSports | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage Microsoft.BingFinance | Remove-AppxPackage -ErrorAction SilentlyContinue
 # Windows Phone Companion
-Get-AppxPackage Microsoft.WindowsPhone | Remove-AppxPackage
+Get-AppxPackage Microsoft.WindowsPhone | Remove-AppxPackage -ErrorAction SilentlyContinue
 # People
-Get-AppxPackage Microsoft.People | Remove-AppxPackage
+Get-AppxPackage Microsoft.People | Remove-AppxPackage -ErrorAction SilentlyContinue
 # Groove Music
-Get-AppxPackage Microsoft.ZuneMusic | Remove-AppxPackage
+Get-AppxPackage Microsoft.ZuneMusic | Remove-AppxPackage -ErrorAction SilentlyContinue
 # Get Started   
-Get-AppxPackage getstarted | Remove-AppxPackage
+Get-AppxPackage getstarted | Remove-AppxPackage -ErrorAction SilentlyContinue
 # Mobile Plan
-Get-AppxPackage Microsoft.OneConnect | Remove-AppxPackage
+Get-AppxPackage Microsoft.OneConnect | Remove-AppxPackage -ErrorAction SilentlyContinue
 # Calendar and Mail
-Get-AppxPackage *windowscommunicationsapps* | Remove-AppxPackage
-Get-AppxPackage *officehub* | Remove-AppxPackage
-Get-AppxPackage *skypeapp* | Remove-AppxPackage
-Get-AppxPackage *windowsmaps* | Remove-AppxPackage
-Get-AppxPackage *zunemusic* | Remove-AppxPackage
-Get-AppxPackage *bingfinance* | Remove-AppxPackage
-Get-AppxPackage *bingnews* | Remove-AppxPackage
-Get-AppxPackage *people* | Remove-AppxPackage
-Get-AppxPackage *bingsports* | Remove-AppxPackage
-Get-AppxPackage *xboxapp* | Remove-AppxPackage
-Get-AppxPackage Microsoft.Getstarted | Remove-AppxPackage
+Get-AppxPackage *windowscommunicationsapps* | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage *officehub* | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage *skypeapp* | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage *windowsmaps* | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage *zunemusic* | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage *bingfinance* | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage *bingnews* | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage *people* | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage *bingsports* | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage *xboxapp* | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage Microsoft.Getstarted | Remove-AppxPackage -ErrorAction SilentlyContinue
 
 ## Install chocolatey
 Write-Host "Install Chocolatey and Packages" -ForegroundColor Green
 Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
-choco install -y dotnet4.8
+choco install -y netfx-4.8-devpack
 choco install -y vscode --params "/NoDesktopIcon"
 choco install -y 7zip.install
 choco install -y openjdk11
