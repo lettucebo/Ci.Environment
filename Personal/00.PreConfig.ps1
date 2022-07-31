@@ -30,9 +30,5 @@ Add-WindowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0
 Enable-WindowsOptionalFeature -Online -FeatureName "NetFx3"
 
 # Restart
-$wshell = New-Object -ComObject Wscript.Shell
-$wshell.Popup("This computer is scheduled for shutdown",10,"Save Data",0x0)
-$wshell.Popup("30 seconds to shutdown",2,"Save it or it will be gone",0x0)
-$xCmdString = {sleep 30}
-Invoke-Command $xCmdString
-Restart-Computer
+Install-Module -Name PSTimers
+Start-PSTimer -Title "Waiting for reboot" -Seconds 20 -ProgressBar -scriptblock {Restart-Computer}

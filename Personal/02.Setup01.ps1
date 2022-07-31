@@ -563,5 +563,6 @@ Start-Process -FilePath $vs2022Exe -ArgumentList `
 "--wait" `
 -Wait -PassThru
 
-Write-Host -NoNewLine 'Press any key to continue...';
-$null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
+# Restart
+Install-Module -Name PSTimers
+Start-PSTimer -Title "Waiting for reboot" -Seconds 20 -ProgressBar -scriptblock {Restart-Computer}
