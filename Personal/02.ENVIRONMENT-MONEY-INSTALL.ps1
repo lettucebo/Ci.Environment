@@ -430,7 +430,8 @@ dotnet nuget add source https://pkgs.dev.azure.com/creatidea/_packaging/Ci.Nuget
 dotnet tool install --global dotnet-ef
 
 ## Install Developer Font
-# https://gist.github.com/anthonyeden/0088b07de8951403a643a8485af2709b
+##### https://gist.github.com/anthonyeden/0088b07de8951403a643a8485af2709b
+##### https://gist.github.com/cosine83/e83c44878a6bdeac0c7c59e3dbfd1f71
 Write-Host "Install Developer Font" -ForegroundColor Green
 $fontUrl = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/YaHei%20Consolas.ttf";
 $fontFile = "$PSScriptRoot\YaHei.ttf";
