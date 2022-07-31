@@ -119,7 +119,6 @@ choco install -y microsoft-windows-terminal
 choco install -y terraform
 choco install -y python
 choco install -y gpg4win
-choco install -y snagit --ignorechecksum
 choco install -y robo3t
 choco install -y office365business
 choco install -y googlechrome
@@ -134,6 +133,7 @@ choco install -y dotnetcore-3.1-sdk
 choco install -y dotnet-5.0-sdk
 choco install -y dotnet-6.0-sdk
 
+#choco install -y snagit --ignorechecksum
 #choco install -y azure-functions-core-tools-3
 #choco install -y spotify --ignorechecksum
 #choco install -y firefox-dev --pre --params "l=en-US"
