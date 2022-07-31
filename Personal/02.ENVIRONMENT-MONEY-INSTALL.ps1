@@ -366,8 +366,8 @@ wsl --set-default-version 2
 
 ## Download and Install Ubunut Linux
 Write-Host "Download and Install Ubunut Linux" -ForegroundColor Green
-curl.exe -L -o $PSScriptRoot\Ubuntu_2004_x64.appx https://aka.ms/wslubuntu2004
-powershell Add-AppxPackage $PSScriptRoot\Ubuntu_2004_x64.appx
+curl.exe -L -o $PSScriptRoot\Ubuntu_2004_x64.appx https://aka.ms/wslubuntu2204
+powershell Add-AppxPackage $PSScriptRoot\Ubuntu_2204_x64.appx
 
 ## Setting winget
 # C:\Users\Money\AppData\Local\Packages\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\LocalState\settings.json
@@ -432,7 +432,6 @@ SETX LC_ALL C.UTF-8 /M
 
 ## Install .NET Core Tools
 dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
-dotnet nuget add source https://pkgs.dev.azure.com/creatidea/_packaging/Ci.Nuget/nuget/v3/index.json -n Ci.Nuget
 dotnet tool install --global dotnet-ef
 
 ## Install Developer Font
