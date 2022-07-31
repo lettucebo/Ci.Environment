@@ -28,5 +28,17 @@ Write-Host "Install PowerShell 7 Complete" -ForegroundColor Green
 # TODO start with new PowerShell 7 windows and continue
 # start pwsh {.\scriptInNewPSWindow.ps1}
 
-Write-Host -NoNewLine 'Press any key to continue...';
-$null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
+# Install MediaFeaturePack before install SnagIt
+Write-Host "Add Windows Optional Features" -ForegroundColor Green
+Add-WindowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0
+
+# Enable .NET Framework 3.5
+Enable-WindowsOptionalFeature -Online -FeatureName "NetFx3"
+
+# Restart
+$wshell = New-Object -ComObject Wscript.Shell
+$wshell.Popup("This computer is scheduled for shutdown",10,"Save Data",0x0)
+$wshell.Popup("30 seconds to shutdown",2,"Save it or it will be gone",0x0)
+$xCmdString = {sleep 30}
+Invoke-Command $xCmdString
+Restart-Computer
