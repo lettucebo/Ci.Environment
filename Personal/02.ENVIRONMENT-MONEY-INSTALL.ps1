@@ -314,7 +314,7 @@ Set-ItemProperty -Path "HKLM:\Software\Microsoft\Command Processor" -Name Autoru
 
 # Config PowerShell
 ## Set Powershell to UTF8 encode and PSReadLine
-$powerhellProfileContent = @"
+$powerhellProfileContent = @'
 Import-Module PSReadLine
 
 $OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.UTF8Encoding]::UTF8
@@ -325,7 +325,7 @@ Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete # 設置 Tab 為菜單�
 Set-PSReadLineKeyHandler -Key Escape -Function Undo # 設置 Esc 為撤銷
 Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward # 設置向上鍵為後向搜索歷史記錄
 Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward # 設置向下鍵為前向搜索歷史紀錄
-"@
+'@
 
 Add-Content -Path C:\Users\${env:username}\Documents\Powershell\Microsoft.PowerShell_profile.ps1 -Value $powerhellProfileContent
 
