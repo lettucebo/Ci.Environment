@@ -159,6 +159,13 @@ choco install -y dotnetcore-6.0-sdk
 # Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
 # Start-Process -FilePath $lbmFile -ArgumentList "/S" -PassThru
 
+## Download MultiViewer for F1
+##### https://beta.f1mv.com/
+Write-Host "Download MultiViewer for F1" -ForegroundColor Green
+$f1ZipFile = "$PSScriptRoot\MultiViewer-for-F1.zip";
+Invoke-WebRequest -Uri "https://releases.f1mv.com/download/73165134/MultiViewer.for.F1-win32-x64-1.5.9.zip" -OutFile $f1ZipFile
+Expand-Archive $f1ZipFile -DestinationPath "$HOME\Downloads" -Force
+
 ## Install Redis Desktop Manager
 Write-Host "Install Redis Desktop Manager" -ForegroundColor Green
 $rdmFile = "$PSScriptRoot\rdm.exe";
