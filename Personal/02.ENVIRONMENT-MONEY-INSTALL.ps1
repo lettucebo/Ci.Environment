@@ -382,6 +382,7 @@ winget install 4DF9E0F8.Netflix_mcm4njqhnhss8 --accept-source-agreements
 winget install 5E8FC25E.XODODOCS_3v3sf0k6w2rec --accept-source-agreements
 winget install Disney.37853FC22B2CE_6rarf9sa4v8jt --accept-source-agreements
 winget install Microsoft.BingWallpaper --accept-source-agreements
+winget install XPDDVC6XTQQKMM --accept-source-agreements
 
 # UnSplash
 # nature,water,architecture,travel
