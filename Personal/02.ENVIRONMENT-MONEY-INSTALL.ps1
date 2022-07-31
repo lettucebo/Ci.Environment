@@ -327,7 +327,7 @@ Set-ItemProperty -Path "HKLM:\Software\Microsoft\Command Processor" -Name Autoru
 ##### https://dotblogs.com.tw/yc421206/2021/08/17/several_packages_to_enhance_posh_Powershell
 Write-Host "Config PowerShell Profile" -ForegroundColor Green
 $powerhellProfileContent = 
-@"
+@'
 Import-Module PSReadLine
 
 $OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.UTF8Encoding]::UTF8
@@ -338,7 +338,7 @@ Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
 Set-PSReadLineKeyHandler -Key Escape -Function Undo
 Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
 Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
-"@
+'@
 
 Add-Content -Path C:\Users\${env:username}\Documents\Powershell\Microsoft.PowerShell_profile.ps1 -Value $powerhellProfileContent
 
