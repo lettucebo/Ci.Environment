@@ -170,8 +170,8 @@ Expand-Archive $f1ZipFile -DestinationPath "$HOME\Downloads" -Force
 
 ## Install Redis Desktop Manager
 Write-Host "Install Redis Desktop Manager" -ForegroundColor Green
-$rdmFile = "$PSScriptRoot\rdm.exe";
-Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2022.3/resp-2022.3.0.exe" -OutFile $rdmFile
+$rdmFile = "$PSScriptRoot\resp.exe";
+Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2022.4.2/resp-2022.4.2.exe" -OutFile $rdmFile
 Start-Process $rdmFile -ArgumentList "/q"
 
 # Dell Bluetooth
