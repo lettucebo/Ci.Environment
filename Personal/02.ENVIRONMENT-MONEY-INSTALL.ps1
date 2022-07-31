@@ -420,27 +420,28 @@ dotnet nuget add source https://pkgs.dev.azure.com/creatidea/_packaging/Ci.Nuget
 dotnet tool install --global dotnet-ef
 
 ## Install Developer Font
+# https://gist.github.com/anthonyeden/0088b07de8951403a643a8485af2709b
 Write-Host "Install Developer Font" -ForegroundColor Green
-$fontUrl = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%217415&authkey=AG0Y5D8cspzzmIM";
+$fontUrl = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/YaHei%20Consolas.ttf";
 $fontFile = "$PSScriptRoot\YaHei.ttf";
-$fontNoto1Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509534&authkey=AFqECC5M2atUmQg";
-$fontNoto1File = "$PSScriptRoot\Noto1.otf";
-$fontNoto2Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509535&authkey=APg9nfCQ3sG6W7U";
-$fontNoto2File = "$PSScriptRoot\Noto2.otf";
-$fontNoto3Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509536&authkey=AMurwiFnjth4CT8";
-$fontNoto3File = "$PSScriptRoot\Noto3.otf";
-$fontNoto4Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509528&authkey=ALOQTLb5JjJkVX8";
-$fontNoto4File = "$PSScriptRoot\Noto4.otf";
-$fontNoto5Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509529&authkey=AKNEXWDCKSoUToM";
-$fontNoto5File = "$PSScriptRoot\Noto5.otf";
-$fontNoto6Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509530&authkey=ABAf0aUvGHedV0s";
-$fontNoto6File = "$PSScriptRoot\Noto6.otf";
-$fontNoto7Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509531&authkey=AE2MeCJFBgo8ohQ";
-$fontNoto7File = "$PSScriptRoot\Noto7.otf";
-$fontNoto8Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509532&authkey=AOMqBGMUrzgkSu0";
-$fontNoto8File = "$PSScriptRoot\Noto8.otf";
-$fontNoto9Url = "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21509533&authkey=AFSaDqjAXk3rf2A";
-$fontNoto9File = "$PSScriptRoot\Noto9.otf";
+$fontNoto1Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Black.otf";
+$fontNoto1File = "$PSScriptRoot\NotoSansCJKtc-Black.otf";
+$fontNoto2Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Bold.otf";
+$fontNoto2File = "$PSScriptRoot\NotoSansCJKtc-Bold.otf";
+$fontNoto3Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-DemiLight.otf";
+$fontNoto3File = "$PSScriptRoot\NotoSansCJKtc-DemiLight.otf";
+$fontNoto4Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Light.otf";
+$fontNoto4File = "$PSScriptRoot\NotoSansCJKtc-Light.otf";
+$fontNoto5Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Medium.otf";
+$fontNoto5File = "$PSScriptRoot\NotoSansCJKtc-Medium.otf";
+$fontNoto6Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Regular.otf";
+$fontNoto6File = "$PSScriptRoot\NotoSansCJKtc-Regular.otf";
+$fontNoto7Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Thin.otf";
+$fontNoto7File = "$PSScriptRoot\NotoSansCJKtc-Thin.otf";
+$fontNoto8Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansMonoCJKtc-Bold.otf";
+$fontNoto8File = "$PSScriptRoot\NotoSansMonoCJKtc-Bold.otf";
+$fontNoto9Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansMonoCJKtc-Regular.otf";
+$fontNoto9File = "$PSScriptRoot\NotoSansMonoCJKtc-Regular.otf";
 
 Write-Host "Download fontFile..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontUrl -OutFile $fontFile
