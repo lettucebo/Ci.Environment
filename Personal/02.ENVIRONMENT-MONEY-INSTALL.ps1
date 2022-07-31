@@ -1,6 +1,6 @@
+Write-Output("Step 2");
 Write-Output(Get-Date);
 
-# 調整 ExecutionPolicy 等級到 RemoteSigned
 Set-ExecutionPolicy RemoteSigned -Force
 
 # 建立 $PROFILE 所需的資料夾
@@ -8,7 +8,13 @@ Set-ExecutionPolicy RemoteSigned -Force
 
 ## check admin right
 If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Write-Warning "You do not have Administrator rights to run this script!`nPlease re-run this script as an Administrator!"
+    Write-Error "You do not have Administrator rights to run this script!`nPlease re-run this script as an Administrator!"
+    Break
+}
+
+## Check Powershell version
+if($PSversionTable.PsVersion.Major -lt 7){
+    Write-Error "Please use Powershell 7 to execute this script!"
     Break
 }
 
@@ -113,7 +119,6 @@ choco install -y nvm
 choco install -y microsoftazurestorageexplorer
 choco install -y azure-cli
 choco install -y line
-choco install -y microsoft-teams
 choco install -y sql-server-management-studio
 choco install -y azure-functions-core-tools
 choco install -y microsoft-windows-terminal
@@ -133,8 +138,8 @@ choco install -y dotnetcore-3.1-sdk
 choco install -y dotnetcore-5.0-sdk
 choco install -y dotnetcore-6.0-sdk
 
+# choco install -y microsoft-teams
 #choco install -y azure-functions-core-tools-3
-#choco install -y jetbrains-rider
 #choco install -y spotify --ignorechecksum
 #choco install -y firefox-dev --pre --params "l=en-US"
 
@@ -163,19 +168,6 @@ Start-Process $rdmFile -ArgumentList "/q"
 # Dell Bluetooth
 # https://www.dell.com/community/XPS/XPS-9310-Bluetooth-lag-with-Logitech-MX-Keys-MX-Master-3/m-p/7795277/highlight/true#M77883
 
-## Install PowerShell 7
-Write-Host "Install PowerShell 7" -ForegroundColor Green
-# https://github.com/PowerShell/PowerShell/blob/master/tools/install-powershell.ps1-README.md
-iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet"
-# # https://github.com/PowerShell/PowerShell/releases
-# $ps7Url = "https://github.com/PowerShell/PowerShell/releases/download/v7.2.5/PowerShell-7.2.5-win-x64.msi";
-# $ps7Msi = "$PSScriptRoot\PowerShell-7.2.5-win-x64.msi";
-# Invoke-WebRequest -Uri $ps7Url -OutFile $ps7Msi
-# # https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows?view=powershell-7.2#install-the-msi-package-from-the-command-line
-# msiexec.exe /package $ps7Msi /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1
-
-# TODO start with new PowerShell 7 windows and continue
-# start pwsh {.\scriptInNewPSWindow.ps1}
 
 ## Install Nuget Provider
 Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
@@ -564,3 +556,4 @@ Invoke-WebRequest -Uri "https://gist.githubusercontent.com/lettucebo/1c791b21bf5
 
 choco install -y dotpeek
 choco install -y resharper
+choco install -y sqltoolbelt --params "/products:'SQL Compare, SQL Data Compare, SQL Prompt, SQL Search, SQL Data Generator, SQL Doc, SQL Dependency Tracker, SQL Backup, SSMS Integration Pack'"
