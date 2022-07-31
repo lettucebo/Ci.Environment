@@ -28,5 +28,5 @@ Write-Host "Install PowerShell 7 Complete" -ForegroundColor Green
 # TODO start with new PowerShell 7 windows and continue
 # start pwsh {.\scriptInNewPSWindow.ps1}
 
-Write-Host -NoNewLine '\r\nPress any key to continue...';
+Write-Host -NoNewLine 'Press any key to continue...';
 $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
