@@ -389,14 +389,21 @@ wsl --install -d Ubuntu
 # '
 
 ## Using WinGet install MS Store application
-winget install Microsoft.Whiteboard --accept-source-agreements
-winget install 50582LuanNguyen.NuGetPackageExplorer --accept-source-agreements
-winget install Spotify.Spotify --accept-source-agreements
-winget install 4DF9E0F8.Netflix_mcm4njqhnhss8 --accept-source-agreements
-winget install 5E8FC25E.XODODOCS_3v3sf0k6w2rec --accept-source-agreements
-winget install Disney.37853FC22B2CE_6rarf9sa4v8jt --accept-source-agreements
-winget install Microsoft.BingWallpaper --accept-source-agreements
-winget install XPDDVC6XTQQKMM --accept-source-agreements
+# Microsoft.Whiteboard
+winget install 9MSPC6MP8FM4 --accept-package-agreements
+# NuGetPackageExplorer
+winget install 9WZDNCRDMDM3 --accept-package-agreements
+# Spotify
+winget install 9NCBCSZSJRSB --accept-package-agreements
+# Netflix_mcm4njqhnhss8
+winget install 9WZDNCRFJ3TJ --accept-package-agreements
+# Xodo PDF
+winget install 9WZDNCRDJXP4 --accept-package-agreements
+# Disney
+winget install 9NXQXXLFST89 --accept-package-agreements
+# BiliBili
+winget install XPDDVC6XTQQKMM --accept-package-agreements
+
 
 # UnSplash
 # nature,water,architecture,travel
