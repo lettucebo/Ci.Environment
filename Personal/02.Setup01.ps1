@@ -134,6 +134,7 @@ choco install -y mobaxterm
 choco install -y ngrok
 choco install -y microsoft-teams.install
 choco install -y sysinternals
+choco install -y openssl.light
 
 choco install -y dotnetcore-2.1-sdk
 choco install -y dotnetcore-2.2-sdk
