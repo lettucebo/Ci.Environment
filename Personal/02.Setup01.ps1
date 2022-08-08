@@ -133,6 +133,7 @@ choco install -y powertoys
 choco install -y mobaxterm
 choco install -y ngrok
 choco install -y microsoft-teams.install
+choco install -y sysinternals
 
 choco install -y dotnetcore-2.1-sdk
 choco install -y dotnetcore-2.2-sdk
@@ -403,10 +404,8 @@ winget install 9WZDNCRDJXP4 --accept-package-agreements
 winget install 9NXQXXLFST89 --accept-package-agreements
 # BiliBili
 winget install XPDDVC6XTQQKMM --accept-package-agreements
-
-
-# UnSplash
-# nature,water,architecture,travel
+# Region to Share
+winget install 9N4066W2R5Q4 --accept-package-agreements
 
 # Enable Telnet Client
 Write-Host "Enable Telnet Client" -ForegroundColor Green
