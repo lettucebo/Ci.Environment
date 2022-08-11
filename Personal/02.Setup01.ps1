@@ -407,6 +407,8 @@ winget install 9NXQXXLFST89 --accept-package-agreements
 winget install XPDDVC6XTQQKMM --accept-package-agreements
 # Region to Share
 winget install 9N4066W2R5Q4 --accept-package-agreements
+# OneNote for Windows 10
+winget install 9WZDNCRFHVJL --accept-package-agreements
 
 # Enable Telnet Client
 Write-Host "Enable Telnet Client" -ForegroundColor Green
