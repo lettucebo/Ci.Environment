@@ -19,6 +19,10 @@ if($PSversionTable.PsVersion.Major -lt 7){
     Break
 }
 
+## Install Nuget Provider
+Install-PackageProvider -Name NuGet -Force
+Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+
 Install-Module -Name PSWindowsUpdate
 Import-Module PSWindowsUpdate
 
