@@ -459,8 +459,9 @@ $gpgConfContnet =
 default-cache-ttl 604800
 max-cache-ttl 604800
 '@
-
-Add-Content -Path C:\Users\${env:username}\AppData\Roaming\gnupg\gpg-agent.conf -Value $gpgConfContnet
+$gpgPath = "C:\Users\${env:username}\AppData\Roaming\gnupg\gpg-agent.conf"
+If (!(Test-Path $gpgPath)) {New-Item -Path $gpgPath -Force}
+Add-Content -Path $gpgPath -Value $gpgConfContnet
 
 ## Install .NET Core Tools
 dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
