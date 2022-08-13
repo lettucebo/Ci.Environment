@@ -35,6 +35,11 @@ Add-WindowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0
 Write-Host "`n Enable .NET Framework 3.5" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -FeatureName "NetFx3" -NoRestart
 
+## Enable Microsoft-Windows-Subsystem-Linux
+Write-Host "`n Enable Microsoft-Windows-Subsystem-Linux" -ForegroundColor Green
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Windows-Subsystem-Linux
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlatform
+
 # Restart
 Write-Host "`n Install PSTimer" -ForegroundColor Green
 Install-Module -Name PSTimers

@@ -353,11 +353,6 @@ Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
 
 Add-Content -Path C:\Users\${env:username}\Documents\Powershell\Microsoft.PowerShell_profile.ps1 -Value $powerhellProfileContent
 
-## Enable Microsoft-Windows-Subsystem-Linux
-Write-Host "`n Enable Microsoft-Windows-Subsystem-Linux" -ForegroundColor Green
-Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Windows-Subsystem-Linux
-Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlatform
-
 ## Install WSL2 Kernel udpate
 ## reference: https://dev.to/smashse/wsl-chocolatey-powershell-winget-1d6p
 ## https://github.com/microsoft/WSL/issues/5014#issuecomment-692432322
@@ -370,7 +365,6 @@ wsl --update
 # & curl.exe -f -o wsl_update_x64.msi "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi"
 # powershell -Command "Start-Process msiexec -Wait -ArgumentList '/a ""wsl_update_x64.msi"" /quiet /qn TARGETDIR=""C:\Temp""'"
 # Copy-Item -Path "$env:TEMP\System32\lxss" -Destination "C:\System32" -Recurse
-
 # Also install the WSL 2 update with a normal full install
 # powershell -Command "Start-Process msiexec -Wait -ArgumentList '/i','wsl_update_x64.msi','/quiet','/qn'"
 
