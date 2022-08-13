@@ -20,18 +20,18 @@ if($PSversionTable.PsVersion.Major -lt 7){
 }
 
 ## Install Nuget Provider
-Write-Host "Install Nuget Provider" -ForegroundColor Green
+Write-Host "`n Install Nuget Provider" -ForegroundColor Green
 Install-PackageProvider -Name NuGet -Force
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 
-Write-Host "Install PSWindowsUpdate" -ForegroundColor Green
+Write-Host "`n Install PSWindowsUpdate" -ForegroundColor Green
 Install-Module -Name PSWindowsUpdate
 Import-Module PSWindowsUpdate
 
-Write-Host "Start WindowsUpdate" -ForegroundColor Green
+Write-Host "`n Start WindowsUpdate" -ForegroundColor Green
 Install-WindowsUpdate -AcceptAll -AutoReboot
 
 # Restart
-Write-Host "Install PSTimer" -ForegroundColor Green
+Write-Host "`n Install PSTimer" -ForegroundColor Green
 Install-Module -Name PSTimers
 Start-PSTimer -Title "Waiting for reboot" -Seconds 20 -ProgressBar -scriptblock {Restart-Computer}

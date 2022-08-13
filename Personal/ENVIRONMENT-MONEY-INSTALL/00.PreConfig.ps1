@@ -14,28 +14,28 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 }
 
 ## Install PowerShell 7
-Write-Host "Install PowerShell 7" -ForegroundColor Green
+Write-Host "`n Install PowerShell 7" -ForegroundColor Green
 # https://github.com/PowerShell/PowerShell/blob/master/tools/install-powershell.ps1-README.md
 iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet"
-Write-Host "Install PowerShell 7 Complete" -ForegroundColor Green
+Write-Host "`n Install PowerShell 7 Complete" -ForegroundColor Green
 
 # TODO start with new PowerShell 7 windows and continue
 # start pwsh {.\scriptInNewPSWindow.ps1}
 
 ## Install Nuget Provider
-Write-Host "Install Nuget Provider" -ForegroundColor Green
+Write-Host "`n Install Nuget Provider" -ForegroundColor Green
 Install-PackageProvider -Name NuGet -Force
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 
 # Install MediaFeaturePack before install SnagIt
-Write-Host "Add Windows Optional Features" -ForegroundColor Green
+Write-Host "`n Add Windows Optional Features" -ForegroundColor Green
 Add-WindowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0
 
 # Enable .NET Framework 3.5
-Write-Host "Enable .NET Framework 3.5" -ForegroundColor Green
+Write-Host "`n Enable .NET Framework 3.5" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -FeatureName "NetFx3" -NoRestart
 
 # Restart
-Write-Host "Install PSTimer" -ForegroundColor Green
+Write-Host "`n Install PSTimer" -ForegroundColor Green
 Install-Module -Name PSTimers
 Start-PSTimer -Title "Waiting for reboot" -Seconds 10 -ProgressBar -scriptblock {Restart-Computer}

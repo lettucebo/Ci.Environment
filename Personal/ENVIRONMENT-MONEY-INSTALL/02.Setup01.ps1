@@ -22,7 +22,7 @@ if($PSversionTable.PsVersion.Major -lt 7){
 reg.exe add “HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32” /f
 
 ## Set Windows 10 Feature
-Write-Host "Set Windows 10 Feature" -ForegroundColor Green
+Write-Host "`n Set Windows 10 Feature" -ForegroundColor Green
 # Unpin Quick Access Documents and Pictures
 $quickDocPath = "C:\Users\" + $env:UserName + "\Documents"
 $quickPicPath = "C:\Users\" + $env:UserName + "\Pictures"
@@ -104,7 +104,7 @@ Get-AppxPackage *xboxapp* | Remove-AppxPackage -ErrorAction SilentlyContinue
 Get-AppxPackage Microsoft.Getstarted | Remove-AppxPackage -ErrorAction SilentlyContinue
 
 ## Install chocolatey
-Write-Host "Install Chocolatey and Packages" -ForegroundColor Green
+Write-Host "`n Install Chocolatey and Packages" -ForegroundColor Green
 Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
 choco install -y netfx-4.8-devpack
@@ -150,14 +150,14 @@ choco install -y dotnet-6.0-sdk
 #choco install -y adobereader
 
 ## Install RdcMan
-# Write-Host "Install RdcMan" -ForegroundColor Green
+# Write-Host "`n Install RdcMan" -ForegroundColor Green
 # $rdcManFile = "$PSScriptRoot\rdcman.msi";
 # Invoke-WebRequest -Uri "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21926608&authkey=AJCptTDx15-h2sE" -OutFile $rdcManFile
 # Start-Process msiexec -ArgumentList "/i $rdcManFile /qn /norestart /l*v install.log " -Wait -PassThru
 
 ## Install Little Big Mouse
 # https://github.com/mgth/LittleBigMouse
-# Write-Host "Install Little Big Mouse" -ForegroundColor Green
+# Write-Host "`n Install Little Big Mouse" -ForegroundColor Green
 # $lbmUrl = "https://github.com/mgth/LittleBigMouse/releases/download/4.2.7124.42685/LittleBigMouse_4.2.7124.42685.exe";
 # $lbmFile = "$PSScriptRoot\LittleBigMouse_4.2.7124.42685.exe";
 # Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
@@ -165,7 +165,7 @@ choco install -y dotnet-6.0-sdk
 
 ## Download MultiViewer for F1
 ##### https://beta.f1mv.com/
-Write-Host "Download MultiViewer for F1" -ForegroundColor Green
+Write-Host "`n Download MultiViewer for F1" -ForegroundColor Green
 $f1ZipFile = "$PSScriptRoot\MultiViewer-for-F1.zip";
 Invoke-WebRequest -Uri "https://releases.f1mv.com/download/73165134/MultiViewer.for.F1-win32-x64-1.5.9.zip" -OutFile $f1ZipFile
 Expand-Archive $f1ZipFile -DestinationPath "$HOME\Downloads" -Force
@@ -173,13 +173,13 @@ Expand-Archive $f1ZipFile -DestinationPath "$HOME\Downloads" -Force
 
 
 ## Install Redis Desktop Manager
-Write-Host "Install Redis Desktop Manager" -ForegroundColor Green
+Write-Host "`n Install Redis Desktop Manager" -ForegroundColor Green
 $rdmFile = "$PSScriptRoot\resp.exe";
 Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2022.4.2/resp-2022.4.2.exe" -OutFile $rdmFile
 Start-Process $rdmFile -ArgumentList "/q"
 
 ## Install Snagit
-Write-Host "Install Snagit" -ForegroundColor Green
+Write-Host "`n Install Snagit" -ForegroundColor Green
 $snagitFile = "$PSScriptRoot\snagit.exe";
 Invoke-WebRequest -Uri "https://download.techsmith.com/snagit/releases/snagit.exe" -OutFile $snagitFile
 Start-Process $snagitFile -ArgumentList "/q"
@@ -193,7 +193,7 @@ Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 
 ## Install Azure PowerShell
-Write-Host "Install Azure PowerShell" -ForegroundColor Green
+Write-Host "`n Install Azure PowerShell" -ForegroundColor Green
 Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
 if ($PSVersionTable.PSEdition -eq 'Desktop' -and (Get-Module -Name AzureRM -ListAvailable)) {
     Write-Warning -Message ('Az module not installed. Having both the AzureRM and ' +
@@ -203,13 +203,13 @@ if ($PSVersionTable.PSEdition -eq 'Desktop' -and (Get-Module -Name AzureRM -List
 }
 
 ## File Explorer show hidden file and file extensions
-Write-Host "File Explorer show hidden file and file extensions" -ForegroundColor Green
+Write-Host "`n File Explorer show hidden file and file extensions" -ForegroundColor Green
 $explorerKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
 Set-ItemProperty $explorerKey Hidden 1
 Set-ItemProperty $explorerKey HideFileExt 0
 
 ## Remove Folders from This PC
-Write-Host "Remove Folders from This PC" -ForegroundColor Green
+Write-Host "`n Remove Folders from This PC" -ForegroundColor Green
 $regPath1 = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\'
 $regPath2 = 'HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\'
 
@@ -227,7 +227,7 @@ $videosItem2 = '{f86fa3ab-70d2-4fc7-9c99-fcbf05467f3a}'
 $3dObjectsItem = '{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}'
 
 # Remove Desktop From This PC
-Write-Host "Remove Desktop From This PC" -ForegroundColor Yellow
+Write-Host "`n Remove Desktop From This PC" -ForegroundColor Yellow
 If (Get-Item -Path $regPath1$desktopItem -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$desktopItem -Recurse
     Remove-Item -Path $regPath2$desktopItem -Recurse
@@ -237,7 +237,7 @@ Else {
 }
 
 # Remove Documents From This PC
-Write-Host "Remove Documents From This PC" -ForegroundColor Yellow
+Write-Host "`n Remove Documents From This PC" -ForegroundColor Yellow
 If (Get-Item -Path $regPath1$documentsItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$documentsItem1 -Recurse
     Remove-Item -Path $regPath2$documentsItem1 -Recurse
@@ -249,7 +249,7 @@ Else {
 }
 
 # Remove Downloads From This PC
-Write-Host "Remove Downloads From This PC" -ForegroundColor Yellow
+Write-Host "`n Remove Downloads From This PC" -ForegroundColor Yellow
 If (Get-Item -Path $regPath1$downloadsItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$downloadsItem1 -Recurse
     Remove-Item -Path $regPath2$downloadsItem1 -Recurse
@@ -261,7 +261,7 @@ Else {
 }
 
 # Remove Music From This PC
-Write-Host "Remove Music From This PC" -ForegroundColor Yellow
+Write-Host "`n Remove Music From This PC" -ForegroundColor Yellow
 If (Get-Item -Path $regPath1$musicItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$musicItem1 -Recurse
     Remove-Item -Path $regPath2$musicItem1 -Recurse
@@ -273,7 +273,7 @@ Else {
 }
 
 # Remove Pictures From This PC
-Write-Host "Remove Pictures From This PC" -ForegroundColor Yellow
+Write-Host "`n Remove Pictures From This PC" -ForegroundColor Yellow
 If (Get-Item -Path $regPath1$picturesItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$picturesItem1 -Recurse
     Remove-Item -Path $regPath2$picturesItem1 -Recurse
@@ -285,7 +285,7 @@ Else {
 }
 
 # Remove Videos From This PC
-Write-Host "Remove Videos From This PC" -ForegroundColor Yellow
+Write-Host "`n Remove Videos From This PC" -ForegroundColor Yellow
 If (Get-Item -Path $regPath1$videosItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$videosItem1 -Recurse
     Remove-Item -Path $regPath2$videosItem1 -Recurse
@@ -297,7 +297,7 @@ Else {
 }
 
 # Remove 3D Objects From This PC
-Write-Host "Remove 3DObjects From This PC" -ForegroundColor Yellow
+Write-Host "`n Remove 3DObjects From This PC" -ForegroundColor Yellow
 If (Get-Item -Path $regPath1$3dObjectsItem -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$3dObjectsItem -Recurse
     Remove-Item -Path $regPath2$3dObjectsItem -Recurse
@@ -308,7 +308,7 @@ Else {
 
 ## Let me set a different input method for each app window
 # https://social.technet.microsoft.com/Forums/ie/en-US/c6e76806-3b64-47e6-876e-ffbbc7438784/the-option-let-me-set-a-different-input-method-for-each-app-window?forum=w8itprogeneral
-Write-Host "Enable Let me set a different input method for each app window" -ForegroundColor Green
+Write-Host "`n Enable Let me set a different input method for each app window" -ForegroundColor Green
 $prefMask = (Get-ItemProperty -Path 'HKCU:\Control Panel\Desktop' -Name 'UserPreferencesMask').UserPreferencesMask
 if (($prefMask[4] -band 0x80) -eq 0) {
   $prefMask[4] = ($prefMask[4] -bor 0x80)
@@ -335,7 +335,7 @@ Set-ItemProperty -Path "HKLM:\Software\Microsoft\Command Processor" -Name Autoru
 ## Set Powershell to UTF8 encode and PSReadLine
 ##### https://gist.github.com/doggy8088/d3f3925452e2d7b923d01142f755d2ae
 ##### https://dotblogs.com.tw/yc421206/2021/08/17/several_packages_to_enhance_posh_Powershell
-Write-Host "Config PowerShell Profile" -ForegroundColor Green
+Write-Host "`n Config PowerShell Profile" -ForegroundColor Green
 $powerhellProfileContent = 
 @'
 Import-Module PSReadLine
@@ -353,7 +353,7 @@ Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
 Add-Content -Path C:\Users\${env:username}\Documents\Powershell\Microsoft.PowerShell_profile.ps1 -Value $powerhellProfileContent
 
 ## Enable Microsoft-Windows-Subsystem-Linux
-Write-Host "Enable Microsoft-Windows-Subsystem-Linux" -ForegroundColor Green
+Write-Host "`n Enable Microsoft-Windows-Subsystem-Linux" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Windows-Subsystem-Linux
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlatform
 
@@ -361,7 +361,7 @@ Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlat
 ## reference: https://dev.to/smashse/wsl-chocolatey-powershell-winget-1d6p
 ## https://github.com/microsoft/WSL/issues/5014#issuecomment-692432322
 # Download and Install the WSL 2 Update (contains Microsoft Linux kernel)
-Write-Host "Install WSL2 Kernel udpate" -ForegroundColor Green
+Write-Host "`n Install WSL2 Kernel udpate" -ForegroundColor Green
 #Invoke-WebRequest https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -outfile $PSScriptRoot\wsl_update_x64.msi
 #Start-Process $PSScriptRoot\wsl_update_x64.msi -ArgumentList '/quiet' -Wait
 ##### https://github.com/microsoft/WSL/issues/7857#issuecomment-999935343
@@ -377,7 +377,7 @@ powershell -Command "Start-Process msiexec -Wait -ArgumentList '/i','wsl_update_
 wsl --set-default-version 2
 
 ## Download and Install Ubunut Linux
-Write-Host "Download and Install Ubunut Linux" -ForegroundColor Green
+Write-Host "`n Download and Install Ubunut Linux" -ForegroundColor Green
 #curl.exe -L -o $PSScriptRoot\Ubuntu_2004_x64.appx https://aka.ms/wslubuntu2204
 #powershell Add-AppxPackage $PSScriptRoot\Ubuntu_2204_x64.appx
 wsl --install -d Ubuntu
@@ -411,15 +411,15 @@ winget install 9N4066W2R5Q4 --accept-package-agreements
 winget install 9WZDNCRFHVJL --accept-package-agreements
 
 # Enable Telnet Client
-Write-Host "Enable Telnet Client" -ForegroundColor Green
+Write-Host "`n Enable Telnet Client" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName TelnetClient
 
 # Enable Hyper-V
-Write-Host "Enable Hyper-V" -ForegroundColor Green
+Write-Host "`n Enable Hyper-V" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Hyper-V -All
 
 # Enable Sandbox
-Write-Host "Enable Sandbox" -ForegroundColor Green
+Write-Host "`n Enable Sandbox" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Containers-DisposableClientVM -All
 
 # Synology VPN Server L2TP/IPSec with PSK
@@ -453,7 +453,7 @@ SETX LC_ALL C.UTF-8 /M
 
 ## gpg config
 $env:UserName
-Write-Host "Config PowerShell Profile" -ForegroundColor Green
+Write-Host "`n Add gpg config" -ForegroundColor Green
 $gpgConfContnet = 
 @'
 default-cache-ttl 604800
@@ -464,13 +464,14 @@ If (!(Test-Path $gpgPath)) {New-Item -Path $gpgPath -Force}
 Add-Content -Path $gpgPath -Value $gpgConfContnet
 
 ## Install .NET Core Tools
+Write-Host "`n Install .NET Core Tools" -ForegroundColor Green
 dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
 dotnet tool install --global dotnet-ef
 
 ## Install Developer Font
 ##### https://gist.github.com/anthonyeden/0088b07de8951403a643a8485af2709b
 ##### https://gist.github.com/cosine83/e83c44878a6bdeac0c7c59e3dbfd1f71
-Write-Host "Install Developer Font" -ForegroundColor Green
+Write-Host "`n Install Developer Font" -ForegroundColor Green
 $fontUrl = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/YaHei%20Consolas.ttf";
 $fontFile = "$PSScriptRoot\YaHei.ttf";
 $fontNoto1Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Black.otf";
@@ -492,25 +493,25 @@ $fontNoto8File = "$PSScriptRoot\NotoSansMonoCJKtc-Bold.otf";
 $fontNoto9Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansMonoCJKtc-Regular.otf";
 $fontNoto9File = "$PSScriptRoot\NotoSansMonoCJKtc-Regular.otf";
 
-Write-Host "Download fontFile..." -ForegroundColor Gray
+Write-Host "`n Download fontFile..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontUrl -OutFile $fontFile
-Write-Host "Download fontNoto1File..." -ForegroundColor Gray
+Write-Host "`n Download fontNoto1File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto1Url -OutFile $fontNoto1File
-Write-Host "Download fontNoto2File..." -ForegroundColor Gray
+Write-Host "`n Download fontNoto2File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto2Url -OutFile $fontNoto2File
-Write-Host "Download fontNoto3File..." -ForegroundColor Gray
+Write-Host "`n Download fontNoto3File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto3Url -OutFile $fontNoto3File
-Write-Host "Download fontNoto4File..." -ForegroundColor Gray
+Write-Host "`n Download fontNoto4File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto4Url -OutFile $fontNoto4File
-Write-Host "Download fontNoto5File..." -ForegroundColor Gray
+Write-Host "`n Download fontNoto5File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto5Url -OutFile $fontNoto5File
-Write-Host "Download fontNoto6File..." -ForegroundColor Gray
+Write-Host "`n Download fontNoto6File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto6Url -OutFile $fontNoto6File
-Write-Host "Download fontNoto7File..." -ForegroundColor Gray
+Write-Host "`n Download fontNoto7File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto7Url -OutFile $fontNoto7File
-Write-Host "Download fontNoto8File..." -ForegroundColor Gray
+Write-Host "`n Download fontNoto8File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto8Url -OutFile $fontNoto8File
-Write-Host "Download fontNoto9File..." -ForegroundColor Gray
+Write-Host "`n Download fontNoto9File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto9Url -OutFile $fontNoto9File
 
 $objFolder = (New-Object -ComObject Shell.Application).Namespace(0x14)
@@ -528,7 +529,7 @@ $objFolder.CopyHere($fontNoto9File, 0x10)
 ## Instal VS 2022
 # https://docs.microsoft.com/en-us/visualstudio/install/workload-and-component-ids?view=vs-2022
 # https://developercommunity.visualstudio.com/t/setup-does-not-wait-for-installation-to-complete-w/26668#T-N1137560
-Write-Host "Instal VS 2022" -ForegroundColor Green
+Write-Host "`n Instal VS 2022" -ForegroundColor Green
 $vs2022Url = "https://aka.ms/vs/17/release/vs_enterprise.exe";
 $vs2022Exe = "$PSScriptRoot\vs_enterprise.exe";
 $start_time = Get-Date
@@ -589,5 +590,4 @@ Start-Process -FilePath $vs2022Exe -ArgumentList `
 -Wait -PassThru
 
 # Restart
-Install-Module -Name PSTimers
 Start-PSTimer -Title "Waiting for reboot" -Seconds 20 -ProgressBar -scriptblock {Restart-Computer}
