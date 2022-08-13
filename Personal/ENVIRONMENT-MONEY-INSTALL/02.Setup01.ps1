@@ -398,6 +398,8 @@ winget install XPDDVC6XTQQKMM --accept-package-agreements
 winget install 9N4066W2R5Q4 --accept-package-agreements
 # OneNote for Windows 10
 winget install 9WZDNCRFHVJL --accept-package-agreements
+# Bing Wallpaper
+winget install Microsoft.BingWallpaper --accept-package-agreements
 
 # Enable Telnet Client
 Write-Host "`n Enable Telnet Client" -ForegroundColor Green
