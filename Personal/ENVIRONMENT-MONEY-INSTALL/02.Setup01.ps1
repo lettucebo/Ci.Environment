@@ -317,6 +317,7 @@ if (($prefMask[4] -band 0x80) -eq 0) {
 
 ## Set PowerPoint export high-resolution
 # https://docs.microsoft.com/zh-tw/office/troubleshoot/powerpoint/change-export-slide-resolution
+Write-Host "`n Set PowerPoint export high-resolution" -ForegroundColor Green
 [microsoft.win32.registry]::SetValue("HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\PowerPoint\Options", "ExportBitmapResolution", 300)
 
 ## Set Show Taskbar buttons on where window is open
@@ -371,9 +372,10 @@ wsl --update
 # Copy-Item -Path "$env:TEMP\System32\lxss" -Destination "C:\System32" -Recurse
 
 # Also install the WSL 2 update with a normal full install
-powershell -Command "Start-Process msiexec -Wait -ArgumentList '/i','wsl_update_x64.msi','/quiet','/qn'"
+# powershell -Command "Start-Process msiexec -Wait -ArgumentList '/i','wsl_update_x64.msi','/quiet','/qn'"
 
 ## Set wsl default version to 2
+Write-Host "`n Set wsl default version to 2" -ForegroundColor Green
 wsl --set-default-version 2
 
 ## Download and Install Ubunut Linux
@@ -382,15 +384,8 @@ Write-Host "`n Download and Install Ubunut Linux" -ForegroundColor Green
 #powershell Add-AppxPackage $PSScriptRoot\Ubuntu_2204_x64.appx
 wsl --install -d Ubuntu
 
-## Setting winget
-# C:\Users\Money\AppData\Local\Packages\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\LocalState\settings.json
-# (Get-Content "C:\Users\Money\AppData\Local\Packages\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\LocalState\settings.json" -Raw) -Replace "// For documentation on these settings, see: https://aka.ms/winget-settings", '
-#     "experimentalFeatures": {
-#         "experimentalMSStore": true
-#     }
-# '
-
 ## Using WinGet install MS Store application
+Write-Host "`n Using WinGet install MS Store application" -ForegroundColor Green
 # Microsoft.Whiteboard
 winget install 9MSPC6MP8FM4 --accept-package-agreements
 # NuGetPackageExplorer
@@ -423,21 +418,26 @@ Write-Host "`n Enable Sandbox" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Containers-DisposableClientVM -All
 
 # Synology VPN Server L2TP/IPSec with PSK
+Write-Host "`n Config Synology VPN Server L2TP/IPSec with PSK" -ForegroundColor Green
 [microsoft.win32.registry]::SetValue("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\PolicyAgent", "AssumeUDPEncapsulationContextOnSendRule", 2)
 
 # Refresh EnvironmentVariable
+Write-Host "`n Refresh EnvironmentVariable" -ForegroundColor Green
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
 ## Restart file explorer
+Write-Host "`n Restart file explorer" -ForegroundColor Green
 Stop-Process -processname explorer
 refreshenv
 
 
 # Install Azure Artifacts Credential Provider
 ## https://github.com/microsoft/artifacts-credprovider
+Write-Host "`n Install Azure Artifacts Credential Provider" -ForegroundColor Green
 iex "& { $(irm https://aka.ms/install-artifacts-credprovider.ps1) } -AddNetfx"
 
 # Config GIT
+Write-Host "`n Config GIT" -ForegroundColor Green
 git config --global user.name "Money Yu"
 git config --global user.email abc12207@gmail.com
 git config --global user.signingkey 871B1DD4A0830BA9897A6AF37240ACACFF6EDB8D
@@ -452,8 +452,8 @@ SETX LC_ALL C.UTF-8 /M
 
 
 ## gpg config
-$env:UserName
 Write-Host "`n Add gpg config" -ForegroundColor Green
+$env:UserName
 $gpgConfContnet = 
 @'
 default-cache-ttl 604800
