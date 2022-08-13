@@ -23,6 +23,7 @@ Write-Host "Install PowerShell 7 Complete" -ForegroundColor Green
 # start pwsh {.\scriptInNewPSWindow.ps1}
 
 ## Install Nuget Provider
+Write-Host "Install Nuget Provider" -ForegroundColor Green
 Install-PackageProvider -Name NuGet -Force
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 
@@ -31,8 +32,10 @@ Write-Host "Add Windows Optional Features" -ForegroundColor Green
 Add-WindowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0
 
 # Enable .NET Framework 3.5
-Enable-WindowsOptionalFeature -Online -FeatureName "NetFx3"
+Write-Host "Enable .NET Framework 3.5" -ForegroundColor Green
+Enable-WindowsOptionalFeature -Online -FeatureName "NetFx3" -NoRestart
 
 # Restart
+Write-Host "Install PSTimer" -ForegroundColor Green
 Install-Module -Name PSTimers
-Start-PSTimer -Title "Waiting for reboot" -Seconds 20 -ProgressBar -scriptblock {Restart-Computer}
+Start-PSTimer -Title "Waiting for reboot" -Seconds 10 -ProgressBar -scriptblock {Restart-Computer}
