@@ -17,7 +17,7 @@ if($PSversionTable.PsVersion.Major -lt 7){
 
 
 # Install nodejs using nvm
-Write-Host "`n Install PSTimer" -ForegroundColor Green
+Write-Host "`n Install nodejs using nvm" -ForegroundColor Green
 $nvmCmd = @'
 cmd.exe /C 
 nvm install 16.16.0
@@ -37,7 +37,7 @@ Invoke-WebRequest -Uri "https://gist.githubusercontent.com/lettucebo/1c791b21bf5
 & $vsixInstallScript -PackageName "MadsKristensen.Tweaks"
 & $vsixInstallScript -PackageName "MikeWard-AnnArbor.VSColorOutput64"
 
-Write-Host "`n Developer tools" -ForegroundColor Green
+Write-Host "`n Install Developer tools" -ForegroundColor Green
 #choco install -y dotpeek
 #choco install -y resharper
 choco install -y dotultimate --params "'/PerMachine /NoCpp /NoTeamCityAddin'"
