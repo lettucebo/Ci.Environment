@@ -26,6 +26,12 @@ nvm use 16.16.0
 '@
 Invoke-Expression -Command:$nvmCmd
 
+# Install GPG agent auto start service
+nssm install GpgAgentService "C:\Program Files (x86)\GnuPG\bin\gpg-agent.exe"
+nssm set GpgAgentService AppDirectory "C:\Program Files (x86)\GnuPG\bin"
+nssm set GpgAgentService AppParameters "--launch gpg-agent"
+nssm set GpgAgentService Description "Auto start gpg-agent"
+
 ## Install Visual Studio Exntension
 Write-Host "`n Install Visual Studio Exntension" -ForegroundColor Green
 $vsixInstallScript = "$PSScriptRoot\install-vsix.ps1";
