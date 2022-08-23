@@ -27,6 +27,7 @@ nvm use 16.16.0
 Invoke-Expression -Command:$nvmCmd
 
 # Install GPG agent auto start service
+## https://stackoverflow.com/a/51407128/1799047
 nssm install GpgAgentService "C:\Program Files (x86)\GnuPG\bin\gpg-agent.exe"
 nssm set GpgAgentService AppDirectory "C:\Program Files (x86)\GnuPG\bin"
 nssm set GpgAgentService AppParameters "--launch gpg-agent"
