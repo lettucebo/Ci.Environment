@@ -136,6 +136,7 @@ choco install -y microsoft-teams.install
 choco install -y sysinternals
 choco install -y openssl.light
 choco install -y nssm
+choco install -y autohotkey
 
 choco install -y dotnetcore-2.1-sdk
 choco install -y dotnetcore-2.2-sdk
