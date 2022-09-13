@@ -43,6 +43,7 @@ Invoke-WebRequest -Uri "https://gist.githubusercontent.com/lettucebo/1c791b21bf5
 & $vsixInstallScript -PackageName "MadsKristensen.EditorConfig"
 & $vsixInstallScript -PackageName "MadsKristensen.Tweaks"
 & $vsixInstallScript -PackageName "MikeWard-AnnArbor.VSColorOutput64"
+& $vsixInstallScript -PackageName "MadsKristensen.RainbowBraces"
 
 Write-Host "`n Install Developer tools" -ForegroundColor Green
 #choco install -y dotpeek
