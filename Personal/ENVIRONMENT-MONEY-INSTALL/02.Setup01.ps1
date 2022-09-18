@@ -82,26 +82,28 @@ Get-AppxPackage Microsoft.BingSports | Remove-AppxPackage -ErrorAction SilentlyC
 Get-AppxPackage Microsoft.BingFinance | Remove-AppxPackage -ErrorAction SilentlyContinue
 # Windows Phone Companion
 Get-AppxPackage Microsoft.WindowsPhone | Remove-AppxPackage -ErrorAction SilentlyContinue
-# People
-Get-AppxPackage Microsoft.People | Remove-AppxPackage -ErrorAction SilentlyContinue
 # Groove Music
-Get-AppxPackage Microsoft.ZuneMusic | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage *Microsoft.ZuneMusic* | Remove-AppxPackage -ErrorAction SilentlyContinue
 # Get Started   
 Get-AppxPackage getstarted | Remove-AppxPackage -ErrorAction SilentlyContinue
 # Mobile Plan
 Get-AppxPackage Microsoft.OneConnect | Remove-AppxPackage -ErrorAction SilentlyContinue
 # Calendar and Mail
 Get-AppxPackage *windowscommunicationsapps* | Remove-AppxPackage -ErrorAction SilentlyContinue
-Get-AppxPackage *officehub* | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage *Microsoft.MicrosoftOfficeHub* | Remove-AppxPackage -ErrorAction SilentlyContinue
 Get-AppxPackage *skypeapp* | Remove-AppxPackage -ErrorAction SilentlyContinue
 Get-AppxPackage *windowsmaps* | Remove-AppxPackage -ErrorAction SilentlyContinue
 Get-AppxPackage *zunemusic* | Remove-AppxPackage -ErrorAction SilentlyContinue
 Get-AppxPackage *bingfinance* | Remove-AppxPackage -ErrorAction SilentlyContinue
-Get-AppxPackage *bingnews* | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage *Microsoft.BingNews* | Remove-AppxPackage -ErrorAction SilentlyContinue
 Get-AppxPackage *people* | Remove-AppxPackage -ErrorAction SilentlyContinue
 Get-AppxPackage *bingsports* | Remove-AppxPackage -ErrorAction SilentlyContinue
 Get-AppxPackage *xboxapp* | Remove-AppxPackage -ErrorAction SilentlyContinue
-Get-AppxPackage Microsoft.Getstarted | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage *Microsoft.Getstarted* | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage *Microsoft.WindowsFeedbackHub* | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage *Microsoft.SkypeApp* | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage *Microsoft.People* | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage *Microsoft.GetHelp* | Remove-AppxPackage -ErrorAction SilentlyContinue
 
 ## Install chocolatey
 Write-Host "`n Install Chocolatey and Packages" -ForegroundColor Green
@@ -398,8 +400,6 @@ winget install 9NXQXXLFST89 --accept-package-agreements
 winget install XPDDVC6XTQQKMM --accept-package-agreements
 # Region to Share
 winget install 9N4066W2R5Q4 --accept-package-agreements
-# OneNote for Windows 10
-winget install 9WZDNCRFHVJL --accept-package-agreements
 # Bing Wallpaper
 winget install Microsoft.BingWallpaper --accept-package-agreements
 
