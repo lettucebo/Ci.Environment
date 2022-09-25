@@ -129,7 +129,7 @@ choco install -y terraform
 choco install -y python
 choco install -y gpg4win
 choco install -y robo3t
-choco install -y office365business
+# choco install -y office365business
 choco install -y googlechrome
 choco install -y powertoys
 choco install -y mobaxterm
