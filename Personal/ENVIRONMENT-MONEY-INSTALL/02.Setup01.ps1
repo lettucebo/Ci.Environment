@@ -386,23 +386,23 @@ wsl --install -d Ubuntu
 ## Using WinGet install MS Store application
 Write-Host "`n Using WinGet install MS Store application" -ForegroundColor Green
 # Microsoft.Whiteboard
-winget install 9MSPC6MP8FM4 --accept-package-agreements
+winget install 9MSPC6MP8FM4 --accept-package-agreements --accept-source-agreements
 # NuGetPackageExplorer
-winget install 9WZDNCRDMDM3 --accept-package-agreements
+winget install 9WZDNCRDMDM3 --accept-package-agreements --accept-source-agreements
 # Spotify
-winget install 9NCBCSZSJRSB --accept-package-agreements
+winget install 9NCBCSZSJRSB --accept-package-agreements --accept-source-agreements
 # Netflix_mcm4njqhnhss8
-winget install 9WZDNCRFJ3TJ --accept-package-agreements
+winget install 9WZDNCRFJ3TJ --accept-package-agreements --accept-source-agreements
 # Xodo PDF
-winget install 9WZDNCRDJXP4 --accept-package-agreements
+winget install 9WZDNCRDJXP4 --accept-package-agreements --accept-source-agreements
 # Disney
-winget install 9NXQXXLFST89 --accept-package-agreements
+winget install 9NXQXXLFST89 --accept-package-agreements --accept-source-agreements
 # BiliBili
-winget install XPDDVC6XTQQKMM --accept-package-agreements
+winget install XPDDVC6XTQQKMM --accept-package-agreements --accept-source-agreements
 # Region to Share
-winget install 9N4066W2R5Q4 --accept-package-agreements
+winget install 9N4066W2R5Q4 --accept-package-agreements --accept-source-agreements
 # Bing Wallpaper
-winget install Microsoft.BingWallpaper --accept-package-agreements
+winget install Microsoft.BingWallpaper --accept-package-agreements --accept-source-agreements
 
 # Enable Telnet Client
 Write-Host "`n Enable Telnet Client" -ForegroundColor Green
