@@ -4,7 +4,8 @@ wget https://dot.net/v1/dotnet-install.sh
 sudo chmod +x ./dotnet-install.sh
 
 env DOTNET_ROOT=/usr/share/dotnet
-env PATH=$PATH:usr/share/dotnet
+env PATH=$PATH:/usr/share/dotnet
+export PATH=$PATH:/usr/share/dotnet
 
 sudo ./dotnet-install.sh --install-dir /usr/share/dotnet --channel 7.0
 sudo ./dotnet-install.sh --install-dir /usr/share/dotnet --channel 6.0
