@@ -18,11 +18,12 @@ dotnet --list-sdks
 ###
 
 wget -c http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.16_amd64.deb
-sudo chown -Rv _apt:root libssl1.1_1.1.1f-1ubuntu2.16_amd64.deb
-sudo apt -y install ./libssl1.1_1.1.1f-1ubuntu2.16_amd64.deb
 wget -c http://security.ubuntu.com/ubuntu/pool/main/o/openssl/openssl_1.1.1f-1ubuntu2.16_amd64.deb
+sudo chown -Rv _apt:root libssl1.1_1.1.1f-1ubuntu2.16_amd64.deb
 sudo chown -Rv _apt:root openssl_1.1.1f-1ubuntu2.16_amd64.deb
-sudo apt -y install ./openssl_1.1.1f-1ubuntu2.16_amd64.deb
+sudo apt -y install ./libssl1.1_1.1.1f-1ubuntu2.16_amd64.deb
+sudo apt -y --allow-downgrades install ./openssl_1.1.1f-1ubuntu2.16_amd64.deb
+
 
 wget https://vstsagentpackage.azureedge.net/agent/2.214.1/vsts-agent-linux-x64-2.214.1.tar.gz
 mkdir adoagent && cd adoagent
