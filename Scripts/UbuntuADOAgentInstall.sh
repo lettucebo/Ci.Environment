@@ -24,11 +24,12 @@ sudo chown -Rv _apt:root openssl_1.1.1f-1ubuntu2.16_amd64.deb
 sudo apt -y install ./libssl1.1_1.1.1f-1ubuntu2.16_amd64.deb
 sudo apt -y --allow-downgrades install ./openssl_1.1.1f-1ubuntu2.16_amd64.deb
 
+## ref https://github.com/microsoft/azure-pipelines-agent/issues/3599#issuecomment-1344552733
 
 wget https://vstsagentpackage.azureedge.net/agent/2.214.1/vsts-agent-linux-x64-2.214.1.tar.gz
 mkdir adoagent && cd adoagent
 tar zxvf ../vsts-agent-linux-x64-2.214.1.tar.gz
-
+export AZP_AGENT_USE_LEGACY_HTTP=true
 ./config.sh
 
 #########
