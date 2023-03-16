@@ -178,22 +178,16 @@ Start-Process -FilePath $f1File -ArgumentList "/S" -PassThru
 
 ## Install Redis Desktop Manager
 Write-Host "`n Install Redis Desktop Manager" -ForegroundColor Green
-$rdmFile = "$PSScriptRoot\resp.exe";
-Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2022.4.2/resp-2022.4.2.exe" -OutFile $rdmFile
+$rdmFile = "$PSScriptRoot\resp-2022.5.0.exe";
+Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2022.5/resp-2022.5.0.exe" -OutFile $rdmFile
 Start-Process $rdmFile -ArgumentList "/q"
-
-## Install Snagit
-#Write-Host "`n Install Snagit" -ForegroundColor Green
-#$snagitFile = "$PSScriptRoot\snagit.exe";
-#Invoke-WebRequest -Uri "https://download.techsmith.com/snagit/releases/snagit.exe" -OutFile $snagitFile
-#Start-Process $snagitFile -ArgumentList "/q"
 
 # Dell Bluetooth
 # https://www.dell.com/community/XPS/XPS-9310-Bluetooth-lag-with-Logitech-MX-Keys-MX-Master-3/m-p/7795277/highlight/true#M77883
 
 ## Install Nuget Provider
-Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+Install-PackageProvider -Name NuGet -Force
 
 ## Install Azure PowerShell
 Write-Host "`n Install Azure PowerShell" -ForegroundColor Green
