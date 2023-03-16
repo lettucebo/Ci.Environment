@@ -15,14 +15,13 @@ if($PSversionTable.PsVersion.Major -lt 7){
     Break
 }
 
-
 # Install nodejs using nvm
 Write-Host "`n Install nodejs using nvm" -ForegroundColor Green
 $nvmCmd = @'
 cmd.exe /C 
-nvm install 16.16.0
-nvm install 18.7.0
-nvm use 16.16.0
+nvm install 18.15.0
+nvm install 19.8.1
+nvm use 18.15.0
 '@
 Invoke-Expression -Command:$nvmCmd
 
@@ -51,5 +50,19 @@ Write-Host "`n Install Developer tools" -ForegroundColor Green
 choco install -y dotultimate --params "'/PerMachine /NoCpp /NoTeamCityAddin'"
 choco install -y sqltoolbelt --params "/products:'SQL Compare, SQL Data Compare, SQL Prompt, SQL Search, SQL Data Generator, SQL Doc, SQL Dependency Tracker, SQL Backup, SSMS Integration Pack'"
 
+## Run basic docker
+docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=P@ssw0rd" `
+   -p 1433:1433 --name mssql2022 --hostname mssql2022 `
+   -d `
+   --restart unless-stopped `
+   mcr.microsoft.com/mssql/server:2022-latest
+ 
+ docker run --name redis `
+ -p 6379:6379 `
+ -d `
+ --restart unless-stopped `
+ redis
+ 
+## Complete
 Write-Host -NoNewLine "`n Environment config complete, Press any key to continue...";
 $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
