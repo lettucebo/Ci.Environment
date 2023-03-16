@@ -140,19 +140,18 @@ choco install -y openssl.light
 choco install -y nssm
 choco install -y autohotkey
 choco install -y gsudo
+choco install -y microsoft-edge-insider-dev
 
 choco install -y dotnetcore-2.1-sdk
 choco install -y dotnetcore-2.2-sdk
 choco install -y dotnetcore-3.1-sdk
 choco install -y dotnet-5.0-sdk
 choco install -y dotnet-6.0-sdk
+choco install -y dotnet-7.0-sdk
 
-#choco install -y snagit --ignorechecksum --version=2022.1.2.20221010
-#choco install -y azure-functions-core-tools-3
-#choco install -y spotify --ignorechecksum
-#choco install -y firefox-dev --pre --params "l=en-US"
-
-#choco install -y adobereader
+choco install -y snagit --ignorechecksum --version=2022.1.2.20221010
+choco install -y spotify --ignorechecksum
+choco install -y firefox-dev --pre --params "l=en-US"
 
 ## Install RdcMan
 # Write-Host "`n Install RdcMan" -ForegroundColor Green
@@ -162,18 +161,18 @@ choco install -y dotnet-6.0-sdk
 
 ## Install Little Big Mouse
 # https://github.com/mgth/LittleBigMouse
-# Write-Host "`n Install Little Big Mouse" -ForegroundColor Green
-# $lbmUrl = "https://github.com/mgth/LittleBigMouse/releases/download/4.2.7124.42685/LittleBigMouse_4.2.7124.42685.exe";
-# $lbmFile = "$PSScriptRoot\LittleBigMouse_4.2.7124.42685.exe";
-# Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
-# Start-Process -FilePath $lbmFile -ArgumentList "/S" -PassThru
+Write-Host "`n Install Little Big Mouse" -ForegroundColor Green
+$lbmUrl = "https://github.com/mgth/LittleBigMouse/releases/download/4.2.7124.42685/LittleBigMouse_4.2.7124.42685.exe";
+$lbmFile = "$PSScriptRoot\LittleBigMouse_4.2.7124.42685.exe";
+Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
+Start-Process -FilePath $lbmFile -ArgumentList "/S" -PassThru
 
 ## Download MultiViewer for F1
 ##### https://beta.f1mv.com/
 Write-Host "`n Download MultiViewer for F1" -ForegroundColor Green
-$f1ZipFile = "$PSScriptRoot\MultiViewer-for-F1.zip";
-Invoke-WebRequest -Uri "https://releases.f1mv.com/download/73165134/MultiViewer.for.F1-win32-x64-1.5.9.zip" -OutFile $f1ZipFile
-Expand-Archive $f1ZipFile -DestinationPath "$HOME\Downloads" -Force
+$f1File = "$PSScriptRoot\MultiViewer.for.F1-1.14.0.Setup.exe";
+Invoke-WebRequest -Uri "https://releases.multiviewer.dev/download/98082755/MultiViewer.for.F1-1.14.0.Setup.exe" -OutFile $f1File
+Start-Process -FilePath $f1File -ArgumentList "/S" -PassThru
 
 
 
