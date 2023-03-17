@@ -22,9 +22,6 @@ Write-Host "`n Install PowerShell 7 Complete" -ForegroundColor Green
 # TODO start with new PowerShell 7 windows and continue
 # start pwsh {.\scriptInNewPSWindow.ps1}
 
-## Install Nuget Provider
-Write-Host "`n Install Nuget Provider" -ForegroundColor Green
-Install-PackageProvider -Name NuGet -Force
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 
 # Install MediaFeaturePack before install SnagIt
