@@ -175,7 +175,12 @@ $f1File = "$PSScriptRoot\MultiViewer.for.F1-1.14.0.Setup.exe";
 Invoke-WebRequest -Uri "https://releases.multiviewer.dev/download/98082755/MultiViewer.for.F1-1.14.0.Setup.exe" -OutFile $f1File
 Start-Process -FilePath $f1File -ArgumentList "/S" -PassThru
 
-
+## Download Azure Storage Emulator
+# https://learn.microsoft.com/en-us/azure/storage/common/storage-use-emulator
+Write-Host "`n Install Azure Storage Emulator" -ForegroundColor Green
+$storFile = "$PSScriptRoot\microsoftazurestorageemulator.msi";
+Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=717179&clcid=0x409" -OutFile $storFile
+Start-Process msiexec -ArgumentList "/i $storFile /qn /norestart /l*v install.log " -Wait -PassThru
 
 ## Install Redis Desktop Manager
 Write-Host "`n Install Redis Desktop Manager" -ForegroundColor Green
