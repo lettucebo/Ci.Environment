@@ -402,6 +402,8 @@ winget install XPDDVC6XTQQKMM --accept-package-agreements --accept-source-agreem
 winget install 9N4066W2R5Q4 --accept-package-agreements --accept-source-agreements
 # Bing Wallpaper
 winget install Microsoft.BingWallpaper --accept-package-agreements --accept-source-agreements
+# Samsung Notes
+winget install 9NBLGGH43VHV --accept-package-agreements --accept-source-agreements
 
 # Enable Telnet Client
 Write-Host "`n Enable Telnet Client" -ForegroundColor Green
