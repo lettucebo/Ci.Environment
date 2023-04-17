@@ -63,6 +63,12 @@ docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=P@ssw0rd" `
  --restart unless-stopped `
  redis
  
+ docker run -e "ACCEPT_EULA=Y" -e "MYSQL_ROOT_PASSWORD=P@ssw0rd" `
+   -p 3306:3306 --name mysql --hostname mysql `
+   -d `
+   --restart unless-stopped `
+   mysql
+ 
 ## Complete
 Write-Host -NoNewLine "`n Environment config complete, Press any key to continue...";
 $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
