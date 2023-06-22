@@ -143,6 +143,7 @@ choco install -y gsudo
 choco install -y microsoft-edge-insider-dev
 choco install -y opera
 choco install -y powerbi
+choco install -y openvpn-connect
 
 choco install -y dotnetcore-2.1-sdk
 choco install -y dotnetcore-2.2-sdk
