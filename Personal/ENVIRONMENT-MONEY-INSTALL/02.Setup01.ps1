@@ -469,6 +469,10 @@ Write-Host "`n Install .NET Core Tools" -ForegroundColor Green
 dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
 dotnet tool install --global dotnet-ef
 
+## Set IPv4 priority
+## https://ipw.cn/doc/ipv6/user/ipv4_ipv6_prefix_precedence.html
+netsh interface ipv6 set prefixpolicy ::ffff:0:0/96 45 4
+
 ## Install Developer Font
 ##### https://gist.github.com/anthonyeden/0088b07de8951403a643a8485af2709b
 ##### https://gist.github.com/cosine83/e83c44878a6bdeac0c7c59e3dbfd1f71
