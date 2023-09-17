@@ -19,8 +19,13 @@ Write-Host "`n Install PowerShell 7" -ForegroundColor Green
 iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet"
 Write-Host "`n Install PowerShell 7 Complete" -ForegroundColor Green
 
+Write-Host "`n Install Nuget Provider" -ForegroundColor Green
 Install-PackageProvider -Name NuGet -Force
+Write-Host "`n Install Nuget Provider Complete" -ForegroundColor Green
+
+Write-Host "`n Install PSGallery" -ForegroundColor Green
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+Write-Host "`n Install PSGallery Complete" -ForegroundColor Green
 
 # Install MediaFeaturePack before install SnagIt
 Write-Host "`n Add Windows Optional Features" -ForegroundColor Green
