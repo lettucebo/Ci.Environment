@@ -29,7 +29,7 @@ Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 Write-Host "`n Install PSGallery Complete" -ForegroundColor Green
 
 # Install MediaFeaturePack before install SnagIt
-Write-Host "`n Add Windows Optional Features" -ForegroundColor Green
+Write-Host "`n Add Windows Optional Features - MediaFeaturePack" -ForegroundColor Green
 Add-WindowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0
 
 # Enable .NET Framework 3.5
