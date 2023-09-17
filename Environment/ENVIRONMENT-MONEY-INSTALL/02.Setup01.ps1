@@ -68,6 +68,7 @@ Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\
 [microsoft.win32.registry]::SetValue("HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "ShowTaskViewButton", 0)
 
 # Disalbe start menu web search result
+## Reference: https://pureinfotech.com/disable-search-web-results-windows-11/
 [microsoft.win32.registry]::SetValue("HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Windows", "DisableSearchBoxSuggestions", 1)
 
 # Set receive update for other Microsoft product
