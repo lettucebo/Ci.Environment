@@ -13,6 +13,7 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     Break
 }
 
+## Install Nuget Provider before install PowerShell 7 to prevent being prompted to install Nuget Provider
 Write-Host "`n Install Nuget Provider" -ForegroundColor Green
 Install-PackageProvider -Name NuGet -Force
 Write-Host "`n Install Nuget Provider Complete" -ForegroundColor Green
