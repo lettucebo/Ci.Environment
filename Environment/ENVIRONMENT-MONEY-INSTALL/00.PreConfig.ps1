@@ -13,15 +13,15 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     Break
 }
 
+Write-Host "`n Install Nuget Provider" -ForegroundColor Green
+Install-PackageProvider -Name NuGet -Force
+Write-Host "`n Install Nuget Provider Complete" -ForegroundColor Green
+
 ## Install PowerShell 7
 Write-Host "`n Install PowerShell 7" -ForegroundColor Green
 # https://github.com/PowerShell/PowerShell/blob/master/tools/install-powershell.ps1-README.md
 iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet"
 Write-Host "`n Install PowerShell 7 Complete" -ForegroundColor Green
-
-Write-Host "`n Install Nuget Provider" -ForegroundColor Green
-Install-PackageProvider -Name NuGet -Force
-Write-Host "`n Install Nuget Provider Complete" -ForegroundColor Green
 
 Write-Host "`n Install PSGallery" -ForegroundColor Green
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
