@@ -199,8 +199,13 @@ Start-Process $rdmFile -ArgumentList "/q"
 # https://www.dell.com/community/XPS/XPS-9310-Bluetooth-lag-with-Logitech-MX-Keys-MX-Master-3/m-p/7795277/highlight/true#M77883
 
 ## Install Nuget Provider
-Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+Write-Host "`n Install Nuget Provider" -ForegroundColor Green
 Install-PackageProvider -Name NuGet -Force
+Write-Host "`n Install Nuget Provider Complete" -ForegroundColor Green
+
+Write-Host "`n Install PSGallery" -ForegroundColor Green
+Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+Write-Host "`n Install PSGallery Complete" -ForegroundColor Green
 
 ## Install Azure PowerShell
 Write-Host "`n Install Azure PowerShell" -ForegroundColor Green
