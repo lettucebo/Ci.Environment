@@ -176,10 +176,10 @@ Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
 Start-Process -FilePath $lbmFile -ArgumentList "/S" -PassThru
 
 ## Download MultiViewer for F1
-##### https://beta.f1mv.com/
+##### https://multiviewer.app/
 Write-Host "`n Download MultiViewer for F1" -ForegroundColor Green
 $f1File = "$PSScriptRoot\MultiViewer.for.F1-1.14.0.Setup.exe";
-Invoke-WebRequest -Uri "https://releases.multiviewer.dev/download/98082755/MultiViewer.for.F1-1.14.0.Setup.exe" -OutFile $f1File
+Invoke-WebRequest -Uri "https://releases.multiviewer.app/download/125348250/MultiViewer.for.F1-1.26.9.Setup.exe" -OutFile $f1File
 Start-Process -FilePath $f1File -ArgumentList "/S" -PassThru
 
 ## Download Azure Storage Emulator
