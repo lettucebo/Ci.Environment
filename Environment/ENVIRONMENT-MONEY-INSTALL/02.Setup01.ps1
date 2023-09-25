@@ -458,6 +458,7 @@ git config --global user.email abc12207@gmail.com
 git config --global user.signingkey 871B1DD4A0830BA9897A6AF37240ACACFF6EDB8D
 git config --global commit.gpgsign true
 git config --global gpg.program "C:\Program Files (x86)\GnuPG\bin\gpg.exe"
+git config --global core.editor "code --wait"
 # 設定 git status 若有中文不會顯示亂碼
 git config --global core.quotepath false
 # 設定 git log 若有中文不會顯示亂碼
