@@ -41,8 +41,11 @@ Invoke-WebRequest -Uri "https://gist.githubusercontent.com/lettucebo/1c791b21bf5
 & $vsixInstallScript -PackageName "MadsKristensen.ZenCoding"
 & $vsixInstallScript -PackageName "MadsKristensen.EditorConfig"
 & $vsixInstallScript -PackageName "MadsKristensen.Tweaks"
-& $vsixInstallScript -PackageName "MikeWard-AnnArbor.VSColorOutput64"
+& $vsixInstallScript -PackageName "ErikEJ.EFCorePowerTools"
 & $vsixInstallScript -PackageName "MadsKristensen.RainbowBraces"
+& $vsixInstallScript -PackageName "GitHub.copilotvs"
+& $vsixInstallScript -PackageName "VisualStudioExptTeam.VSGitHubCopilot"
+& $vsixInstallScript -PackageName "NikolayBalakin.Outputenhancer"
 
 Write-Host "`n Install Developer tools" -ForegroundColor Green
 #choco install -y dotpeek
