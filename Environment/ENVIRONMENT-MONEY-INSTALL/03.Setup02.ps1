@@ -51,6 +51,8 @@ Write-Host "`n Install Developer tools" -ForegroundColor Green
 #choco install -y dotpeek
 #choco install -y resharper
 choco install -y dotultimate --params "'/NoCpp /NoTeamCityAddin'"
+
+## https://download.red-gate.com/installers/SQLToolbelt/
 choco install -y sqltoolbelt --params "/products:'SQL Compare, SQL Data Compare, SQL Prompt, SQL Search, SQL Data Generator, SQL Doc, SQL Dependency Tracker, SQL Backup, SSMS Integration Pack'"
 
 ## Run basic docker
