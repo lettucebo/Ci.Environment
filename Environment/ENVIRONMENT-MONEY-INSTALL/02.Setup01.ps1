@@ -21,8 +21,8 @@ if($PSversionTable.PsVersion.Major -lt 7){
 ## Set traditional context menu
 reg.exe add “HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32” /f
 
-## Set Windows 10 Feature
-Write-Host "`n Set Windows 10 Feature" -ForegroundColor Green
+## Set Windows Feature
+Write-Host "`n Set Windows Feature" -ForegroundColor Green
 # Unpin Quick Access Documents and Pictures
 $quickDocPath = "C:\Users\" + $env:UserName + "\Documents"
 $quickPicPath = "C:\Users\" + $env:UserName + "\Pictures"
@@ -70,6 +70,10 @@ Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\
 # Disalbe start menu web search result
 ## Reference: https://pureinfotech.com/disable-search-web-results-windows-11/
 [microsoft.win32.registry]::SetValue("HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Windows", "DisableSearchBoxSuggestions", 1)
+
+# Set screenshot save location
+## Reference: https://superuser.com/a/1829862/1720344
+[microsoft.win32.registry]::SetValue("HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders", "{B7BEDE81-DF94-4682-A7D8-57A52620B86F}", "%UserProfile%\Downloads\ScreenShots")
 
 # Set receive update for other Microsoft product
 $ServiceManager = New-Object -ComObject "Microsoft.Update.ServiceManager"
