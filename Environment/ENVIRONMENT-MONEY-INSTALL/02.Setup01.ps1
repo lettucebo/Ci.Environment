@@ -137,8 +137,8 @@ choco install -y python
 choco install -y gpg4win
 choco install -y studio3t
 choco install -y googlechrome
-choco install -y firefox-dev --pre --params "l=en-US"
-choco install -y opera
+# choco install -y firefox-dev --pre --params "l=en-US"
+# choco install -y opera
 choco install -y microsoft-edge-insider-dev
 choco install -y powertoys
 choco install -y mobaxterm
@@ -447,7 +447,6 @@ Write-Host "`n Restart file explorer" -ForegroundColor Green
 Stop-Process -processname explorer
 refreshenv
 
-
 # Install Azure Artifacts Credential Provider
 ## https://github.com/microsoft/artifacts-credprovider
 Write-Host "`n Install Azure Artifacts Credential Provider" -ForegroundColor Green
@@ -467,7 +466,6 @@ git config --global core.quotepath false
 SETX LC_ALL C.UTF-8 /M
 ## https://blog.puckwang.com/post/2019/sign_git_commit_with_gpg/
 ## gpg --import .\pgp-private-keys.asc
-
 
 ## gpg config
 Write-Host "`n Add gpg config" -ForegroundColor Green
