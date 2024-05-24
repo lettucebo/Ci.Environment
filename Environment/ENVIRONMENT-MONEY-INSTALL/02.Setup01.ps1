@@ -139,7 +139,7 @@ choco install -y studio3t
 choco install -y googlechrome
 # choco install -y firefox-dev --pre --params "l=en-US"
 # choco install -y opera
-choco install -y microsoft-edge-insider-dev
+# choco install -y microsoft-edge-insider-dev
 choco install -y powertoys
 choco install -y mobaxterm
 choco install -y ngrok
@@ -159,6 +159,7 @@ choco install -y dotnetcore-3.1-sdk
 choco install -y dotnet-5.0-sdk
 choco install -y dotnet-6.0-sdk
 choco install -y dotnet-7.0-sdk
+choco install -y dotnet-8.0-sdk
 
 choco install -y snagit --ignorechecksum --version=2022.1.2.20221010
 
