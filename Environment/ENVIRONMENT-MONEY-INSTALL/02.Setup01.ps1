@@ -135,7 +135,7 @@ choco install -y azure-functions-core-tools
 choco install -y terraform
 choco install -y python
 choco install -y gpg4win
-choco install -y studio3t
+# choco install -y studio3t
 choco install -y googlechrome
 # choco install -y firefox-dev --pre --params "l=en-US"
 # choco install -y opera
@@ -146,12 +146,13 @@ choco install -y ngrok
 choco install -y microsoft-teams.install
 choco install -y sysinternals
 choco install -y openssl.light
-choco install -y nssm
+# choco install -y nssm
 choco install -y autohotkey
 choco install -y gsudo
 choco install -y powerbi
 choco install -y openvpn-connect
 choco install -y starship
+choco install -y rdcman
 
 choco install -y dotnetcore-2.1-sdk
 choco install -y dotnetcore-2.2-sdk
@@ -182,10 +183,10 @@ Start-Process -FilePath $lbmFile -ArgumentList "/S" -PassThru
 
 ## Download MultiViewer for F1
 ##### https://multiviewer.app/
-Write-Host "`n Download MultiViewer for F1" -ForegroundColor Green
-$f1File = "$PSScriptRoot\MultiViewer.for.F1-1.14.0.Setup.exe";
-Invoke-WebRequest -Uri "https://releases.multiviewer.app/download/125348250/MultiViewer.for.F1-1.26.9.Setup.exe" -OutFile $f1File
-Start-Process -FilePath $f1File -ArgumentList "/S" -PassThru
+# Write-Host "`n Download MultiViewer for F1" -ForegroundColor Green
+# $f1File = "$PSScriptRoot\MultiViewer.for.F1-1.14.0.Setup.exe";
+# Invoke-WebRequest -Uri "https://releases.multiviewer.app/download/125348250/MultiViewer.for.F1-1.26.9.Setup.exe" -OutFile $f1File
+# Start-Process -FilePath $f1File -ArgumentList "/S" -PassThru
 
 ## Download Azure Storage Emulator
 # https://learn.microsoft.com/en-us/azure/storage/common/storage-use-emulator
@@ -421,7 +422,7 @@ winget install 9N4066W2R5Q4 --accept-package-agreements --accept-source-agreemen
 # Bing Wallpaper
 winget install Microsoft.BingWallpaper --accept-package-agreements --accept-source-agreements
 # Samsung Notes
-winget install 9NBLGGH43VHV --accept-package-agreements --accept-source-agreements
+# winget install 9NBLGGH43VHV --accept-package-agreements --accept-source-agreements
 
 # Enable Telnet Client
 Write-Host "`n Enable Telnet Client" -ForegroundColor Green
