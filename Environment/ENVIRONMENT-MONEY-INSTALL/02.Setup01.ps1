@@ -669,6 +669,7 @@ Start-Process -FilePath $vs2022Exe -ArgumentList `
 "--add", "Microsoft.VisualStudio.Component.TestTools.MicrosoftTestManager", `
 "--add", "Microsoft.VisualStudio.Component.TypeScript.3.0", `
 "--add", "Microsoft.VisualStudio.Component.Windows10SDK.17134", `
+"--add", "Microsoft.VisualStudio.Workload.NetCrossPlat", `
 "--add", "Microsoft.Net.Component.3.5.DeveloperTools", `
 "--add", "Microsoft.Net.Component.4.5.2.SDK", `
 "--add", "Microsoft.Net.Component.4.5.2.TargetingPack", `
@@ -684,10 +685,17 @@ Start-Process -FilePath $vs2022Exe -ArgumentList `
 "--add", "Microsoft.Net.Component.4.7.2.TargetingPack", `
 "--add", "Microsoft.Net.Component.4.8.SDK", `
 "--add", "Microsoft.Net.Component.4.8.TargetingPack", `
-"--add", "Microsoft.Net.Core.Component.SDK.2.2", `
-"--add", "Microsoft.Net.Core.Component.SDK.3.0", `
+"--add", "Microsoft.Net.Component.4.8.1.SDK", `
+"--add", "Microsoft.Net.Component.4.8.1.TargetingPack", `
+"--add", "Microsoft.Net.Core.Component.SDK.2.1", `
+"--add", "Microsoft.NetCore.Component.Runtime.3.1", `
+"--add", "Microsoft.NetCore.Component.Runtime.5.0", `
+"--add", "Microsoft.NetCore.Component.Runtime.6.0", `
+"--add", "Microsoft.NetCore.Component.Runtime.7.0", `
+"--add", "Microsoft.NetCore.Component.Runtime.8.0", `
 "--add", "Microsoft.NetCore.ComponentGroup.DevelopmentTools.2.1", `
 "--add", "Microsoft.NetCore.ComponentGroup.Web.2.1", `
+"--add", "Component.Dotfuscator", `
 "--add", "Microsoft.VisualStudio.Web.Mvc4.ComponentGroup", `
 "--add", "Microsoft.VisualStudio.Component.Azure.Storage.AzCopy", `
 "--add", "Microsoft.VisualStudio.Component.Git", `
