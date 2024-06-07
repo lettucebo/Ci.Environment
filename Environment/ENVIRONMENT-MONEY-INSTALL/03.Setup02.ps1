@@ -36,7 +36,7 @@ nssm set GpgAgentService Description "Auto start gpg-agent"
 Write-Host "`n Install Visual Studio Exntension" -ForegroundColor Green
 $vsixInstallScript = "$PSScriptRoot\install-vsix.ps1";
 Invoke-WebRequest -Uri "https://gist.githubusercontent.com/lettucebo/1c791b21bf56f467254bc85fd70631f4/raw/5dc3ff85b38058208d203383c54d8b7818365566/install-vsix.ps1" -OutFile $vsixInstallScript
-& $vsixInstallScript -PackageName "ErlandR.ReAttach"
+# & $vsixInstallScript -PackageName "ErlandR.ReAttach"
 & $vsixInstallScript -PackageName "MadsKristensen.FileIcons"
 & $vsixInstallScript -PackageName "MadsKristensen.ZenCoding"
 & $vsixInstallScript -PackageName "MadsKristensen.EditorConfig"
@@ -45,7 +45,9 @@ Invoke-WebRequest -Uri "https://gist.githubusercontent.com/lettucebo/1c791b21bf5
 & $vsixInstallScript -PackageName "MadsKristensen.RainbowBraces"
 & $vsixInstallScript -PackageName "GitHub.copilotvs"
 & $vsixInstallScript -PackageName "VisualStudioExptTeam.VSGitHubCopilot"
+& $vsixInstallScript -PackageName "VisualStudioExptTeam.VSGitHubCopilot"
 & $vsixInstallScript -PackageName "NikolayBalakin.Outputenhancer"
+& $vsixInstallScript -PackageName "sergeb.GhostDoc"
 
 Write-Host "`n Install Developer tools" -ForegroundColor Green
 #choco install -y dotpeek
