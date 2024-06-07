@@ -146,7 +146,7 @@ choco install -y ngrok
 choco install -y microsoft-teams.install
 choco install -y sysinternals
 choco install -y openssl.light
-# choco install -y nssm
+choco install -y nssm
 choco install -y autohotkey
 choco install -y gsudo
 choco install -y powerbi
