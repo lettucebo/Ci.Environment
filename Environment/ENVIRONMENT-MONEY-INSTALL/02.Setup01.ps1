@@ -190,8 +190,8 @@ Start-Process msiexec -ArgumentList "/i $storFile /qn /norestart /l*v install.lo
 
 ## Install Redis Desktop Manager
 Write-Host "`n Install Redis Desktop Manager" -ForegroundColor Green
-$rdmFile = "$PSScriptRoot\resp-2022.5.0.exe";
-Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2022.5/resp-2022.5.0.exe" -OutFile $rdmFile
+$rdmFile = "$PSScriptRoot\resp-2022.5.1.exe";
+Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2022.5.1/resp-2022.5.1.exe" -OutFile $rdmFile
 Start-Process $rdmFile -ArgumentList "/q"
 
 # Dell Bluetooth
