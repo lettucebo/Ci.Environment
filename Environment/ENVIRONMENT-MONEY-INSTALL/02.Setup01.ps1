@@ -166,13 +166,6 @@ choco install -y snagit --ignorechecksum --version=2022.1.2.20221010
 
 # choco install -y office365business
 
-
-## Install RdcMan
-# Write-Host "`n Install RdcMan" -ForegroundColor Green
-# $rdcManFile = "$PSScriptRoot\rdcman.msi";
-# Invoke-WebRequest -Uri "https://onedrive.live.com/download?cid=9FBB0DE07F2BDB9D&resid=9FBB0DE07F2BDB9D%21926608&authkey=AJCptTDx15-h2sE" -OutFile $rdcManFile
-# Start-Process msiexec -ArgumentList "/i $rdcManFile /qn /norestart /l*v install.log " -Wait -PassThru
-
 ## Install Little Big Mouse
 # https://github.com/mgth/LittleBigMouse
 Write-Host "`n Install Little Big Mouse" -ForegroundColor Green
