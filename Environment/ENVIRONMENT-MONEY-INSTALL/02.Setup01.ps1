@@ -169,8 +169,8 @@ choco install -y snagit --ignorechecksum --version=2022.1.2.20221010
 ## Install Little Big Mouse
 # https://github.com/mgth/LittleBigMouse
 Write-Host "`n Install Little Big Mouse" -ForegroundColor Green
-$lbmUrl = "https://github.com/mgth/LittleBigMouse/releases/download/4.2.7124.42685/LittleBigMouse_4.2.7124.42685.exe";
-$lbmFile = "$PSScriptRoot\LittleBigMouse_4.2.7124.42685.exe";
+$lbmUrl = "https://github.com/mgth/LittleBigMouse/releases/download/v5.2.3/LittleBigMouse-5.2.3.0.exe";
+$lbmFile = "$PSScriptRoot\LittleBigMouse-5.2.3.0.exe";
 Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
 Start-Process -FilePath $lbmFile -ArgumentList "/S" -PassThru
 
