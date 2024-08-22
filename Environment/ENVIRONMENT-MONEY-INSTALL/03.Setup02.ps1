@@ -19,9 +19,9 @@ if($PSversionTable.PsVersion.Major -lt 7){
 Write-Host "`n Install nodejs using nvm" -ForegroundColor Green
 $nvmCmd = @'
 cmd.exe /C 
-nvm install 20.13.1
-nvm install 22.2.0
-nvm use 20.13.1
+nvm install 20.17.0
+nvm install 22.6.0
+nvm use 22.6.0
 '@
 Invoke-Expression -Command:$nvmCmd
 
