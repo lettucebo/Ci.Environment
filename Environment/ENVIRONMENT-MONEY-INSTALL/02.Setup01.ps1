@@ -404,8 +404,15 @@ winget install 9WZDNCRDMDM3 --accept-package-agreements --accept-source-agreemen
 winget install 9NCBCSZSJRSB --accept-package-agreements --accept-source-agreements
 # Netflix_mcm4njqhnhss8
 winget install 9WZDNCRFJ3TJ --accept-package-agreements --accept-source-agreements
+# Sysinternals Suite
+winget install 9P7KNL5RWT25 --accept-package-agreements --accept-source-agreements
+# Media Extensions
+winget install 9PMMSR1CGPWG --accept-package-agreements --accept-source-agreements
+winget install 9N4D0MSMP0PT --accept-package-agreements --accept-source-agreements
+winget install 9N5TDP8VCMHS --accept-package-agreements --accept-source-agreements
+winget install 9PG2DK419DRG --accept-package-agreements --accept-source-agreements
 # Xodo PDF
-winget install 9WZDNCRDJXP4 --accept-package-agreements --accept-source-agreements
+# winget install 9WZDNCRDJXP4 --accept-package-agreements --accept-source-agreements
 # Disney
 winget install 9NXQXXLFST89 --accept-package-agreements --accept-source-agreements
 # BiliBili
