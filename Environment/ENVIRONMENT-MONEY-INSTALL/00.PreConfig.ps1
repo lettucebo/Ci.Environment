@@ -41,6 +41,9 @@ Write-Host "`n Enable Microsoft-Windows-Subsystem-Linux" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Windows-Subsystem-Linux
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlatform
 
+## Change the language for non-Unicode programs setting
+Set-WinSystemLocale zh-TW
+
 # Restart
 Write-Host "`n Install PSTimer" -ForegroundColor Green
 Install-Module -Name PSTimers
