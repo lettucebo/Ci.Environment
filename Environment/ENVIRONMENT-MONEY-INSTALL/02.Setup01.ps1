@@ -23,11 +23,15 @@ reg.exe add “HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2
 
 ## Set Windows Feature
 Write-Host "`n Set Windows Feature" -ForegroundColor Green
+
 # Unpin unnecessary item in Quick Access 
 $QuickAccess = new-object -com shell.application
 $Results=$QuickAccess.Namespace("shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}").Items()
 $DeleteDefaultItems = @("Documents","Pictures","Videos","Music")
 ($Results| where {$_.name -in $DeleteDefaultItems}).InvokeVerb("unpinfromhome")
+
+# Create custom folder
+mkdir "C:/Users/$Env:UserName/Source/Repos"
 
 # Reference: https://gist.github.com/NickCraver/7ebf9efbfd0c3eab72e9
 # Change Explorer home screen back to "This PC"
