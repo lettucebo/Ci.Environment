@@ -62,4 +62,5 @@ function hosts { notepad c:\windows\system32\drivers\etc\hosts }
 
 # 安裝常用應用程式
 choco install 7zip -y
-winget install 9N0DX20HK701 --accept-package-agreements --accept-source-agreements
+choco install microsoft-windows-terminal -y
+# winget install 9N0DX20HK701 --accept-package-agreements --accept-source-agreements
