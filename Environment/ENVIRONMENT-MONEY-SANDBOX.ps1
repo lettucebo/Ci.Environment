@@ -65,30 +65,4 @@ choco install cascadiafonts -y
 
 # 安裝常用應用程式
 choco install 7zip -y
-
-# 設定預設 Git Alias
-git config --global alias.ci   commit
-git config --global alias.cm   "commit --amend -C HEAD"
-git config --global alias.co   checkout
-git config --global alias.st   status
-git config --global alias.sts  "status -s"
-git config --global alias.br   branch
-git config --global alias.re   remote
-git config --global alias.di   diff
-git config --global alias.type "cat-file -t"
-git config --global alias.dump "cat-file -p"
-git config --global alias.lo   "log --oneline"
-git config --global alias.ls   "log --show-signature"
-git config --global alias.ll   "log --pretty=format:'%h %ad | %s%d [%Cgreen%an%Creset]' --graph --date=short"
-git config --global alias.lg   "log --graph --pretty=format:'%Cred%h%Creset %ad |%C(yellow)%d%Creset %s %Cgreen(%cr)%Creset [%Cgreen%an%Creset]' --abbrev-commit --date=short"
-git config --global alias.alias "config --get-regexp ^alias\."
-git config --global alias.ignore "!gi() { curl -sL https://www.gitignore.io/api/\$@ ;}; gi"
-git config --global alias.iac  "!giac() { git init && git add . && git commit -m 'Initial commit' ;}; giac"
-git config --global alias.rc  "!grc() { git reset --hard && git clean -fdx ;}; read -p 'Do you want to run the <<< git reset --hard && git clean -fdx >>> command? (Y/N) ' answer && [[ $answer == [Yy] ]] && grc"
-
-# 設定 git 預設編輯器為 notepad
-git config --global core.editor "notepad"
-
-# 直接設定 Git 預設 user.name 與 user.email
-git config --global user.name "Your Name"
-git config --global user.email "you@example.com"
+winget install 9N0DX20HK701 --accept-package-agreements --accept-source-agreements
