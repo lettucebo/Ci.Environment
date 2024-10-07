@@ -55,13 +55,10 @@ function hosts { notepad c:\windows\system32\drivers\etc\hosts }
 . $PROFILE
 
 # 安裝 Microsoft YaHei Mono 字型
-Install-Module -Name PSWinGlue -Force
-$tmpFolder = New-TemporaryFile | %{ rm $_; mkdir $_ }
-Invoke-WebRequest -Uri "https://github.com/doggy8088/MicrosoftYaHeiMono-CP950/blob/master/MicrosoftYaHeiMono-CP950.ttf?raw=true" -OutFile "$tmpFolder\MicrosoftYaHeiMono-CP950.ttf"
-Install-Font -Scope System -Path $tmpFolder
-
-# 安装常用字型
-choco install cascadiafonts -y
+# Install-Module -Name PSWinGlue -Force
+# $tmpFolder = New-TemporaryFile | %{ rm $_; mkdir $_ }
+# Invoke-WebRequest -Uri "https://github.com/doggy8088/MicrosoftYaHeiMono-CP950/blob/master/MicrosoftYaHeiMono-CP950.ttf?raw=true" -OutFile "$tmpFolder\MicrosoftYaHeiMono-CP950.ttf"
+# Install-Font -Scope System -Path $tmpFolder
 
 # 安裝常用應用程式
 choco install 7zip -y
