@@ -23,3 +23,7 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/lettuc
 ``` powershell
 iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/lettucebo/Ci.Environment/raw/master/Environment/ENVIRONMENT-MONEY-INSTALL/03.Setup02.ps1'))
 ```
+## Sandbox
+``` powershell
+iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/lettucebo/Ci.Environment/raw/master/Environment/ENVIRONMENT-MONEY-SANDBOX.ps1'))
+```
