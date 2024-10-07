@@ -7,10 +7,10 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 # 調整 ExecutionPolicy 等級到 RemoteSigned
 Set-ExecutionPolicy RemoteSigned -Force
 
-# 安裝 PowerShellGet 所需的 NuGet 套件提供者，並設定信任 PSGallery
-# https://learn.microsoft.com/en-us/powershell/scripting/gallery/installing-psget
-Install-PackageProvider -Name NuGet -Force
-Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+# # 安裝 PowerShellGet 所需的 NuGet 套件提供者，並設定信任 PSGallery
+# # https://learn.microsoft.com/en-us/powershell/scripting/gallery/installing-psget
+# Install-PackageProvider -Name NuGet -Force
+# Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 
 ## Set traditional context menu
 reg.exe add “HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32” /f
@@ -54,7 +54,7 @@ function hosts { notepad c:\windows\system32\drivers\etc\hosts }
 
 . $PROFILE
 
-# 安裝 Microsoft YaHei Mono 字型
+# # 安裝 Microsoft YaHei Mono 字型
 # Install-Module -Name PSWinGlue -Force
 # $tmpFolder = New-TemporaryFile | %{ rm $_; mkdir $_ }
 # Invoke-WebRequest -Uri "https://github.com/doggy8088/MicrosoftYaHeiMono-CP950/blob/master/MicrosoftYaHeiMono-CP950.ttf?raw=true" -OutFile "$tmpFolder\MicrosoftYaHeiMono-CP950.ttf"
