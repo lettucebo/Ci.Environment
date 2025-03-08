@@ -151,7 +151,7 @@ choco install -y dotnet-6.0-sdk
 choco install -y dotnet-7.0-sdk
 choco install -y dotnet-8.0-sdk
 
-choco install -y snagit --ignorechecksum --version=2022.1.2.20221010
+choco install -y snagit --ignorechecksum --version=2022.1.4
 
 # choco install -y office365business
 
