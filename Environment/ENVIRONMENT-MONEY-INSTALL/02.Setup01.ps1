@@ -109,8 +109,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.We
 choco install -y netfx-4.8-devpack
 choco install -y vscode --params "/NoDesktopIcon"
 choco install -y 7zip.install
-choco install -y openjdk11
-choco install -y openjdk8
+choco install -y openjdk
 choco install -y git.install --params "/NoShellIntegration"
 choco install -y tortoisegit
 choco install -y potplayer
@@ -135,7 +134,6 @@ choco install -y ngrok
 choco install -y microsoft-teams.install
 choco install -y sysinternals
 choco install -y openssl.light
-choco install -y nssm
 choco install -y autohotkey
 choco install -y gsudo
 choco install -y powerbi
@@ -150,6 +148,7 @@ choco install -y dotnet-5.0-sdk
 choco install -y dotnet-6.0-sdk
 choco install -y dotnet-7.0-sdk
 choco install -y dotnet-8.0-sdk
+choco install -y dotnet-9.0-sdk
 
 choco install -y snagit --ignorechecksum --version=2022.1.4
 
