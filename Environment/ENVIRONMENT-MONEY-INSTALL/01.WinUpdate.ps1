@@ -1,37 +1,59 @@
-Write-Output("Step 1: Install PowerShell 7");
-Write-Output(Get-Date);
+# =========================
+# PowerShell 7 Windows Update Script
+# This script installs PowerShell 7, configures update modules, and runs Windows Update.
+# =========================
 
-# 調整 ExecutionPolicy 等級到 RemoteSigned
+# Message display helper functions for better UX
+function Show-Section { param([string]$Message,[string]$Emoji="➤",[string]$Color="Cyan") Write-Host ""; Write-Host ("="*60) -ForegroundColor DarkGray; Write-Host "$Emoji $Message" -ForegroundColor $Color -BackgroundColor Black; Write-Host ("="*60) -ForegroundColor DarkGray }
+function Show-Info { param([string]$Message,[string]$Emoji="ℹ️",[string]$Color="Gray") Write-Host "$Emoji $Message" -ForegroundColor $Color }
+function Show-Warning { param([string]$Message,[string]$Emoji="⚠️") Write-Host "$Emoji $Message" -ForegroundColor Yellow }
+function Show-Error { param([string]$Message,[string]$Emoji="❌") Write-Host "$Emoji $Message" -ForegroundColor Red }
+function Show-Success { param([string]$Message,[string]$Emoji="✅") Write-Host "$Emoji $Message" -ForegroundColor Green }
+
+Show-Section -Message "Step 1: Install PowerShell 7" -Emoji "🚀" -Color "Magenta"
+Show-Info -Message ("Current Time: " + (Get-Date)) -Emoji "⏰"
+
+# Set ExecutionPolicy to RemoteSigned for script execution
+Show-Section -Message "Set Execution Policy" -Emoji "🔐" -Color "Yellow"
 Set-ExecutionPolicy RemoteSigned -Force
+Show-Success -Message "Execution policy set to RemoteSigned."
 
-# 建立 $PROFILE 所需的資料夾
+# Create the directory required for $PROFILE if it does not exist
+Show-Section -Message "Create PowerShell Profile Directory" -Emoji "📁" -Color "Cyan"
 [System.IO.Directory]::CreateDirectory([System.IO.Path]::GetDirectoryName($PROFILE))
+Show-Success -Message "Profile directory ensured."
 
-## check admin right
+# Check if the script is running with administrator rights
+Show-Section -Message "Check Administrator Rights" -Emoji "🔒" -Color "Red"
 If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Write-Warning "You do not have Administrator rights to run this script!`nPlease re-run this script as an Administrator!"
-    Break
-}
+    Show-Error -Message "You do not have Administrator rights to run this script!`nPlease re-run this script as an Administrator!"
+    exit
+} else { Show-Success -Message "Administrator rights confirmed." }
 
-## Check Powershell version
+# Check PowerShell version
+Show-Section -Message "Check PowerShell Version" -Emoji "🛡️" -Color "Yellow"
 if($PSversionTable.PsVersion.Major -lt 7){
-    Write-Error "Please use Powershell 7 to execute this script!"
-    Break
-}
+    Show-Error -Message "Please use Powershell 7 to execute this script!"
+    exit
+} else { Show-Success -Message "PowerShell version is $($PSversionTable.PsVersion.Major)." }
 
-## Install Nuget Provider
-Write-Host "`n Install Nuget Provider" -ForegroundColor Green
+# Install Nuget Provider and set PSGallery as trusted
+Show-Section -Message "Install Nuget Provider" -Emoji "📦" -Color "Green"
 Install-PackageProvider -Name NuGet -Force
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+Show-Success -Message "Nuget Provider and PSGallery set."
 
-Write-Host "`n Install PSWindowsUpdate" -ForegroundColor Green
+# Install PSWindowsUpdate module
+Show-Section -Message "Install PSWindowsUpdate" -Emoji "⬇️" -Color "Green"
 Install-Module -Name PSWindowsUpdate
 Import-Module PSWindowsUpdate
+Show-Success -Message "PSWindowsUpdate module installed."
 
-Write-Host "`n Start WindowsUpdate" -ForegroundColor Green
+# Start Windows Update
+Show-Section -Message "Start Windows Update" -Emoji "🔄" -Color "Green"
 Install-WindowsUpdate -AcceptAll -AutoReboot
 
-# Restart
-Write-Host "`n Install PSTimer" -ForegroundColor Green
+# Restart the computer to apply changes
+Show-Section -Message "Restart Computer" -Emoji "🔄" -Color "Yellow"
 Install-Module -Name PSTimers
-Start-PSTimer -Title "Waiting for reboot" -Seconds 20 -ProgressBar -scriptblock {Restart-Computer}
+Start-PSTimer -Title "Waiting for reboot" -Seconds 30 -ProgressBar -scriptblock {Restart-Computer}

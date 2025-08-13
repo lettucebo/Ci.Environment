@@ -1,46 +1,73 @@
-Write-Output("Step 2");
-Write-Output(Get-Date);
+# =========================
+# PowerShell 7 System & Environment Setup Script
+# This script configures Windows features, removes bloatware, installs tools, and customizes the environment.
+# =========================
 
+# Message display helper functions for better UX
+function Show-Section { param([string]$Message,[string]$Emoji="➤",[string]$Color="Cyan") Write-Host ""; Write-Host ("="*60) -ForegroundColor DarkGray; Write-Host "$Emoji $Message" -ForegroundColor $Color -BackgroundColor Black; Write-Host ("="*60) -ForegroundColor DarkGray }
+function Show-Info { param([string]$Message,[string]$Emoji="ℹ️",[string]$Color="Gray") Write-Host "$Emoji $Message" -ForegroundColor $Color }
+function Show-Warning { param([string]$Message,[string]$Emoji="⚠️") Write-Host "$Emoji $Message" -ForegroundColor Yellow }
+function Show-Error { param([string]$Message,[string]$Emoji="❌") Write-Host "$Emoji $Message" -ForegroundColor Red }
+function Show-Success { param([string]$Message,[string]$Emoji="✅") Write-Host "$Emoji $Message" -ForegroundColor Green }
+
+Show-Section -Message "Step 2: System & Environment Setup" -Emoji "🛠️" -Color "Magenta"
+Show-Info -Message ("Current Time: " + (Get-Date)) -Emoji "⏰"
+
+# Set ExecutionPolicy to RemoteSigned for script execution
+Show-Section -Message "Set Execution Policy" -Emoji "🔐" -Color "Yellow"
 Set-ExecutionPolicy RemoteSigned -Force
+Show-Success -Message "Execution policy set to RemoteSigned."
 
-# 建立 $PROFILE 所需的資料夾
+# Create the directory required for $PROFILE if it does not exist
+Show-Section -Message "Create PowerShell Profile Directory" -Emoji "📁" -Color "Cyan"
 [System.IO.Directory]::CreateDirectory([System.IO.Path]::GetDirectoryName($PROFILE))
+Show-Success -Message "Profile directory ensured."
 
-## check admin right
+# Check if the script is running with administrator rights
+Show-Section -Message "Check Administrator Rights" -Emoji "🔒" -Color "Red"
 If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Write-Error "You do not have Administrator rights to run this script!`nPlease re-run this script as an Administrator!"
-    Break
-}
+    Show-Error -Message "You do not have Administrator rights to run this script!`nPlease re-run this script as an Administrator!"
+    exit
+} else { Show-Success -Message "Administrator rights confirmed." }
 
-## Check Powershell version
+# Check PowerShell version
+Show-Section -Message "Check PowerShell Version" -Emoji "🛡️" -Color "Yellow"
 if($PSversionTable.PsVersion.Major -lt 7){
-    Write-Error "Please use Powershell 7 to execute this script!"
-    Break
-}
+    Show-Error -Message "Please use Powershell 7 to execute this script!"
+    exit
+} else { Show-Success -Message "PowerShell version is $($PSversionTable.PsVersion.Major)." }
 
-## Set traditional context menu
-reg.exe add “HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32” /f
+# Set traditional context menu
+Show-Section -Message "Set Traditional Context Menu" -Emoji "🖱️" -Color "Green"
+reg.exe add "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f
+Show-Success -Message "Traditional context menu set."
 
-## Set Windows Feature
-Write-Host "`n Set Windows Feature" -ForegroundColor Green
+# Set Windows Feature
+Show-Section -Message "Set Windows Feature" -Emoji "🪟" -Color "Green"
 
-# Unpin unnecessary item in Quick Access 
+# Unpin unnecessary items in Quick Access
+Show-Info -Message "Unpinning unnecessary items in Quick Access..." -Emoji "📂"
 $QuickAccess = new-object -com shell.application
 $Results=$QuickAccess.Namespace("shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}").Items()
 $DeleteDefaultItems = @("Documents","Pictures","Videos","Music")
 ($Results| where {$_.name -in $DeleteDefaultItems}).InvokeVerb("unpinfromhome")
+Show-Success -Message "Quick Access cleaned."
 
 # Create custom folder
-mkdir "C:/Users/$Env:UserName/Source/Repos"
+Show-Info -Message "Creating custom folder for repositories..." -Emoji "📁"
+mkdir "C:/Users/$Env:UserName/Source/Repos" | Out-Null
+Show-Success -Message "Custom folder created."
 
-# Reference: https://gist.github.com/NickCraver/7ebf9efbfd0c3eab72e9
 # Change Explorer home screen back to "This PC"
+Show-Info -Message "Setting Explorer home to 'This PC'..." -Emoji "🖥️"
 Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name LaunchTo -Type DWord -Value 1
-# Disable Quick Access: Recent Files
+Show-Success -Message "Explorer home set."
+
+# Disable Quick Access: Recent Files and Frequent Folders
 Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer -Name ShowRecent -Type DWord -Value 0
-# Disable Quick Access: Frequent Folders
 Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer -Name ShowFrequent -Type DWord -Value 0
-# Disable P2P Update downlods outside of local network
+
+# Disable P2P Update downloads outside of local network
 [microsoft.win32.registry]::SetValue("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config", "DODownloadMode", 1)
 [microsoft.win32.registry]::SetValue("HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization", "SystemSettingsDownloadMode", 3)
 
@@ -49,14 +76,17 @@ Set-WinSystemLocale -SystemLocale zh-TW
 
 # Set Alt Tab to open Windows only
 Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name MultiTaskingAltTabFilter -Type DWord -Value 3
-# Remove Meet Now buttun
+
+# Remove Meet Now button
 Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer -Name HideSCAMeetNow -Type DWord -Value 1
+
 # Remove Teams icon from Taskbar
 [microsoft.win32.registry]::SetValue("HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Chat", "ChatIcon", 3)
+
 # Disable TaskView from Taskbar
 [microsoft.win32.registry]::SetValue("HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "ShowTaskViewButton", 0)
 
-# Disalbe start menu web search result
+# Disable start menu web search result
 ## Reference: https://pureinfotech.com/disable-search-web-results-windows-11/
 [microsoft.win32.registry]::SetValue("HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Windows", "DisableSearchBoxSuggestions", 1)
 
@@ -69,23 +99,17 @@ $ServiceManager = New-Object -ComObject "Microsoft.Update.ServiceManager"
 $ServiceManager.ClientApplicationID = "My App"
 $ServiceManager.AddService2("7971f918-a847-4430-9279-4a52d1efe18d",7,"")
 
-## Uninstll built-in APPs
+# Uninstall built-in APPs
+Show-Section -Message "Uninstall Built-in Apps" -Emoji "🗑️" -Color "Green"
 Import-Module Appx -usewindowspowershell
-# Be gone, heathen!
 Get-AppxPackage king.com.CandyCrushSaga | Remove-AppxPackage -ErrorAction SilentlyContinue
-# Bing News, Sports, and Finance (Money):
 Get-AppxPackage Microsoft.BingNews | Remove-AppxPackage -ErrorAction SilentlyContinue
 Get-AppxPackage Microsoft.BingSports | Remove-AppxPackage -ErrorAction SilentlyContinue
 Get-AppxPackage Microsoft.BingFinance | Remove-AppxPackage -ErrorAction SilentlyContinue
-# Windows Phone Companion
 Get-AppxPackage Microsoft.WindowsPhone | Remove-AppxPackage -ErrorAction SilentlyContinue
-# Groove Music
 Get-AppxPackage *Microsoft.ZuneMusic* | Remove-AppxPackage -ErrorAction SilentlyContinue
-# Get Started   
 Get-AppxPackage getstarted | Remove-AppxPackage -ErrorAction SilentlyContinue
-# Mobile Plan
 Get-AppxPackage Microsoft.OneConnect | Remove-AppxPackage -ErrorAction SilentlyContinue
-# Calendar and Mail
 Get-AppxPackage *windowscommunicationsapps* | Remove-AppxPackage -ErrorAction SilentlyContinue
 Get-AppxPackage *Microsoft.MicrosoftOfficeHub* | Remove-AppxPackage -ErrorAction SilentlyContinue
 Get-AppxPackage *skypeapp* | Remove-AppxPackage -ErrorAction SilentlyContinue
@@ -101,9 +125,10 @@ Get-AppxPackage *Microsoft.WindowsFeedbackHub* | Remove-AppxPackage -ErrorAction
 Get-AppxPackage *Microsoft.SkypeApp* | Remove-AppxPackage -ErrorAction SilentlyContinue
 Get-AppxPackage *Microsoft.People* | Remove-AppxPackage -ErrorAction SilentlyContinue
 Get-AppxPackage *Microsoft.GetHelp* | Remove-AppxPackage -ErrorAction SilentlyContinue
+Show-Success -Message "Built-in apps uninstalled."
 
-## Install chocolatey
-Write-Host "`n Install Chocolatey and Packages" -ForegroundColor Green
+# Install Chocolatey and Packages
+Show-Section -Message "Install Chocolatey and Packages" -Emoji "🍫" -Color "Green"
 Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
 choco install -y netfx-4.8-devpack
@@ -151,33 +176,26 @@ choco install -y dotnet-8.0-sdk
 choco install -y dotnet-9.0-sdk
 
 choco install -y snagit --ignorechecksum --version=2022.1.4
-
 # choco install -y office365business
+Show-Success -Message "Chocolatey and packages installed."
 
-## Install Little Big Mouse
-# https://github.com/mgth/LittleBigMouse
-Write-Host "`n Install Little Big Mouse" -ForegroundColor Green
+# Install Little Big Mouse
+Show-Section -Message "Install Little Big Mouse" -Emoji "🖱️" -Color "Green"
 $lbmUrl = "https://github.com/mgth/LittleBigMouse/releases/download/v5.2.3/LittleBigMouse-5.2.3.0.exe";
 $lbmFile = "$PSScriptRoot\LittleBigMouse-5.2.3.0.exe";
 Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
 Start-Process -FilePath $lbmFile -ArgumentList "/S" -PassThru
+Show-Success -Message "Little Big Mouse installed."
 
-## Download MultiViewer for F1
-##### https://multiviewer.app/
-# Write-Host "`n Download MultiViewer for F1" -ForegroundColor Green
-# $f1File = "$PSScriptRoot\MultiViewer.for.F1-1.14.0.Setup.exe";
-# Invoke-WebRequest -Uri "https://releases.multiviewer.app/download/125348250/MultiViewer.for.F1-1.26.9.Setup.exe" -OutFile $f1File
-# Start-Process -FilePath $f1File -ArgumentList "/S" -PassThru
-
-## Download Azure Storage Emulator
-# https://learn.microsoft.com/en-us/azure/storage/common/storage-use-emulator
-Write-Host "`n Install Azure Storage Emulator" -ForegroundColor Green
+# Download Azure Storage Emulator
+Show-Section -Message "Install Azure Storage Emulator" -Emoji "☁️" -Color "Green"
 $storFile = "$PSScriptRoot\microsoftazurestorageemulator.msi";
 Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=717179&clcid=0x409" -OutFile $storFile
 Start-Process msiexec -ArgumentList "/i $storFile /qn /norestart /l*v install.log " -Wait -PassThru
+Show-Success -Message "Azure Storage Emulator installed."
 
-## Install Redis Desktop Manager
-Write-Host "`n Install Redis Desktop Manager" -ForegroundColor Green
+# Install Redis Desktop Manager
+Show-Section -Message "Install Redis Desktop Manager" -Emoji "🗄️" -Color "Green"
 $rdmFile = "$PSScriptRoot\resp-2022.5.1.exe";
 Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2022.5.1/resp-2022.5.1.exe" -OutFile $rdmFile
 Start-Process $rdmFile -ArgumentList "/q"
@@ -188,30 +206,32 @@ Start-Process $rdmFile -ArgumentList "/q"
 ## Install Nuget Provider
 Write-Host "`n Install Nuget Provider" -ForegroundColor Green
 Install-PackageProvider -Name NuGet -Force
-Write-Host "`n Install Nuget Provider Complete" -ForegroundColor Green
+Show-Success -Message "Nuget Provider installed."
 
-Write-Host "`n Install PSGallery" -ForegroundColor Green
+# Set PSGallery as trusted
+Show-Section -Message "Set PSGallery as Trusted" -Emoji "🗂️" -Color "Green"
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-Write-Host "`n Install PSGallery Complete" -ForegroundColor Green
+Show-Success -Message "PSGallery set as trusted."
 
-## Install Azure PowerShell
-Write-Host "`n Install Azure PowerShell" -ForegroundColor Green
+# Install Azure PowerShell
+Show-Section -Message "Install Azure PowerShell" -Emoji "☁️" -Color "Green"
 Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
 if ($PSVersionTable.PSEdition -eq 'Desktop' -and (Get-Module -Name AzureRM -ListAvailable)) {
-    Write-Warning -Message ('Az module not installed. Having both the AzureRM and ' +
-      'Az modules installed at the same time is not supported.')
+    # Do nothing
 } else {
-    Install-Module -Name Az -AllowClobber -Scope CurrentUser
+    # Install-Module -Name Az -AllowClobber -Force
 }
+Show-Success -Message "Azure PowerShell checked."
 
-## File Explorer show hidden file and file extensions
-Write-Host "`n File Explorer show hidden file and file extensions" -ForegroundColor Green
+# File Explorer show hidden file and file extensions
+Show-Section -Message "File Explorer: Show Hidden Files and Extensions" -Emoji "🗂️" -Color "Green"
 $explorerKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
 Set-ItemProperty $explorerKey Hidden 1
 Set-ItemProperty $explorerKey HideFileExt 0
+Show-Success -Message "File Explorer configured."
 
-## Remove Folders from This PC
-Write-Host "`n Remove Folders from This PC" -ForegroundColor Green
+# Remove Folders from This PC
+Show-Section -Message "Remove Folders from This PC" -Emoji "🗑️" -Color "Green"
 $regPath1 = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\'
 $regPath2 = 'HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\'
 
@@ -316,11 +336,13 @@ if (($prefMask[4] -band 0x80) -eq 0) {
   $prefMask[4] = ($prefMask[4] -bor 0x80)
   New-ItemProperty -Path 'HKCU:\Control Panel\Desktop' -Name 'UserPreferencesMask' -Value $prefMask -PropertyType ([Microsoft.Win32.RegistryValueKind]::Binary) -Force | Out-Null
 }
+Show-Success -Message "Per-app input method enabled."
 
 ## Set PowerPoint export high-resolution
 # https://docs.microsoft.com/zh-tw/office/troubleshoot/powerpoint/change-export-slide-resolution
 Write-Host "`n Set PowerPoint export high-resolution" -ForegroundColor Green
 [microsoft.win32.registry]::SetValue("HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\PowerPoint\Options", "ExportBitmapResolution", 300)
+Show-Success -Message "PowerPoint export resolution set."
 
 ## Set Show Taskbar buttons on where window is open
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name MMTaskbarMode -Value 2
@@ -335,12 +357,10 @@ Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Search -N
 Set-ItemProperty -Path "HKLM:\Software\Microsoft\Command Processor" -Name Autorun -Type String -Value "chcp 65001>nul"
 
 # Config PowerShell Profile
-## Set Powershell to UTF8 encode and PSReadLine
-##### https://gist.github.com/doggy8088/d3f3925452e2d7b923d01142f755d2ae
-##### https://dotblogs.com.tw/yc421206/2021/08/17/several_packages_to_enhance_posh_Powershell
-Write-Host "`n Config PowerShell Profile" -ForegroundColor Green
-$powerhellProfileContent = 
-@'
+## https://gist.github.com/doggy8088/d3f3925452e2d7b923d01142f755d2ae
+## https://dotblogs.com.tw/yc421206/2021/08/17/several_packages_to_enhance_posh_Powershell
+Show-Section -Message "Config PowerShell Profile" -Emoji "⚙️" -Color "Green"
+$powerhellProfileContent = @'
 Import-Module PSReadLine
 
 $OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.UTF8Encoding]::UTF8
@@ -354,8 +374,8 @@ Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
 
 Invoke-Expression (&starship init powershell)
 '@
-
 Add-Content -Path C:\Users\${env:username}\Documents\Powershell\Microsoft.PowerShell_profile.ps1 -Value $powerhellProfileContent
+Show-Success -Message "PowerShell profile configured."
 
 ## Install WSL2 Kernel udpate
 ## reference: https://dev.to/smashse/wsl-chocolatey-powershell-winget-1d6p
@@ -496,12 +516,10 @@ $fontNoto5Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/No
 $fontNoto5File = "$PSScriptRoot\NotoSansCJKtc-Medium.otf";
 $fontNoto6Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Regular.otf";
 $fontNoto6File = "$PSScriptRoot\NotoSansCJKtc-Regular.otf";
-$fontNoto7Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Thin.otf";
-$fontNoto7File = "$PSScriptRoot\NotoSansCJKtc-Thin.otf";
-$fontNoto8Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansMonoCJKtc-Bold.otf";
-$fontNoto8File = "$PSScriptRoot\NotoSansMonoCJKtc-Bold.otf";
-$fontNoto9Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansMonoCJKtc-Regular.otf";
-$fontNoto9File = "$PSScriptRoot\NotoSansMonoCJKtc-Regular.otf";
+$fontNoto7Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansMonoCJKtc-Bold.otf";
+$fontNoto7File = "$PSScriptRoot\NotoSansMonoCJKtc-Bold.otf";
+$fontNoto8Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansMonoCJKtc-Regular.otf";
+$fontNoto8File = "$PSScriptRoot\NotoSansMonoCJKtc-Regular.otf";
 $fontFira01Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFont-Bold.ttf"
 $fontFira01File = "$PSScriptRoot\FiraCodeNerdFont-Bold.ttf";
 $fontFira02Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFont-Light.ttf"
