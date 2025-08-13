@@ -88,10 +88,12 @@ choco install -y dotultimate --params "'/NoCpp /NoTeamCityAddin'"
 choco install -y sqltoolbelt --params "/products:'SQL Compare, SQL Data Compare, SQL Prompt, SQL Search, SQL Data Generator, SQL Doc, SQL Dependency Tracker, SQL Backup, SSMS Integration Pack'"
 
 ## Reset Windows TCP
+# https://blog.darkthread.net/blog/clear-reserved-tcp-port-ranges/
 net stop winnat
 net start winnat
 
 ## Exclude ports from Windows NAT
+# https://blog.miniasp.com/post/2019/03/31/Ports-blocked-by-Windows-10-for-unknown-reason
 netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=1433
 netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=3000
 netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=3001
