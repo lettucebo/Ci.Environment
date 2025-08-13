@@ -9,6 +9,14 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     Break
 }
 
+# Make sure have launched Visual Studio at least once before running this script.
+Write-Host "Please make sure you have launched Visual Studio at least once. Otherwise, installing extensions may fail." -ForegroundColor Yellow
+$vsConfirm = Read-Host "Have you already launched Visual Studio? (Y/N)"
+if ($vsConfirm -ne 'Y' -and $vsConfirm -ne 'y') {
+    Write-Warning "Please launch Visual Studio first, then re-run this setup script."
+    exit
+}
+
 ## Check Powershell version
 if($PSversionTable.PsVersion.Major -lt 7){
     Write-Error "Please use Powershell 7 to execute this script!"
@@ -57,6 +65,20 @@ choco install -y dotultimate --params "'/NoCpp /NoTeamCityAddin'"
 ## https://download.red-gate.com/installers/SQLToolbelt/
 choco install -y sqltoolbelt --params "/products:'SQL Compare, SQL Data Compare, SQL Prompt, SQL Search, SQL Data Generator, SQL Doc, SQL Dependency Tracker, SQL Backup, SSMS Integration Pack'"
 
+## Reset Windows TCP
+net stop winnat
+net start winnat
+
+## Exclude ports from Windows NAT
+netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=1433
+netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=3000
+netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=3001
+netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=4200
+netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=5000
+netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=5001
+netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=8080
+netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=8888
+
 ## Run basic docker
 docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=P@ssw0rd" `
    -p 1433:1433 --name mssql2022 --hostname mssql2022 `
@@ -70,11 +92,11 @@ docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=P@ssw0rd" `
  --restart unless-stopped `
  redis
  
- docker run -e "ACCEPT_EULA=Y" -e "MYSQL_ROOT_PASSWORD=P@ssw0rd" `
-   -p 3306:3306 --name mysql --hostname mysql `
+ docker run -e "POSTGRES_PASSWORD=P@ssw0rd" `
+   -p 5432:5432 --name postgres --hostname postgres `
    -d `
    --restart unless-stopped `
-   mysql
+   postgres
  
 ## Complete
 Write-Host -NoNewLine "`n Environment config complete, Press any key to continue...";
