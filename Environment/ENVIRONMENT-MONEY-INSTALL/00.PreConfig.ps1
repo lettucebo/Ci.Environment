@@ -83,8 +83,6 @@ Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Pe
 Show-Success -Message "Windows 11 accent color 已設為自動。"
 Show-Info -Message "Accent color auto configuration complete" -Emoji "�"
 
-
-
 # Restart the computer to apply changes
 Show-Section -Message "Restart Computer" -Emoji "🔄" -Color "Yellow"
 Install-Module -Name PSTimers
