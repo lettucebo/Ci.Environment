@@ -149,7 +149,7 @@ choco install -y terraform
 choco install -y python
 choco install -y gpg4win
 # choco install -y studio3t
-choco install -y googlechrome
+choco install -y googlechrome --ignore-checksums
 # choco install -y firefox-dev --pre --params "l=en-US"
 # choco install -y opera
 # choco install -y microsoft-edge-insider-dev
