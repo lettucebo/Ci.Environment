@@ -398,11 +398,7 @@ wsl --update
 Write-Host "`n Set wsl default version to 2" -ForegroundColor Green
 wsl --set-default-version 2
 
-## Download and Install Ubunut Linux
-Write-Host "`n Download and Install Ubunut Linux" -ForegroundColor Green
-#curl.exe -L -o $PSScriptRoot\Ubuntu_2004_x64.appx https://aka.ms/wslubuntu2204
-#powershell Add-AppxPackage $PSScriptRoot\Ubuntu_2204_x64.appx
-wsl --install -d Ubuntu
+
 
 ## Using WinGet install MS Store and relate application
 # 安裝 Windows Terminal Canary

@@ -25,6 +25,12 @@ if ($vsConfirm -ne 'Y' -and $vsConfirm -ne 'y') {
   exit
 }
 
+## Download and Install Ubunut Linux
+Write-Host "`n Download and Install Ubunut Linux" -ForegroundColor Green
+#curl.exe -L -o $PSScriptRoot\Ubuntu_2004_x64.appx https://aka.ms/wslubuntu2204
+#powershell Add-AppxPackage $PSScriptRoot\Ubuntu_2204_x64.appx
+wsl --install -d Ubuntu
+
 # [1/7] Install Node.js using nvm (auto select LTS and Current)
 Write-Host "`n[1/7] Install nodejs using nvm (auto select LTS and Current)" -ForegroundColor Green
 
