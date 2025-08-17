@@ -75,7 +75,14 @@ Show-Section -Message "Set Windows 11 Color Mode to Dark" -Emoji "🌑" -Color "
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name AppsUseLightTheme -Value 0
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name SystemUsesLightTheme -Value 0
 Show-Success -Message "Windows 11 已設定為深色模式。"
-Show-Info -Message "Dark mode configuration complete" -Emoji "🌑"
+
+# 設定 Windows 11 accent color 跟隨桌布
+Show-Section -Message "Set Windows 11 Accent Color to Auto" -Emoji "🎨" -Color "Blue"
+Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name ColorPrevalence -Value 1
+Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name AutoColorization -Value 1
+Show-Success -Message "Windows 11 accent color 已設為自動。"
+Show-Info -Message "Accent color auto configuration complete" -Emoji "�"
+
 
 
 # Restart the computer to apply changes
