@@ -70,6 +70,14 @@ Show-Section -Message "Set System Locale" -Emoji "🌏" -Color "Green"
 Set-WinSystemLocale zh-TW
 Show-Success -Message "System locale set to zh-TW."
 
+# 設定 Windows 11 為深色模式
+Show-Section -Message "Set Windows 11 Color Mode to Dark" -Emoji "🌑" -Color "DarkGray"
+Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name AppsUseLightTheme -Value 0
+Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name SystemUsesLightTheme -Value 0
+Show-Success -Message "Windows 11 已設定為深色模式。"
+Show-Info -Message "Dark mode configuration complete" -Emoji "🌑"
+
+
 # Restart the computer to apply changes
 Show-Section -Message "Restart Computer" -Emoji "🔄" -Color "Yellow"
 Install-Module -Name PSTimers
