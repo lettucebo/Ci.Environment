@@ -405,7 +405,11 @@ Write-Host "`n Download and Install Ubunut Linux" -ForegroundColor Green
 wsl --install -d Ubuntu
 
 ## Using WinGet install MS Store and relate application
+# 安裝 Windows Terminal Canary
+Write-Host "`n Using WinGet install Windows Terminal Canary" -ForegroundColor Green
+winget install --id Microsoft.WindowsTerminal.Canary --accept-package-agreements --accept-source-agreements
 Write-Host "`n Using WinGet install MS Store application" -ForegroundColor Green
+
 # Microsoft.Whiteboard
 winget install 9MSPC6MP8FM4 --accept-package-agreements --accept-source-agreements
 # NuGetPackageExplorer
