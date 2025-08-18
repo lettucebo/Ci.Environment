@@ -25,6 +25,19 @@ if ($vsConfirm -ne 'Y' -and $vsConfirm -ne 'y') {
   exit
 }
 
+# 啟用 Windows Developer Mode
+Write-Host "啟用 Windows Developer Mode..." -ForegroundColor Green
+try {
+  $regPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock"
+  if (-not (Test-Path $regPath)) {
+    New-Item -Path $regPath -Force | Out-Null
+  }
+  Set-ItemProperty -Path $regPath -Name "AllowDevelopmentWithoutDevLicense" -Value 1 -Type DWord
+  Write-Host "Windows Developer Mode 已啟用。" -ForegroundColor Green
+} catch {
+  Write-Warning "啟用 Developer Mode 失敗: $_"
+}
+
 ## Download and Install Ubunut Linux
 Write-Host "`n Download and Install Ubunut Linux" -ForegroundColor Green
 #curl.exe -L -o $PSScriptRoot\Ubuntu_2004_x64.appx https://aka.ms/wslubuntu2204
