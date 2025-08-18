@@ -402,10 +402,15 @@ wsl --set-default-version 2
 
 ## Using WinGet install MS Store and relate application
 # 安裝 Windows Terminal Canary
-Write-Host "`n Using WinGet install Windows Terminal Canary" -ForegroundColor Green
-winget install --id Microsoft.WindowsTerminal.Canary --accept-package-agreements --accept-source-agreements
-Write-Host "`n Using WinGet install MS Store application" -ForegroundColor Green
+Write-Host "`n Downloading and installing Windows Terminal Canary (latest) from GitHub..." -ForegroundColor Green
+$canaryInstallerUrl = "https://terminalbuilds-grbmacf3f6bsbma8.z01.azurefd.net/nightly/Microsoft.WindowsTerminalCanary.appinstaller"
+$canaryInstallerPath = "$PSScriptRoot\WindowsTerminalCanary.appinstaller"
+Write-Host "Downloading Windows Terminal Canary installer..." -ForegroundColor Green
+Invoke-WebRequest -Uri $canaryInstallerUrl -OutFile $canaryInstallerPath
+Start-Process -FilePath "explorer.exe" -ArgumentList $canaryInstallerPath
+Show-Info -Message "Windows Terminal Canary .appinstaller launched. Please follow the App Installer prompts to complete installation." -Emoji "🟡"
 
+Write-Host "`n Using WinGet install MS Store application" -ForegroundColor Green
 # Microsoft.Whiteboard
 winget install 9MSPC6MP8FM4 --accept-package-agreements --accept-source-agreements
 # NuGetPackageExplorer
