@@ -733,4 +733,4 @@ Start-Process -FilePath $vs2025Exe -ArgumentList `
 -Wait -PassThru
 
 # Restart
-Start-PSTimer -Title "Waiting for reboot" -Seconds 20 -ProgressBar -scriptblock {Restart-Computer}
+Start-PSTimer -Title "Waiting for reboot" -Seconds 20 -ProgressBar -scriptblock {Restart-Computer -Force}
