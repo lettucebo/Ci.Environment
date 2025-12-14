@@ -37,11 +37,16 @@ if($PSversionTable.PsVersion.Major -lt 7){
     exit
 } else { Show-Success -Message "PowerShell version is $($PSversionTable.PsVersion.Major)." }
 
-# Install Nuget Provider and set PSGallery as trusted
-Show-Section -Message "Install Nuget Provider" -Emoji "📦" -Color "Green"
-Install-PackageProvider -Name NuGet -Force
+# Install NuGet Provider and set PSGallery as trusted
+Show-Section -Message "Install NuGet Provider" -Emoji "📦" -Color "Green"
+try {
+    Install-PackageProvider -Name NuGet -Force -ErrorAction Stop
+    Show-Success -Message "NuGet Provider installed."
+} catch {
+    Show-Warning -Message "NuGet Provider installation skipped (PowerShell 7 uses a different package management system)."
+}
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-Show-Success -Message "Nuget Provider and PSGallery set."
+Show-Success -Message "PSGallery set as trusted."
 
 # Install PSWindowsUpdate module
 Show-Section -Message "Install PSWindowsUpdate" -Emoji "⬇️" -Color "Green"
