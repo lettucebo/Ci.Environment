@@ -546,6 +546,7 @@ $fontNoto8Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/No
 $fontNoto8File = "$PSScriptRoot\NotoSansMonoCJKtc-Bold.otf";
 $fontNoto9Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansMonoCJKtc-Regular.otf";
 $fontNoto9File = "$PSScriptRoot\NotoSansMonoCJKtc-Regular.otf";
+$fontFira01Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFont-Bold.ttf"
 $fontFira01File = "$PSScriptRoot\FiraCodeNerdFont-Bold.ttf";
 $fontFira02Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFont-Light.ttf"
 $fontFira02File = "$PSScriptRoot\FiraCodeNerdFont-Light.ttf";
