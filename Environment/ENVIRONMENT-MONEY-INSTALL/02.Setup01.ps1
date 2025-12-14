@@ -441,6 +441,8 @@ winget install Microsoft.BingWallpaper --accept-package-agreements --accept-sour
 # winget install 9NBLGGH43VHV --accept-package-agreements --accept-source-agreements
 # Redis Insight
 winget install RedisInsight.RedisInsight --accept-package-agreements --accept-source-agreements
+# Microsoft.WindowsTerminal.Preview
+winget install Microsoft.WindowsTerminal.Preview --accept-package-agreements --accept-source-agreements
 
 # Enable Telnet Client
 Write-Host "`n Enable Telnet Client" -ForegroundColor Green
