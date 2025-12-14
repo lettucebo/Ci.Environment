@@ -4,26 +4,61 @@
 # =========================
 
 # Message display helper functions for better UX
-function Show-Section { param([string]$Message,[string]$Emoji="➤",[string]$Color="Cyan") Write-Host ""; Write-Host ("="*60) -ForegroundColor DarkGray; Write-Host "$Emoji $Message" -ForegroundColor $Color -BackgroundColor Black; Write-Host ("="*60) -ForegroundColor DarkGray }
-function Show-Info { param([string]$Message,[string]$Emoji="ℹ️",[string]$Color="Gray") Write-Host "$Emoji $Message" -ForegroundColor $Color }
-function Show-Warning { param([string]$Message,[string]$Emoji="⚠️") Write-Host "$Emoji $Message" -ForegroundColor Yellow }
-function Show-Error { param([string]$Message,[string]$Emoji="❌") Write-Host "$Emoji $Message" -ForegroundColor Red }
-function Show-Success { param([string]$Message,[string]$Emoji="✅") Write-Host "$Emoji $Message" -ForegroundColor Green }
+function Show-Section {
+    param(
+        [string]$Message,
+        [string]$Emoji = "➤",
+        [string]$Color = "Cyan"
+    )
+    Write-Host ""
+    Write-Host ("=" * 60) -ForegroundColor DarkGray
+    Write-Host "$Emoji $Message" -ForegroundColor $Color -BackgroundColor Black
+    Write-Host ("=" * 60) -ForegroundColor DarkGray
+}
+function Show-Info {
+    param(
+        [string]$Message,
+        [string]$Emoji = "ℹ️",
+        [string]$Color = "Gray"
+    )
+    Write-Host "$Emoji $Message" -ForegroundColor $Color
+}
+function Show-Warning {
+    param(
+        [string]$Message,
+        [string]$Emoji = "⚠️"
+    )
+    Write-Host "$Emoji $Message" -ForegroundColor Yellow
+}
+function Show-Error {
+    param(
+        [string]$Message,
+        [string]$Emoji = "❌"
+    )
+    Write-Host "$Emoji $Message" -ForegroundColor Red
+}
+function Show-Success {
+    param(
+        [string]$Message,
+        [string]$Emoji = "✅"
+    )
+    Write-Host "$Emoji $Message" -ForegroundColor Green
+}
 
-Show-Section -Message "Step 3: Extended Setup" -Emoji "🚀" -Color "Magenta"
+Show-Section -Message "Step 2: Extended Setup" -Emoji "🚀" -Color "Magenta"
 Show-Info -Message ("Current Time: " + (Get-Date)) -Emoji "⏰"
 
-# Set ExecutionPolicy to RemoteSigned for script execution
-Show-Section -Message "Set Execution Policy" -Emoji "🔐" -Color "Yellow"
-Set-ExecutionPolicy RemoteSigned -Force
-Show-Success -Message "Execution policy set to RemoteSigned."
-
-# Check PowerShell version
+# Check PowerShell version first before making any system changes
 Show-Section -Message "Check PowerShell Version" -Emoji "🛡️" -Color "Yellow"
 if ($PSversionTable.PsVersion.Major -lt 7) {
   Show-Error -Message "Please use Powershell 7 to execute this script!"
   exit
 } else { Show-Success -Message "PowerShell version is $($PSversionTable.PsVersion.Major)." }
+
+# Set ExecutionPolicy to RemoteSigned for script execution
+Show-Section -Message "Set Execution Policy" -Emoji "🔐" -Color "Yellow"
+Set-ExecutionPolicy RemoteSigned -Force
+Show-Success -Message "Execution policy set to RemoteSigned."
 
 # Check if the script is running with administrator rights
 Show-Section -Message "Check Administrator Rights" -Emoji "🔒" -Color "Red"
@@ -60,7 +95,11 @@ Show-Section -Message "Download and Install Ubuntu Linux" -Emoji "🐧" -Color "
 #curl.exe -L -o $PSScriptRoot\Ubuntu_2004_x64.appx https://aka.ms/wslubuntu2204
 #powershell Add-AppxPackage $PSScriptRoot\Ubuntu_2204_x64.appx
 wsl --install -d Ubuntu
-Show-Success -Message "Ubuntu Linux installation triggered."
+if ($LASTEXITCODE -eq 0) {
+  Show-Success -Message "Ubuntu Linux installation triggered."
+} else {
+  Show-Error -Message "Failed to trigger Ubuntu Linux installation. Exit code: $LASTEXITCODE"
+}
 
 # [1/7] Install Node.js using nvm (auto select LTS and Current)
 Show-Section -Message "[1/7] Install Node.js using nvm" -Emoji "📦" -Color "Green"
@@ -100,11 +139,20 @@ Show-Success -Message "Node.js installation completed."
 # [2/7] Install GPG agent as a Windows service using NSSM
 Show-Section -Message "[2/7] Install GPG agent auto start service" -Emoji "🔑" -Color "Green"
 # Reference: https://stackoverflow.com/a/51407128/1799047
+$nssmFailed = $false
 nssm install GpgAgentService "C:\Program Files (x86)\GnuPG\bin\gpg-agent.exe"
+if ($LASTEXITCODE -ne 0) { $nssmFailed = $true }
 nssm set GpgAgentService AppDirectory "C:\Program Files (x86)\GnuPG\bin"
+if ($LASTEXITCODE -ne 0) { $nssmFailed = $true }
 nssm set GpgAgentService AppParameters "--launch gpg-agent"
+if ($LASTEXITCODE -ne 0) { $nssmFailed = $true }
 nssm set GpgAgentService Description "Auto start gpg-agent"
-Show-Success -Message "GPG agent service installed."
+if ($LASTEXITCODE -ne 0) { $nssmFailed = $true }
+if ($nssmFailed) {
+  Show-Error -Message "Failed to configure GPG agent service with NSSM."
+} else {
+  Show-Success -Message "GPG agent service installed."
+}
 
 # [3/7] Install Visual Studio extensions via helper script
 Show-Section -Message "[3/7] Install Visual Studio Extensions" -Emoji "🧩" -Color "Green"
@@ -136,8 +184,14 @@ Show-Success -Message "Developer tools installed."
 Show-Section -Message "[5/7] Reset Windows TCP" -Emoji "🔄" -Color "Green"
 # Reference: https://blog.darkthread.net/blog/clear-reserved-tcp-port-ranges/
 net stop winnat
+$stopExitCode = $LASTEXITCODE
 net start winnat
-Show-Success -Message "Windows TCP NAT service reset."
+$startExitCode = $LASTEXITCODE
+if ($stopExitCode -eq 0 -and $startExitCode -eq 0) {
+    Show-Success -Message "Windows TCP NAT service reset."
+} else {
+    Show-Error -Message "Failed to reset Windows TCP NAT service. (stop exit code: $stopExitCode, start exit code: $startExitCode)"
+}
 
 # [6/7] Exclude commonly used ports from Windows NAT to avoid conflicts
 Show-Section -Message "[6/7] Exclude Ports from Windows NAT" -Emoji "🔌" -Color "Green"

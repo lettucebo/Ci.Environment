@@ -4,11 +4,46 @@
 # =========================
 
 # Message display helper functions for better UX
-function Show-Section { param([string]$Message,[string]$Emoji="➤",[string]$Color="Cyan") Write-Host ""; Write-Host ("="*60) -ForegroundColor DarkGray; Write-Host "$Emoji $Message" -ForegroundColor $Color -BackgroundColor Black; Write-Host ("="*60) -ForegroundColor DarkGray }
-function Show-Info { param([string]$Message,[string]$Emoji="ℹ️",[string]$Color="Gray") Write-Host "$Emoji $Message" -ForegroundColor $Color }
-function Show-Warning { param([string]$Message,[string]$Emoji="⚠️") Write-Host "$Emoji $Message" -ForegroundColor Yellow }
-function Show-Error { param([string]$Message,[string]$Emoji="❌") Write-Host "$Emoji $Message" -ForegroundColor Red }
-function Show-Success { param([string]$Message,[string]$Emoji="✅") Write-Host "$Emoji $Message" -ForegroundColor Green }
+function Show-Section {
+    param(
+        [string]$Message,
+        [string]$Emoji = "➤",
+        [string]$Color = "Cyan"
+    )
+    Write-Host ""
+    Write-Host ("=" * 60) -ForegroundColor DarkGray
+    Write-Host "$Emoji $Message" -ForegroundColor $Color -BackgroundColor Black
+    Write-Host ("=" * 60) -ForegroundColor DarkGray
+}
+function Show-Info {
+    param(
+        [string]$Message,
+        [string]$Emoji = "ℹ️",
+        [string]$Color = "Gray"
+    )
+    Write-Host "$Emoji $Message" -ForegroundColor $Color
+}
+function Show-Warning {
+    param(
+        [string]$Message,
+        [string]$Emoji = "⚠️"
+    )
+    Write-Host "$Emoji $Message" -ForegroundColor Yellow
+}
+function Show-Error {
+    param(
+        [string]$Message,
+        [string]$Emoji = "❌"
+    )
+    Write-Host "$Emoji $Message" -ForegroundColor Red
+}
+function Show-Success {
+    param(
+        [string]$Message,
+        [string]$Emoji = "✅"
+    )
+    Write-Host "$Emoji $Message" -ForegroundColor Green
+}
 
 Show-Section -Message "Step 2: System & Environment Setup" -Emoji "🛠️" -Color "Magenta"
 Show-Info -Message ("Current Time: " + (Get-Date)) -Emoji "⏰"
@@ -451,17 +486,37 @@ irm https://claude.ai/install.ps1 | iex
 
 # Enable Telnet Client
 Show-Section -Message "Enable Windows Optional Features" -Emoji "🪟" -Color "Green"
+$featuresSucceeded = $true
 Show-Info -Message "Enable Telnet Client" -Emoji "🔌"
-Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName TelnetClient
+try {
+    Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName TelnetClient -ErrorAction Stop
+} catch {
+    Show-Warning -Message "Failed to enable Telnet Client: $($_.Exception.Message)"
+    $featuresSucceeded = $false
+}
 
 # Enable Hyper-V
 Show-Info -Message "Enable Hyper-V" -Emoji "🖥️"
-Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Hyper-V -All
+try {
+    Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Hyper-V -All -ErrorAction Stop
+} catch {
+    Show-Warning -Message "Failed to enable Hyper-V: $($_.Exception.Message)"
+    $featuresSucceeded = $false
+}
 
 # Enable Sandbox
 Show-Info -Message "Enable Sandbox" -Emoji "📦"
-Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Containers-DisposableClientVM -All
-Show-Success -Message "Windows optional features enabled."
+try {
+    Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Containers-DisposableClientVM -All -ErrorAction Stop
+} catch {
+    Show-Warning -Message "Failed to enable Sandbox: $($_.Exception.Message)"
+    $featuresSucceeded = $false
+}
+if ($featuresSucceeded) {
+    Show-Success -Message "Windows optional features enabled."
+} else {
+    Show-Warning -Message "Some Windows optional features failed to enable. Check messages above."
+}
 
 # Synology VPN Server L2TP/IPSec with PSK
 Show-Section -Message "Configure VPN and Network Settings" -Emoji "🔐" -Color "Green"
@@ -480,8 +535,12 @@ refreshenv
 # Install Azure Artifacts Credential Provider
 ## https://github.com/microsoft/artifacts-credprovider
 Show-Section -Message "Install Azure Artifacts Credential Provider" -Emoji "☁️" -Color "Green"
-iex "& { $(irm https://aka.ms/install-artifacts-credprovider.ps1) } -AddNetfx"
-Show-Success -Message "Azure Artifacts Credential Provider installed."
+try {
+    iex "& { $(irm https://aka.ms/install-artifacts-credprovider.ps1) } -AddNetfx"
+    Show-Success -Message "Azure Artifacts Credential Provider installed."
+} catch {
+    Show-Error -Message "Failed to install Azure Artifacts Credential Provider: $($_.Exception.Message)"
+}
 
 # Config GIT
 Show-Section -Message "Configure Git" -Emoji "📝" -Color "Green"
@@ -513,9 +572,13 @@ Show-Success -Message "Git and GPG configured."
 
 ## Install .NET Core Tools
 Show-Section -Message "Install .NET Core Tools" -Emoji "🔧" -Color "Green"
-dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
-dotnet tool install --global dotnet-ef
-Show-Success -Message ".NET Core Tools installed."
+try {
+    dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org -ErrorAction Stop
+    dotnet tool install --global dotnet-ef -ErrorAction Stop
+    Show-Success -Message ".NET Core Tools installed."
+} catch {
+    Show-Error -Message "Failed to install .NET Core Tools. Please check the error above."
+}
 
 ## Set IPv4 priority
 ## https://ipw.cn/doc/ipv6/user/ipv4_ipv6_prefix_precedence.html
@@ -604,7 +667,7 @@ Invoke-WebRequest -Uri $fontNoto8Url -OutFile $fontNoto8File
 Show-Info -Message "Downloading NotoSansMonoCJKtc-Regular font..." -Emoji "⬇️"
 Invoke-WebRequest -Uri $fontNoto9Url -OutFile $fontNoto9File
 
-Show-Info -Message "Downloading FiraCode Nerd fonts..." -Emoji "⬇️"
+Show-Info -Message "Downloading FiraCode Nerd fonts (18 files - this may take a while)..." -Emoji "⬇️"
 Invoke-WebRequest -Uri $fontFira01Url -OutFile $fontFira01File
 Invoke-WebRequest -Uri $fontFira02Url -OutFile $fontFira02File
 Invoke-WebRequest -Uri $fontFira03Url -OutFile $fontFira03File
