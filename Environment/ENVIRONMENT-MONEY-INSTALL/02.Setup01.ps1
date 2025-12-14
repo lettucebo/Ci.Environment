@@ -708,6 +708,7 @@ Start-Process -FilePath $vs2025Exe -ArgumentList `
 "--add", "Microsoft.NetCore.Component.Runtime.7.0", `
 "--add", "Microsoft.NetCore.Component.Runtime.8.0", `
 "--add", "Microsoft.NetCore.Component.Runtime.9.0", `
+"--add", "Microsoft.NetCore.Component.Runtime.10.0", `
 "--add", "Microsoft.NetCore.ComponentGroup.DevelopmentTools.2.1", `
 "--add", "Microsoft.NetCore.ComponentGroup.Web.2.1", `
 "--add", "Component.Dotfuscator", `
