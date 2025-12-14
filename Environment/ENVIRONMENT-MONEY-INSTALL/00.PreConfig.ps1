@@ -1,9 +1,11 @@
 # =========================
 # PowerShell 7 Pre-Configuration Script
 # This script sets up the environment for PowerShell 7 installation and related features.
+# Note: This script runs in Windows PowerShell (before PS7 is installed), so helper functions
+# are defined inline instead of importing from Common-Functions.psm1 for compatibility.
 # =========================
 
-# Message display helper functions for better UX
+# Message display helper functions for better UX (inline for Windows PowerShell compatibility)
 function Show-Section { param([string]$Message,[string]$Emoji="➤",[string]$Color="Cyan") Write-Host ""; Write-Host ("="*60) -ForegroundColor DarkGray; Write-Host "$Emoji $Message" -ForegroundColor $Color -BackgroundColor Black; Write-Host ("="*60) -ForegroundColor DarkGray }
 function Show-Info { param([string]$Message,[string]$Emoji="ℹ️",[string]$Color="Gray") Write-Host "$Emoji $Message" -ForegroundColor $Color }
 function Show-Warning { param([string]$Message,[string]$Emoji="⚠️") Write-Host "$Emoji $Message" -ForegroundColor Yellow }
