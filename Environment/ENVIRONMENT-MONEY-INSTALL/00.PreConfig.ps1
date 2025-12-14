@@ -34,20 +34,17 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 Show-Section -Message "Install Nuget Provider" -Emoji "📦" -Color "Green"
 Install-PackageProvider -Name NuGet -Force
 Show-Success -Message "Nuget Provider installed."
-Show-Info -Message "Install Nuget Provider Complete" -Color "Green"
 
 # Install PowerShell 7 using the official Microsoft script
 Show-Section -Message "Install PowerShell 7" -Emoji "⬇️" -Color "Green"
 # Reference: https://github.com/PowerShell/PowerShell/blob/master/tools/install-powershell.ps1-README.md
 Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet"
 Show-Success -Message "PowerShell 7 installation triggered."
-Show-Info -Message "Install PowerShell 7 Complete" -Color "Green"
 
 # Set PSGallery as a trusted repository
 Show-Section -Message "Set PSGallery as Trusted" -Emoji "🗂️" -Color "Green"
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 Show-Success -Message "PSGallery set as trusted."
-Show-Info -Message "Install PSGallery Complete" -Color "Green"
 
 # Install MediaFeaturePack before installing SnagIt
 Show-Section -Message "Add Windows Optional Features - MediaFeaturePack" -Emoji "🪟" -Color "Green"
@@ -81,7 +78,6 @@ Show-Section -Message "Set Windows 11 Accent Color to Auto" -Emoji "🎨" -Color
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name ColorPrevalence -Value 1
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name AutoColorization -Value 1
 Show-Success -Message "Windows 11 accent color 已設為自動。"
-Show-Info -Message "Accent color auto configuration complete" -Color "Blue"
 
 # Restart the computer to apply changes
 Show-Section -Message "Restart Computer" -Emoji "🔄" -Color "Yellow"
