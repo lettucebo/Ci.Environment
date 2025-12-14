@@ -443,6 +443,8 @@ winget install Microsoft.BingWallpaper --accept-package-agreements --accept-sour
 winget install RedisInsight.RedisInsight --accept-package-agreements --accept-source-agreements
 # Microsoft.WindowsTerminal.Preview
 winget install Microsoft.WindowsTerminal.Preview --accept-package-agreements --accept-source-agreements
+# GitHub.Copilot.CLI.Prerelease
+winget install GitHub.Copilot.Prerelease --accept-package-agreements --accept-source-agreements
 
 # Enable Telnet Client
 Write-Host "`n Enable Telnet Client" -ForegroundColor Green
