@@ -43,7 +43,7 @@ try {
     Install-PackageProvider -Name NuGet -Force -ErrorAction Stop
     Show-Success -Message "NuGet Provider installed."
 } catch {
-    Show-Warning -Message "NuGet Provider installation skipped (not required for PowerShell 7)."
+    Show-Warning -Message "NuGet Provider installation skipped (PowerShell 7 uses a different package management system)."
 }
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 Show-Success -Message "PSGallery set as trusted."
