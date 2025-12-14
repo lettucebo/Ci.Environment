@@ -753,6 +753,7 @@ Start-Process -FilePath $vs2025Exe -ArgumentList `
 -Wait -PassThru
 
 # Restart
+Show-Info -Message "Computer will restart in 20 seconds..." -Emoji "⏳"
 Start-PSTimer -Title "Waiting for reboot" -Seconds 20 -ProgressBar -scriptblock {
     try {
         Restart-Computer -Force -ErrorAction Stop

@@ -73,7 +73,7 @@ Start-PSTimer -Title "Waiting for reboot" -Seconds 30 -ProgressBar -scriptblock 
         Restart-Computer -Force -ErrorAction Stop
     } catch {
         # If normal force restart fails (e.g., locked session), use shutdown command
-        Write-Host "⚠️ Restart-Computer failed, using shutdown command..." -ForegroundColor Yellow
+        Write-Host "Restart-Computer failed, using shutdown command..." -ForegroundColor Yellow
         shutdown /r /f /t 0
     }
 }

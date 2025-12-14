@@ -96,6 +96,7 @@ Show-Info -Message "Accent color auto configuration complete" -Color "Blue"
 # Restart the computer to apply changes
 Show-Section -Message "Restart Computer" -Color "Yellow"
 Install-Module -Name PSTimers -Force
+Show-Info -Message "Computer will restart in 30 seconds..." -Color "Gray"
 Start-PSTimer -Title "Waiting for reboot" -Seconds 30 -ProgressBar -scriptblock {
     try {
         Restart-Computer -Force -ErrorAction Stop
