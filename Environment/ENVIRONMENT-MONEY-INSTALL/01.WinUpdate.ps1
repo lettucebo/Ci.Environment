@@ -39,7 +39,18 @@ if($PSversionTable.PsVersion.Major -lt 7){
 
 # Install Nuget Provider and set PSGallery as trusted
 Show-Section -Message "Install Nuget Provider" -Emoji "📦" -Color "Green"
-Install-PackageProvider -Name NuGet -Force
+try {
+    Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -ErrorAction Stop
+} catch {
+    Show-Warning -Message "NuGet provider installation via Install-PackageProvider failed, trying alternative method..."
+    # Alternative: Register NuGet source directly if provider install fails
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Install-PackageProvider -Name NuGet -Force -ErrorAction SilentlyContinue
+    } catch {
+        Show-Warning -Message "NuGet provider may already be installed or not required for this PowerShell version."
+    }
+}
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 Show-Success -Message "Nuget Provider and PSGallery set."
 
@@ -55,5 +66,14 @@ Install-WindowsUpdate -AcceptAll -AutoReboot
 
 # Restart the computer to apply changes
 Show-Section -Message "Restart Computer" -Emoji "🔄" -Color "Yellow"
-Install-Module -Name PSTimers
-Start-PSTimer -Title "Waiting for reboot" -Seconds 30 -ProgressBar -scriptblock {Restart-Computer -Force}
+Install-Module -Name PSTimers -Force
+Show-Info -Message "Computer will restart in 30 seconds..." -Emoji "⏳"
+Start-PSTimer -Title "Waiting for reboot" -Seconds 30 -ProgressBar -scriptblock {
+    try {
+        Restart-Computer -Force -ErrorAction Stop
+    } catch {
+        # If normal force restart fails (e.g., locked session), use shutdown command
+        Write-Host "⚠️ Restart-Computer failed, using shutdown command..." -ForegroundColor Yellow
+        shutdown /r /f /t 0
+    }
+}

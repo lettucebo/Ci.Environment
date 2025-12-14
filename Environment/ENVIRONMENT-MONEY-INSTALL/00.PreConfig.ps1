@@ -32,7 +32,17 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 
 # Install Nuget Provider before installing PowerShell 7 to prevent prompts
 Show-Section -Message "Install Nuget Provider" -Color "Green"
-Install-PackageProvider -Name NuGet -Force
+try {
+    Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -ErrorAction Stop
+} catch {
+    Show-Warning -Message "NuGet provider installation via Install-PackageProvider failed, trying alternative method..."
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Install-PackageProvider -Name NuGet -Force -ErrorAction SilentlyContinue
+    } catch {
+        Show-Warning -Message "NuGet provider may already be installed or not required for this PowerShell version."
+    }
+}
 Show-Success -Message "Nuget Provider installed."
 Show-Info -Message "Install Nuget Provider Complete" -Color "Green"
 
@@ -85,5 +95,13 @@ Show-Info -Message "Accent color auto configuration complete" -Color "Blue"
 
 # Restart the computer to apply changes
 Show-Section -Message "Restart Computer" -Color "Yellow"
-Install-Module -Name PSTimers
-Start-PSTimer -Title "Waiting for reboot" -Seconds 30 -ProgressBar -scriptblock {Restart-Computer -Force}
+Install-Module -Name PSTimers -Force
+Start-PSTimer -Title "Waiting for reboot" -Seconds 30 -ProgressBar -scriptblock {
+    try {
+        Restart-Computer -Force -ErrorAction Stop
+    } catch {
+        # If normal force restart fails (e.g., locked session), use shutdown command
+        Write-Host "Restart-Computer failed, using shutdown command..." -ForegroundColor Yellow
+        shutdown /r /f /t 0
+    }
+}
