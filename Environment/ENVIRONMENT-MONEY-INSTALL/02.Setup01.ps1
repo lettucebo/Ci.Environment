@@ -441,6 +441,13 @@ winget install Microsoft.BingWallpaper --accept-package-agreements --accept-sour
 # winget install 9NBLGGH43VHV --accept-package-agreements --accept-source-agreements
 # Redis Insight
 winget install RedisInsight.RedisInsight --accept-package-agreements --accept-source-agreements
+# Microsoft.WindowsTerminal.Preview
+winget install Microsoft.WindowsTerminal.Preview --accept-package-agreements --accept-source-agreements
+# GitHub.Copilot.CLI.Prerelease
+winget install GitHub.Copilot.Prerelease --accept-package-agreements --accept-source-agreements
+
+# Claude Code
+irm https://claude.ai/install.ps1 | iex
 
 # Enable Telnet Client
 Show-Section -Message "Enable Windows Optional Features" -Emoji "🪟" -Color "Green"
@@ -651,18 +658,18 @@ $objFolder.CopyHere($fontFira17File, 0x10)
 $objFolder.CopyHere($fontFira18File, 0x10)
 Show-Success -Message "FiraCode fonts installed."
 
-## Install VS 2022
-# https://docs.microsoft.com/en-us/visualstudio/install/workload-and-component-ids?view=vs-2022
+## Install VS 2025
+# https://learn.microsoft.com/en-us/visualstudio/install/workload-and-component-ids
 # https://developercommunity.visualstudio.com/t/setup-does-not-wait-for-installation-to-complete-w/26668#T-N1137560
-Show-Section -Message "Install Visual Studio 2022" -Emoji "💻" -Color "Green"
-$vs2022Url = "https://aka.ms/vs/17/release/vs_enterprise.exe";
-$vs2022Exe = "$PSScriptRoot\vs_enterprise.exe";
+Show-Section -Message "Install Visual Studio 2025" -Emoji "💻" -Color "Green"
+$vs2025Url = "https://aka.ms/vs/18/pre/vs_enterprise.exe";
+$vs2025Exe = "$PSScriptRoot\vs_enterprise.exe";
 $start_time = Get-Date
 
-Invoke-WebRequest -Uri $vs2022Url -OutFile $vs2022Exe
-Show-Info -Message "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, at $vs2022Exe" -Emoji "⏱️"
+Invoke-WebRequest -Uri $vs2025Url -OutFile $vs2025Exe
+Show-Info -Message "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, at $vs2025Exe" -Emoji "⏱️"
 
-Start-Process -FilePath $vs2022Exe -ArgumentList `
+Start-Process -FilePath $vs2025Exe -ArgumentList `
 "--addProductLang", "En-us", `
 "--add", "Microsoft.VisualStudio.Workload.Azure", `
 "--add", "Microsoft.VisualStudio.Workload.ManagedDesktop", `
@@ -700,6 +707,8 @@ Start-Process -FilePath $vs2022Exe -ArgumentList `
 "--add", "Microsoft.NetCore.Component.Runtime.6.0", `
 "--add", "Microsoft.NetCore.Component.Runtime.7.0", `
 "--add", "Microsoft.NetCore.Component.Runtime.8.0", `
+"--add", "Microsoft.NetCore.Component.Runtime.9.0", `
+"--add", "Microsoft.NetCore.Component.Runtime.10.0", `
 "--add", "Microsoft.NetCore.ComponentGroup.DevelopmentTools.2.1", `
 "--add", "Microsoft.NetCore.ComponentGroup.Web.2.1", `
 "--add", "Component.Dotfuscator", `
