@@ -72,7 +72,7 @@ Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer 
 [microsoft.win32.registry]::SetValue("HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization", "SystemSettingsDownloadMode", 3)
 
 # Set the system locale
-Set-WinSystemLocale -SystemLocale zh-TW
+# Set-WinSystemLocale -SystemLocale zh-TW
 
 # Set Alt Tab to open Windows only
 Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name MultiTaskingAltTabFilter -Type DWord -Value 3
@@ -155,8 +155,6 @@ choco install -y googlechrome --ignore-checksums
 # choco install -y microsoft-edge-insider-dev
 choco install -y powertoys
 choco install -y mobaxterm
-choco install -y ngrok
-choco install -y microsoft-teams.install
 choco install -y sysinternals
 choco install -y openssl.light
 choco install -y autohotkey
@@ -178,6 +176,7 @@ choco install -y dotnet-6.0-sdk
 choco install -y dotnet-7.0-sdk
 choco install -y dotnet-8.0-sdk
 choco install -y dotnet-9.0-sdk
+choco install -y dotnet-10.0-sdk
 
 choco install -y snagit --ignorechecksum --version=2022.1.4
 # choco install -y office365business
@@ -192,17 +191,19 @@ Start-Process -FilePath $lbmFile -ArgumentList "/S" -PassThru
 Show-Success -Message "Little Big Mouse installed."
 
 # Download Azure Storage Emulator
-Show-Section -Message "Install Azure Storage Emulator" -Emoji "☁️" -Color "Green"
-$storFile = "$PSScriptRoot\microsoftazurestorageemulator.msi";
-Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=717179&clcid=0x409" -OutFile $storFile
-Start-Process msiexec -ArgumentList "/i $storFile /qn /norestart /l*v install.log " -Wait -PassThru
-Show-Success -Message "Azure Storage Emulator installed."
+## The app as been retired
+# Show-Section -Message "Install Azure Storage Emulator" -Emoji "☁️" -Color "Green"
+# $storFile = "$PSScriptRoot\microsoftazurestorageemulator.msi";
+# Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=717179&clcid=0x409" -OutFile $storFile
+# Start-Process msiexec -ArgumentList "/i $storFile /qn /norestart /l*v install.log " -Wait -PassThru
+# Show-Success -Message "Azure Storage Emulator installed."
 
 # Install Redis Desktop Manager
-Show-Section -Message "Install Redis Desktop Manager" -Emoji "🗄️" -Color "Green"
-$rdmFile = "$PSScriptRoot\resp-2022.5.1.exe";
-Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2022.5.1/resp-2022.5.1.exe" -OutFile $rdmFile
-Start-Process $rdmFile -ArgumentList "/q"
+## The app as been retired
+# Show-Section -Message "Install Redis Desktop Manager" -Emoji "🗄️" -Color "Green"
+# $rdmFile = "$PSScriptRoot\resp-2022.5.1.exe";
+# Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2022.5.1/resp-2022.5.1.exe" -OutFile $rdmFile
+# Start-Process $rdmFile -ArgumentList "/q"
 
 # Dell Bluetooth
 # https://www.dell.com/community/XPS/XPS-9310-Bluetooth-lag-with-Logitech-MX-Keys-MX-Master-3/m-p/7795277/highlight/true#M77883
@@ -438,6 +439,8 @@ winget install 9N4066W2R5Q4 --accept-package-agreements --accept-source-agreemen
 winget install Microsoft.BingWallpaper --accept-package-agreements --accept-source-agreements
 # Samsung Notes
 # winget install 9NBLGGH43VHV --accept-package-agreements --accept-source-agreements
+# Redis Insight
+winget install RedisInsight.RedisInsight --accept-package-agreements --accept-source-agreements
 
 # Enable Telnet Client
 Write-Host "`n Enable Telnet Client" -ForegroundColor Green
