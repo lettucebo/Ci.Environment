@@ -746,8 +746,9 @@ Show-Success -Message "FiraCode fonts installed."
 ## Install VS 2025
 # https://learn.microsoft.com/en-us/visualstudio/install/workload-and-component-ids
 # https://developercommunity.visualstudio.com/t/setup-does-not-wait-for-installation-to-complete-w/26668#T-N1137560
+# https://gist.github.com/Chenx221/6f4ed72cd785d80edb0bc50c9921daf7?permalink_comment_id=5876163
 Show-Section -Message "Install Visual Studio 2025" -Emoji "💻" -Color "Green"
-$vs2025Url = "https://aka.ms/vs/18/pre/vs_enterprise.exe";
+$vs2025Url = "https://aka.ms/vs/18/Stable/vs_enterprise.exe";
 $vs2025Exe = "$PSScriptRoot\vs_enterprise.exe";
 $start_time = Get-Date
 
