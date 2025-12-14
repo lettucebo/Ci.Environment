@@ -4,11 +4,46 @@
 # =========================
 
 # Message display helper functions for better UX
-function Show-Section { param([string]$Message,[string]$Emoji="➤",[string]$Color="Cyan") Write-Host ""; Write-Host ("="*60) -ForegroundColor DarkGray; Write-Host "$Emoji $Message" -ForegroundColor $Color -BackgroundColor Black; Write-Host ("="*60) -ForegroundColor DarkGray }
-function Show-Info { param([string]$Message,[string]$Emoji="ℹ️",[string]$Color="Gray") Write-Host "$Emoji $Message" -ForegroundColor $Color }
-function Show-Warning { param([string]$Message,[string]$Emoji="⚠️") Write-Host "$Emoji $Message" -ForegroundColor Yellow }
-function Show-Error { param([string]$Message,[string]$Emoji="❌") Write-Host "$Emoji $Message" -ForegroundColor Red }
-function Show-Success { param([string]$Message,[string]$Emoji="✅") Write-Host "$Emoji $Message" -ForegroundColor Green }
+function Show-Section {
+    param(
+        [string]$Message,
+        [string]$Emoji = "➤",
+        [string]$Color = "Cyan"
+    )
+    Write-Host ""
+    Write-Host ("=" * 60) -ForegroundColor DarkGray
+    Write-Host "$Emoji $Message" -ForegroundColor $Color -BackgroundColor Black
+    Write-Host ("=" * 60) -ForegroundColor DarkGray
+}
+function Show-Info {
+    param(
+        [string]$Message,
+        [string]$Emoji = "ℹ️",
+        [string]$Color = "Gray"
+    )
+    Write-Host "$Emoji $Message" -ForegroundColor $Color
+}
+function Show-Warning {
+    param(
+        [string]$Message,
+        [string]$Emoji = "⚠️"
+    )
+    Write-Host "$Emoji $Message" -ForegroundColor Yellow
+}
+function Show-Error {
+    param(
+        [string]$Message,
+        [string]$Emoji = "❌"
+    )
+    Write-Host "$Emoji $Message" -ForegroundColor Red
+}
+function Show-Success {
+    param(
+        [string]$Message,
+        [string]$Emoji = "✅"
+    )
+    Write-Host "$Emoji $Message" -ForegroundColor Green
+}
 
 Show-Section -Message "Step 2: System & Environment Setup" -Emoji "🛠️" -Color "Magenta"
 Show-Info -Message ("Current Time: " + (Get-Date)) -Emoji "⏰"
@@ -209,7 +244,7 @@ Show-Success -Message "Little Big Mouse installed."
 # https://www.dell.com/community/XPS/XPS-9310-Bluetooth-lag-with-Logitech-MX-Keys-MX-Master-3/m-p/7795277/highlight/true#M77883
 
 ## Install Nuget Provider
-Write-Host "`n Install Nuget Provider" -ForegroundColor Green
+Show-Info -Message "Install Nuget Provider" -Emoji "📦"
 Install-PackageProvider -Name NuGet -Force
 Show-Success -Message "Nuget Provider installed."
 
@@ -254,17 +289,17 @@ $videosItem2 = '{f86fa3ab-70d2-4fc7-9c99-fcbf05467f3a}'
 $3dObjectsItem = '{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}'
 
 # Remove Desktop From This PC
-Write-Host "`n Remove Desktop From This PC" -ForegroundColor Yellow
+Show-Info -Message "Remove Desktop From This PC" -Emoji "🗑️" -Color "Yellow"
 If (Get-Item -Path $regPath1$desktopItem -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$desktopItem -Recurse
     Remove-Item -Path $regPath2$desktopItem -Recurse
 }
 Else {
-    Write-Warning "Desktop key does not exist `n"
+    Show-Warning -Message "Desktop key does not exist"
 }
 
 # Remove Documents From This PC
-Write-Host "`n Remove Documents From This PC" -ForegroundColor Yellow
+Show-Info -Message "Remove Documents From This PC" -Emoji "🗑️" -Color "Yellow"
 If (Get-Item -Path $regPath1$documentsItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$documentsItem1 -Recurse
     Remove-Item -Path $regPath2$documentsItem1 -Recurse
@@ -272,11 +307,11 @@ If (Get-Item -Path $regPath1$documentsItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath2$documentsItem2 -Recurse
 }
 Else {
-    Write-Warning "Documents key does not exist `n"
+    Show-Warning -Message "Documents key does not exist"
 }
 
 # Remove Downloads From This PC
-Write-Host "`n Remove Downloads From This PC" -ForegroundColor Yellow
+Show-Info -Message "Remove Downloads From This PC" -Emoji "🗑️" -Color "Yellow"
 If (Get-Item -Path $regPath1$downloadsItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$downloadsItem1 -Recurse
     Remove-Item -Path $regPath2$downloadsItem1 -Recurse
@@ -284,11 +319,11 @@ If (Get-Item -Path $regPath1$downloadsItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath2$downloadsItem2 -Recurse
 }
 Else {
-    Write-Warning "Downloads key does not exist `n"
+    Show-Warning -Message "Downloads key does not exist"
 }
 
 # Remove Music From This PC
-Write-Host "`n Remove Music From This PC" -ForegroundColor Yellow
+Show-Info -Message "Remove Music From This PC" -Emoji "🗑️" -Color "Yellow"
 If (Get-Item -Path $regPath1$musicItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$musicItem1 -Recurse
     Remove-Item -Path $regPath2$musicItem1 -Recurse
@@ -296,11 +331,11 @@ If (Get-Item -Path $regPath1$musicItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath2$musicItem2 -Recurse
 }
 Else {
-    Write-Warning "Music key does not exist `n"
+    Show-Warning -Message "Music key does not exist"
 }
 
 # Remove Pictures From This PC
-Write-Host "`n Remove Pictures From This PC" -ForegroundColor Yellow
+Show-Info -Message "Remove Pictures From This PC" -Emoji "🗑️" -Color "Yellow"
 If (Get-Item -Path $regPath1$picturesItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$picturesItem1 -Recurse
     Remove-Item -Path $regPath2$picturesItem1 -Recurse
@@ -308,11 +343,11 @@ If (Get-Item -Path $regPath1$picturesItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath2$picturesItem2 -Recurse
 }
 Else {
-    Write-Warning "Pictures key does not exist `n"
+    Show-Warning -Message "Pictures key does not exist"
 }
 
 # Remove Videos From This PC
-Write-Host "`n Remove Videos From This PC" -ForegroundColor Yellow
+Show-Info -Message "Remove Videos From This PC" -Emoji "🗑️" -Color "Yellow"
 If (Get-Item -Path $regPath1$videosItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$videosItem1 -Recurse
     Remove-Item -Path $regPath2$videosItem1 -Recurse
@@ -320,22 +355,22 @@ If (Get-Item -Path $regPath1$videosItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath2$videosItem2 -Recurse
 }
 Else {
-    Write-Warning "Videos key does not exist `n"
+    Show-Warning -Message "Videos key does not exist"
 }
 
 # Remove 3D Objects From This PC
-Write-Host "`n Remove 3DObjects From This PC" -ForegroundColor Yellow
+Show-Info -Message "Remove 3DObjects From This PC" -Emoji "🗑️" -Color "Yellow"
 If (Get-Item -Path $regPath1$3dObjectsItem -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$3dObjectsItem -Recurse
     Remove-Item -Path $regPath2$3dObjectsItem -Recurse
 }
 Else {
-    Write-Warning "3DObjects key does not exist `n"
+    Show-Warning -Message "3DObjects key does not exist"
 }
 
 ## Let me set a different input method for each app window
 # https://social.technet.microsoft.com/Forums/ie/en-US/c6e76806-3b64-47e6-876e-ffbbc7438784/the-option-let-me-set-a-different-input-method-for-each-app-window?forum=w8itprogeneral
-Write-Host "`n Enable Let me set a different input method for each app window" -ForegroundColor Green
+Show-Info -Message "Enable Let me set a different input method for each app window" -Emoji "⌨️" -Color "Green"
 $prefMask = (Get-ItemProperty -Path 'HKCU:\Control Panel\Desktop' -Name 'UserPreferencesMask').UserPreferencesMask
 if (($prefMask[4] -band 0x80) -eq 0) {
   $prefMask[4] = ($prefMask[4] -bor 0x80)
@@ -345,7 +380,7 @@ Show-Success -Message "Per-app input method enabled."
 
 ## Set PowerPoint export high-resolution
 # https://docs.microsoft.com/zh-tw/office/troubleshoot/powerpoint/change-export-slide-resolution
-Write-Host "`n Set PowerPoint export high-resolution" -ForegroundColor Green
+Show-Info -Message "Set PowerPoint export high-resolution" -Emoji "📊" -Color "Green"
 [microsoft.win32.registry]::SetValue("HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\PowerPoint\Options", "ExportBitmapResolution", 300)
 Show-Success -Message "PowerPoint export resolution set."
 
@@ -386,7 +421,7 @@ Show-Success -Message "PowerShell profile configured."
 ## reference: https://dev.to/smashse/wsl-chocolatey-powershell-winget-1d6p
 ## https://github.com/microsoft/WSL/issues/5014#issuecomment-692432322
 # Download and Install the WSL 2 Update (contains Microsoft Linux kernel)
-Write-Host "`n Install WSL2 Kernel udpate" -ForegroundColor Green
+Show-Info -Message "Install WSL2 Kernel update" -Emoji "🐧" -Color "Green"
 #Invoke-WebRequest https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -outfile $PSScriptRoot\wsl_update_x64.msi
 #Start-Process $PSScriptRoot\wsl_update_x64.msi -ArgumentList '/quiet' -Wait
 ##### https://github.com/microsoft/WSL/issues/7857#issuecomment-999935343
@@ -398,20 +433,20 @@ wsl --update
 # powershell -Command "Start-Process msiexec -Wait -ArgumentList '/i','wsl_update_x64.msi','/quiet','/qn'"
 
 ## Set wsl default version to 2
-Write-Host "`n Set wsl default version to 2" -ForegroundColor Green
+Show-Info -Message "Set WSL default version to 2" -Emoji "🐧" -Color "Green"
 wsl --set-default-version 2
 
 ## Using WinGet install MS Store and relate application
 # 安裝 Windows Terminal Canary
-Write-Host "`n Downloading and installing Windows Terminal Canary (latest) from GitHub..." -ForegroundColor Green
+Show-Section -Message "Install Windows Terminal Canary" -Emoji "💻" -Color "Green"
 $canaryInstallerUrl = "https://terminalbuilds-grbmacf3f6bsbma8.z01.azurefd.net/nightly/Microsoft.WindowsTerminalCanary.appinstaller"
 $canaryInstallerPath = "$PSScriptRoot\WindowsTerminalCanary.appinstaller"
-Write-Host "Downloading Windows Terminal Canary installer..." -ForegroundColor Green
+Show-Info -Message "Downloading Windows Terminal Canary installer..." -Emoji "⬇️"
 Invoke-WebRequest -Uri $canaryInstallerUrl -OutFile $canaryInstallerPath
 Start-Process -FilePath "explorer.exe" -ArgumentList $canaryInstallerPath
 Show-Info -Message "Windows Terminal Canary .appinstaller launched. Please follow the App Installer prompts to complete installation." -Emoji "🟡"
 
-Write-Host "`n Using WinGet install MS Store application" -ForegroundColor Green
+Show-Section -Message "Install MS Store Applications via WinGet" -Emoji "🏪" -Color "Green"
 # Microsoft.Whiteboard
 winget install 9MSPC6MP8FM4 --accept-package-agreements --accept-source-agreements
 # NuGetPackageExplorer
@@ -450,37 +485,65 @@ winget install GitHub.Copilot.Prerelease --accept-package-agreements --accept-so
 irm https://claude.ai/install.ps1 | iex
 
 # Enable Telnet Client
-Write-Host "`n Enable Telnet Client" -ForegroundColor Green
-Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName TelnetClient
+Show-Section -Message "Enable Windows Optional Features" -Emoji "🪟" -Color "Green"
+$featuresSucceeded = $true
+Show-Info -Message "Enable Telnet Client" -Emoji "🔌"
+try {
+    Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName TelnetClient -ErrorAction Stop
+} catch {
+    Show-Warning -Message "Failed to enable Telnet Client: $($_.Exception.Message)"
+    $featuresSucceeded = $false
+}
 
 # Enable Hyper-V
-Write-Host "`n Enable Hyper-V" -ForegroundColor Green
-Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Hyper-V -All
+Show-Info -Message "Enable Hyper-V" -Emoji "🖥️"
+try {
+    Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Hyper-V -All -ErrorAction Stop
+} catch {
+    Show-Warning -Message "Failed to enable Hyper-V: $($_.Exception.Message)"
+    $featuresSucceeded = $false
+}
 
 # Enable Sandbox
-Write-Host "`n Enable Sandbox" -ForegroundColor Green
-Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Containers-DisposableClientVM -All
+Show-Info -Message "Enable Sandbox" -Emoji "📦"
+try {
+    Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Containers-DisposableClientVM -All -ErrorAction Stop
+} catch {
+    Show-Warning -Message "Failed to enable Sandbox: $($_.Exception.Message)"
+    $featuresSucceeded = $false
+}
+if ($featuresSucceeded) {
+    Show-Success -Message "Windows optional features enabled."
+} else {
+    Show-Warning -Message "Some Windows optional features failed to enable. Check messages above."
+}
 
 # Synology VPN Server L2TP/IPSec with PSK
-Write-Host "`n Config Synology VPN Server L2TP/IPSec with PSK" -ForegroundColor Green
+Show-Section -Message "Configure VPN and Network Settings" -Emoji "🔐" -Color "Green"
+Show-Info -Message "Config Synology VPN Server L2TP/IPSec with PSK" -Emoji "🌐"
 [microsoft.win32.registry]::SetValue("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\PolicyAgent", "AssumeUDPEncapsulationContextOnSendRule", 2)
 
 # Refresh EnvironmentVariable
-Write-Host "`n Refresh EnvironmentVariable" -ForegroundColor Green
+Show-Info -Message "Refresh EnvironmentVariable" -Emoji "🔄"
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
 ## Restart file explorer
-Write-Host "`n Restart file explorer" -ForegroundColor Green
+Show-Info -Message "Restart file explorer" -Emoji "📂"
 Stop-Process -processname explorer
 refreshenv
 
 # Install Azure Artifacts Credential Provider
 ## https://github.com/microsoft/artifacts-credprovider
-Write-Host "`n Install Azure Artifacts Credential Provider" -ForegroundColor Green
-iex "& { $(irm https://aka.ms/install-artifacts-credprovider.ps1) } -AddNetfx"
+Show-Section -Message "Install Azure Artifacts Credential Provider" -Emoji "☁️" -Color "Green"
+try {
+    iex "& { $(irm https://aka.ms/install-artifacts-credprovider.ps1) } -AddNetfx"
+    Show-Success -Message "Azure Artifacts Credential Provider installed."
+} catch {
+    Show-Error -Message "Failed to install Azure Artifacts Credential Provider: $($_.Exception.Message)"
+}
 
 # Config GIT
-Write-Host "`n Config GIT" -ForegroundColor Green
+Show-Section -Message "Configure Git" -Emoji "📝" -Color "Green"
 git config --global user.name "Money Yu"
 git config --global user.email abc12207@gmail.com
 git config --global user.signingkey 871B1DD4A0830BA9897A6AF37240ACACFF6EDB8D
@@ -495,7 +558,7 @@ SETX LC_ALL C.UTF-8 /M
 ## gpg --import .\pgp-private-keys.asc
 
 ## gpg config
-Write-Host "`n Add gpg config" -ForegroundColor Green
+Show-Info -Message "Add GPG config" -Emoji "🔐"
 $env:UserName
 $gpgConfContnet = 
 @'
@@ -505,20 +568,30 @@ max-cache-ttl 604800
 $gpgPath = "C:\Users\${env:username}\AppData\Roaming\gnupg\gpg-agent.conf"
 If (!(Test-Path $gpgPath)) {New-Item -Path $gpgPath -Force}
 Add-Content -Path $gpgPath -Value $gpgConfContnet
+Show-Success -Message "Git and GPG configured."
 
 ## Install .NET Core Tools
-Write-Host "`n Install .NET Core Tools" -ForegroundColor Green
+Show-Section -Message "Install .NET Core Tools" -Emoji "🔧" -Color "Green"
+$dotnetFailed = $false
 dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
+if ($LASTEXITCODE -ne 0) { $dotnetFailed = $true }
 dotnet tool install --global dotnet-ef
+if ($LASTEXITCODE -ne 0) { $dotnetFailed = $true }
+if ($dotnetFailed) {
+    Show-Error -Message "Failed to install .NET Core Tools. Please check the error above."
+} else {
+    Show-Success -Message ".NET Core Tools installed."
+}
 
 ## Set IPv4 priority
 ## https://ipw.cn/doc/ipv6/user/ipv4_ipv6_prefix_precedence.html
+Show-Info -Message "Set IPv4 priority" -Emoji "🌐"
 netsh interface ipv6 set prefixpolicy ::ffff:0:0/96 45 4
 
 ## Install Developer Font
 ##### https://gist.github.com/anthonyeden/0088b07de8951403a643a8485af2709b
 ##### https://gist.github.com/cosine83/e83c44878a6bdeac0c7c59e3dbfd1f71
-Write-Host "`n Install Developer Font" -ForegroundColor Green
+Show-Section -Message "Install Developer Fonts" -Emoji "🔤" -Color "Green"
 $fontUrl = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/YaHei%20Consolas.ttf";
 $fontFile = "$PSScriptRoot\YaHei.ttf";
 $fontNoto1Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Black.otf";
@@ -576,65 +649,48 @@ $fontFira17File = "$PSScriptRoot\FiraCodeNerdFont-Retina.ttf";
 $fontFira18Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFont-SemiBold.ttf"
 $fontFira18File = "$PSScriptRoot\FiraCodeNerdFont-SemiBold.ttf";
 
-Write-Host "`n Download fontFile..." -ForegroundColor Gray
+Show-Info -Message "Downloading YaHei Consolas font..." -Emoji "⬇️"
 Invoke-WebRequest -Uri $fontUrl -OutFile $fontFile
-Write-Host "`n Download fontNoto1File..." -ForegroundColor Gray
+Show-Info -Message "Downloading NotoSansCJKtc-Black font..." -Emoji "⬇️"
 Invoke-WebRequest -Uri $fontNoto1Url -OutFile $fontNoto1File
-Write-Host "`n Download fontNoto2File..." -ForegroundColor Gray
+Show-Info -Message "Downloading NotoSansCJKtc-Bold font..." -Emoji "⬇️"
 Invoke-WebRequest -Uri $fontNoto2Url -OutFile $fontNoto2File
-Write-Host "`n Download fontNoto3File..." -ForegroundColor Gray
+Show-Info -Message "Downloading NotoSansCJKtc-DemiLight font..." -Emoji "⬇️"
 Invoke-WebRequest -Uri $fontNoto3Url -OutFile $fontNoto3File
-Write-Host "`n Download fontNoto4File..." -ForegroundColor Gray
+Show-Info -Message "Downloading NotoSansCJKtc-Light font..." -Emoji "⬇️"
 Invoke-WebRequest -Uri $fontNoto4Url -OutFile $fontNoto4File
-Write-Host "`n Download fontNoto5File..." -ForegroundColor Gray
+Show-Info -Message "Downloading NotoSansCJKtc-Medium font..." -Emoji "⬇️"
 Invoke-WebRequest -Uri $fontNoto5Url -OutFile $fontNoto5File
-Write-Host "`n Download fontNoto6File..." -ForegroundColor Gray
+Show-Info -Message "Downloading NotoSansCJKtc-Regular font..." -Emoji "⬇️"
 Invoke-WebRequest -Uri $fontNoto6Url -OutFile $fontNoto6File
-Write-Host "`n Download fontNoto7File..." -ForegroundColor Gray
+Show-Info -Message "Downloading NotoSansCJKtc-Thin font..." -Emoji "⬇️"
 Invoke-WebRequest -Uri $fontNoto7Url -OutFile $fontNoto7File
-Write-Host "`n Download fontNoto8File..." -ForegroundColor Gray
+Show-Info -Message "Downloading NotoSansMonoCJKtc-Bold font..." -Emoji "⬇️"
 Invoke-WebRequest -Uri $fontNoto8Url -OutFile $fontNoto8File
-Write-Host "`n Download fontNoto9File..." -ForegroundColor Gray
+Show-Info -Message "Downloading NotoSansMonoCJKtc-Regular font..." -Emoji "⬇️"
 Invoke-WebRequest -Uri $fontNoto9Url -OutFile $fontNoto9File
 
-Write-Host "`n Download fontFira01File..." -ForegroundColor Gray
+Show-Info -Message "Downloading FiraCode Nerd fonts (18 files - this may take a while)..." -Emoji "⬇️"
 Invoke-WebRequest -Uri $fontFira01Url -OutFile $fontFira01File
-Write-Host "`n Download fontFira02File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontFira02Url -OutFile $fontFira02File
-Write-Host "`n Download fontFira03File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontFira03Url -OutFile $fontFira03File
-Write-Host "`n Download fontFira04File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontFira04Url -OutFile $fontFira04File
-Write-Host "`n Download fontFira05File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontFira05Url -OutFile $fontFira05File
-Write-Host "`n Download fontFira06File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontFira06Url -OutFile $fontFira06File
-Write-Host "`n Download fontFira07File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontFira07Url -OutFile $fontFira07File
-Write-Host "`n Download fontFira08File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontFira08Url -OutFile $fontFira08File
-Write-Host "`n Download fontFira09File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontFira09Url -OutFile $fontFira09File
-Write-Host "`n Download fontFira10File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontFira10Url -OutFile $fontFira10File
-Write-Host "`n Download fontFira11File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontFira11Url -OutFile $fontFira11File
-Write-Host "`n Download fontFira12File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontFira12Url -OutFile $fontFira12File
-Write-Host "`n Download fontFira13File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontFira13Url -OutFile $fontFira13File
-Write-Host "`n Download fontFira14File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontFira14Url -OutFile $fontFira14File
-Write-Host "`n Download fontFira15File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontFira15Url -OutFile $fontFira15File
-Write-Host "`n Download fontFira16File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontFira16Url -OutFile $fontFira16File
-Write-Host "`n Download fontFira17File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontFira17Url -OutFile $fontFira17File
-Write-Host "`n Download fontFira18File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontFira18Url -OutFile $fontFira18File
 
-Write-Host "`n Installing NotoSans fonts..." -ForegroundColor Gray
+Show-Info -Message "Installing NotoSans fonts..." -Emoji "📥"
 $objFolder = (New-Object -ComObject Shell.Application).Namespace(0x14)
 $objFolder.CopyHere($fontFile, 0x10)
 $objFolder.CopyHere($fontNoto1File, 0x10)
@@ -646,9 +702,9 @@ $objFolder.CopyHere($fontNoto6File, 0x10)
 $objFolder.CopyHere($fontNoto7File, 0x10)
 $objFolder.CopyHere($fontNoto8File, 0x10)
 $objFolder.CopyHere($fontNoto9File, 0x10)
-Write-Host "`n NotoSans fonts installed..." -ForegroundColor Gray
+Show-Success -Message "NotoSans fonts installed."
 
-Write-Host "`n Installing FiraCode fonts..." -ForegroundColor Gray
+Show-Info -Message "Installing FiraCode fonts..." -Emoji "📥"
 $objFolder.CopyHere($fontFira01File, 0x10)
 $objFolder.CopyHere($fontFira02File, 0x10)
 $objFolder.CopyHere($fontFira03File, 0x10)
@@ -667,18 +723,18 @@ $objFolder.CopyHere($fontFira15File, 0x10)
 $objFolder.CopyHere($fontFira16File, 0x10)
 $objFolder.CopyHere($fontFira17File, 0x10)
 $objFolder.CopyHere($fontFira18File, 0x10)
-Write-Host "`n FiraCode fonts installed..." -ForegroundColor Gray
+Show-Success -Message "FiraCode fonts installed."
 
 ## Install VS 2025
 # https://learn.microsoft.com/en-us/visualstudio/install/workload-and-component-ids
 # https://developercommunity.visualstudio.com/t/setup-does-not-wait-for-installation-to-complete-w/26668#T-N1137560
-Write-Host "`n Install VS 2025" -ForegroundColor Green
+Show-Section -Message "Install Visual Studio 2025" -Emoji "💻" -Color "Green"
 $vs2025Url = "https://aka.ms/vs/18/pre/vs_enterprise.exe";
 $vs2025Exe = "$PSScriptRoot\vs_enterprise.exe";
 $start_time = Get-Date
 
 Invoke-WebRequest -Uri $vs2025Url -OutFile $vs2025Exe
-Write-Output "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, at $vs2025Exe"
+Show-Info -Message "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, at $vs2025Exe" -Emoji "⏱️"
 
 Start-Process -FilePath $vs2025Exe -ArgumentList `
 "--addProductLang", "En-us", `
