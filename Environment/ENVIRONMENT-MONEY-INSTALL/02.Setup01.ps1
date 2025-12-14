@@ -446,6 +446,9 @@ winget install Microsoft.WindowsTerminal.Preview --accept-package-agreements --a
 # GitHub.Copilot.CLI.Prerelease
 winget install GitHub.Copilot.Prerelease --accept-package-agreements --accept-source-agreements
 
+# Claude Code
+irm https://claude.ai/install.ps1 | iex
+
 # Enable Telnet Client
 Write-Host "`n Enable Telnet Client" -ForegroundColor Green
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName TelnetClient
