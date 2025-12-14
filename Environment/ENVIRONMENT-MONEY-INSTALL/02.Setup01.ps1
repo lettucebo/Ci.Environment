@@ -219,6 +219,7 @@ choco install -y claude
 choco install -y nssm
 choco install -y 1password
 choco install -y microsoft-teams-new-bootstrapper
+choco install -y nerd-fonts-hack
 
 choco install -y dotnetcore-2.1-sdk
 choco install -y dotnetcore-2.2-sdk
