@@ -37,13 +37,13 @@ if($PSversionTable.PsVersion.Major -lt 7){
     exit
 } else { Show-Success -Message "PowerShell version is $($PSversionTable.PsVersion.Major)." }
 
-# Install Nuget Provider and set PSGallery as trusted
-Show-Section -Message "Install Nuget Provider" -Emoji "📦" -Color "Green"
+# Install NuGet Provider and set PSGallery as trusted
+Show-Section -Message "Install NuGet Provider" -Emoji "📦" -Color "Green"
 try {
     Install-PackageProvider -Name NuGet -Force -ErrorAction Stop
-    Show-Success -Message "Nuget Provider installed."
+    Show-Success -Message "NuGet Provider installed."
 } catch {
-    Show-Warning -Message "Nuget Provider installation skipped (not required for PowerShell 7)."
+    Show-Warning -Message "NuGet Provider installation skipped (not required for PowerShell 7)."
 }
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 Show-Success -Message "PSGallery set as trusted."
