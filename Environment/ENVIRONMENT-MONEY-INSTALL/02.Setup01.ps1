@@ -99,6 +99,24 @@ $ServiceManager = New-Object -ComObject "Microsoft.Update.ServiceManager"
 $ServiceManager.ClientApplicationID = "My App"
 $ServiceManager.AddService2("7971f918-a847-4430-9279-4a52d1efe18d",7,"")
 
+# Set Windows Theme to Dark Mode and Configure Accent Color
+Show-Section -Message "Set Windows Theme to Dark Mode" -Emoji "🎨" -Color "Magenta"
+# Set Apps to use dark theme (0 = Dark, 1 = Light)
+Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name AppsUseLightTheme -Type DWord -Value 0
+Show-Info -Message "Apps set to use dark theme." -Emoji "🌙"
+
+# Set System to use dark theme (0 = Dark, 1 = Light)
+Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name SystemUsesLightTheme -Type DWord -Value 0
+Show-Info -Message "System set to use dark theme." -Emoji "🌙"
+
+# Show accent color on title bars and window borders (1 = Show, 0 = Hide)
+Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name ColorPrevalence -Type DWord -Value 1
+Show-Info -Message "Accent color will be shown on title bars and window borders." -Emoji "🎨"
+
+# Note: Accent color is set to automatic by default when not explicitly configured
+# Windows will automatically choose accent color based on wallpaper
+Show-Success -Message "Windows theme configured: Dark mode enabled with automatic accent color."
+
 # Uninstall built-in APPs
 Show-Section -Message "Uninstall Built-in Apps" -Emoji "🗑️" -Color "Green"
 Import-Module Appx -usewindowspowershell
