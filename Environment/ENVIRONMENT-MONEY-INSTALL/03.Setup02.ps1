@@ -17,6 +17,14 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
   exit
 }
 
+# Prompt user to ensure Visual Studio has been launched at least once
+Write-Host "Please make sure you have launched Visual Studio at least once. Otherwise, installing extensions may fail." -ForegroundColor Yellow
+$vsConfirm = Read-Host "Have you already launched Visual Studio? (Y/N)"
+if ($vsConfirm -ne 'Y' -and $vsConfirm -ne 'y') {
+  Write-Warning "Please launch Visual Studio first, then re-run this setup script."
+  exit
+}
+
 # 啟用 Windows Developer Mode
 Write-Host "啟用 Windows Developer Mode..." -ForegroundColor Green
 try {
@@ -29,78 +37,6 @@ try {
 } catch {
   Write-Warning "啟用 Developer Mode 失敗: $_"
 }
-
-## Install VS 2025
-# https://docs.microsoft.com/en-us/visualstudio/install/workload-and-component-ids?view=vs-2022
-# https://developercommunity.visualstudio.com/t/setup-does-not-wait-for-installation-to-complete-w/26668#T-N1137560
-Write-Host "`n Install VS 2025" -ForegroundColor Green
-$vs2025Url = "https://aka.ms/vs/18/pre/vs_enterprise.exe";
-$vs2025Exe = "$PSScriptRoot\vs_enterprise.exe";
-$start_time = Get-Date
-
-Invoke-WebRequest -Uri $vs2025Url -OutFile $vs2025Exe
-Write-Output "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, at $vs2025Exe"
-
-Start-Process -FilePath $vs2025Exe -ArgumentList `
-"--addProductLang", "En-us", `
-"--add", "Microsoft.VisualStudio.Workload.Azure", `
-"--add", "Microsoft.VisualStudio.Workload.ManagedDesktop", `
-"--add", "Microsoft.VisualStudio.Workload.NetWeb", `
-"--add", "Microsoft.VisualStudio.Workload.NetCoreTools", `
-"--add", "Microsoft.VisualStudio.Workload.Universal", `
-"--add", "Microsoft.VisualStudio.Workload.VisualStudioExtension", `
-"--add", "Microsoft.VisualStudio.Component.LinqToSql", `
-"--add", "Microsoft.VisualStudio.Component.TestTools.CodedUITest", `
-"--add", "Microsoft.VisualStudio.Component.TestTools.FeedbackClient", `
-"--add", "Microsoft.VisualStudio.Component.TestTools.MicrosoftTestManager", `
-"--add", "Microsoft.VisualStudio.Component.TypeScript.3.0", `
-"--add", "Microsoft.VisualStudio.Component.Windows10SDK.17134", `
-"--add", "Microsoft.VisualStudio.Workload.NetCrossPlat", `
-"--add", "Microsoft.Net.Component.3.5.DeveloperTools", `
-"--add", "Microsoft.Net.Component.4.5.2.SDK", `
-"--add", "Microsoft.Net.Component.4.5.2.TargetingPack", `
-"--add", "Microsoft.Net.Component.4.6.1.SDK", `
-"--add", "Microsoft.Net.Component.4.6.1.TargetingPack", `
-"--add", "Microsoft.Net.Component.4.6.2.SDK", `
-"--add", "Microsoft.Net.Component.4.6.2.TargetingPack", `
-"--add", "Microsoft.Net.Component.4.7.SDK", `
-"--add", "Microsoft.Net.Component.4.7.TargetingPack", `
-"--add", "Microsoft.Net.Component.4.7.1.SDK", `
-"--add", "Microsoft.Net.Component.4.7.1.TargetingPack", `
-"--add", "Microsoft.Net.Component.4.7.2.SDK", `
-"--add", "Microsoft.Net.Component.4.7.2.TargetingPack", `
-"--add", "Microsoft.Net.Component.4.8.SDK", `
-"--add", "Microsoft.Net.Component.4.8.TargetingPack", `
-"--add", "Microsoft.Net.Component.4.8.1.SDK", `
-"--add", "Microsoft.Net.Component.4.8.1.TargetingPack", `
-"--add", "Microsoft.Net.Core.Component.SDK.2.1", `
-"--add", "Microsoft.NetCore.Component.Runtime.3.1", `
-"--add", "Microsoft.NetCore.Component.Runtime.5.0", `
-"--add", "Microsoft.NetCore.Component.Runtime.6.0", `
-"--add", "Microsoft.NetCore.Component.Runtime.7.0", `
-"--add", "Microsoft.NetCore.Component.Runtime.8.0", `
-"--add", "Microsoft.NetCore.Component.Runtime.9.0", `
-"--add", "Microsoft.NetCore.ComponentGroup.DevelopmentTools.2.1", `
-"--add", "Microsoft.NetCore.ComponentGroup.Web.2.1", `
-"--add", "Component.Dotfuscator", `
-"--add", "Microsoft.VisualStudio.Web.Mvc4.ComponentGroup", `
-"--add", "Microsoft.VisualStudio.Component.Azure.Storage.AzCopy", `
-"--add", "Microsoft.VisualStudio.Component.Git", `
-"--add", "Microsoft.VisualStudio.Component.DiagnosticTools", `
-"--add", "Microsoft.VisualStudio.Component.AppInsights.Tools", `
-"--add", "Microsoft.VisualStudio.Component.DependencyValidation.Enterprise", `
-"--add", "Microsoft.VisualStudio.Component.TestTools.WebLoadTest", `
-"--add", "Microsoft.VisualStudio.Component.Windows10SDK.IpOverUsb", `
-"--add", "Microsoft.VisualStudio.Component.CodeMap", `
-"--add", "Microsoft.VisualStudio.Component.ClassDesigner", `
-"--add", "Microsoft.VisualStudio.Component.TestTools.Core", `
-"--add", "Microsoft.ComponentGroup.Blend", `
-"--add", "Component.GitHub.VisualStudio", `
-"--includeRecommended", `
-"--passive", `
-"--norestart", `
-"--wait" `
--Wait -PassThru
 
 ## Download and Install Ubunut Linux
 Write-Host "`n Download and Install Ubunut Linux" -ForegroundColor Green
@@ -151,13 +87,6 @@ nssm set GpgAgentService AppParameters "--launch gpg-agent"
 nssm set GpgAgentService Description "Auto start gpg-agent"
 
 # [3/7] Install Visual Studio extensions via helper script
-# Prompt user to launch Visual Studio 2025 before installing extensions
-Write-Host "Please launch Visual Studio 2025 at least once before installing extensions. Otherwise, installing extensions may fail." -ForegroundColor Yellow
-$vsConfirm = Read-Host "Have you already launched Visual Studio 2025? (Y/N)"
-if ($vsConfirm -ne 'Y' -and $vsConfirm -ne 'y') {
-  Write-Warning "Please launch Visual Studio 2025 first, then re-run this setup script."
-  exit
-}
 Write-Host "`n[3/7] Install Visual Studio Extension" -ForegroundColor Green
 $vsixInstallScript = "$PSScriptRoot\install-vsix.ps1";
 Invoke-WebRequest -Uri "https://gist.githubusercontent.com/lettucebo/1c791b21bf56f467254bc85fd70631f4/raw/5dc3ff85b38058208d203383c54d8b7818365566/install-vsix.ps1" -OutFile $vsixInstallScript
