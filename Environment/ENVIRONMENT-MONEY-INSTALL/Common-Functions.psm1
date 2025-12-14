@@ -74,10 +74,18 @@ function Require-PowerShell7 {
 }
 
 # Initialize environment (create profile directory, set execution policy)
+# Note: This function uses -Force for execution policy as these are unattended setup scripts
+# that require RemoteSigned policy for proper operation. Only use in trusted contexts.
 function Initialize-Environment {
     # Set ExecutionPolicy to RemoteSigned for script execution
-    Set-ExecutionPolicy RemoteSigned -Force
-    Show-Success -Message "Execution policy set to RemoteSigned."
+    # Using -Force as this is an unattended setup script requiring admin privileges
+    try {
+        Set-ExecutionPolicy RemoteSigned -Force -ErrorAction Stop
+        Show-Success -Message "Execution policy set to RemoteSigned."
+    }
+    catch {
+        Show-Warning -Message "Could not set execution policy: $_"
+    }
 
     # Create the directory required for $PROFILE if it does not exist
     [System.IO.Directory]::CreateDirectory([System.IO.Path]::GetDirectoryName($PROFILE)) | Out-Null
