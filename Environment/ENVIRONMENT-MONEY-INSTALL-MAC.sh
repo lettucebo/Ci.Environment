@@ -1,45 +1,42 @@
 # Install HomeBrew
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-# Install cask
-brew tap homebrew/cask-cask
-
-# Install software
+# Install command-line tools
 brew install node
 brew install nvm
 brew install git
 brew install azure-cli
 
-# Install cask software
-brew cask install google-chrome
-brew cask install microsoft-office
-brew cask install microsoft-teams
-brew cask install microsoft-azure-storage-explorer
-brew cask install microsoft-edge-beta
-brew cask install iina
-brew cask install spotify
-brew cask install firefox-developer-edition
-brew cask install snagit
-brew cask install fork
-brew cask install tunnelblick
-brew cask install visual-studio
-brew cask install visual-studio-code
-brew cask install azure-data-studio   
-brew cask install filezilla
-brew cask install docker-edge
-brew cask install adobe-acrobat-reader 
-brew cask install teamviewer
-brew cask install obs
-brew cask install scroll-reverser
-brew cask install onedrive
-brew cask install the-unarchiver
-brew cask install telegram
-brew cask install xmind-zen
-brew cask install smcfancontrol
-brew cask install rider
+# Install GUI applications (using --cask syntax as 'brew cask' is deprecated)
+brew install --cask google-chrome
+brew install --cask microsoft-office
+brew install --cask microsoft-teams
+brew install --cask microsoft-azure-storage-explorer
+brew install --cask microsoft-edge
+brew install --cask iina
+brew install --cask spotify
+brew install --cask firefox-developer-edition
+brew install --cask snagit
+brew install --cask fork
+brew install --cask tunnelblick
+brew install --cask visual-studio
+brew install --cask visual-studio-code
+brew install --cask azure-data-studio
+brew install --cask filezilla
+brew install --cask docker
+brew install --cask adobe-acrobat-reader
+brew install --cask teamviewer
+brew install --cask obs
+brew install --cask scroll-reverser
+brew install --cask onedrive
+brew install --cask the-unarchiver
+brew install --cask telegram
+brew install --cask xmind
+brew install --cask smcfancontrol
+brew install --cask rider
 
-# Install .NET Core SDK
-curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 3.1
-curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 3.0
-curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 2.2
-curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 2.1
+# Install .NET SDK (current LTS and STS versions)
+curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 9.0
+curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0
+curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 7.0
+curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 6.0
