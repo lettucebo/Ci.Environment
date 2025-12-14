@@ -105,15 +105,12 @@ $personalizeKey = 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Person
 
 # Set Apps to use dark theme (0 = Dark, 1 = Light)
 Set-ItemProperty -Path $personalizeKey -Name AppsUseLightTheme -Type DWord -Value 0 -ErrorAction SilentlyContinue
-Show-Info -Message "Apps set to use dark theme." -Emoji "🌙"
 
 # Set System to use dark theme (0 = Dark, 1 = Light)
 Set-ItemProperty -Path $personalizeKey -Name SystemUsesLightTheme -Type DWord -Value 0 -ErrorAction SilentlyContinue
-Show-Info -Message "System set to use dark theme." -Emoji "🌙"
 
 # Show accent color on title bars and window borders (1 = Show, 0 = Hide)
 Set-ItemProperty -Path $personalizeKey -Name ColorPrevalence -Type DWord -Value 1 -ErrorAction SilentlyContinue
-Show-Info -Message "Accent color will be shown on title bars and window borders." -Emoji "🎨"
 
 # Note: Accent color is set to automatic by default when not explicitly configured
 # Windows will automatically choose accent color based on wallpaper
