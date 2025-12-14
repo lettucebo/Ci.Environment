@@ -661,18 +661,18 @@ $objFolder.CopyHere($fontFira17File, 0x10)
 $objFolder.CopyHere($fontFira18File, 0x10)
 Write-Host "`n FiraCode fonts installed..." -ForegroundColor Gray
 
-## Instal VS 2022
-# https://docs.microsoft.com/en-us/visualstudio/install/workload-and-component-ids?view=vs-2022
+## Install VS 2025
+# https://learn.microsoft.com/en-us/visualstudio/install/workload-and-component-ids
 # https://developercommunity.visualstudio.com/t/setup-does-not-wait-for-installation-to-complete-w/26668#T-N1137560
-Write-Host "`n Instal VS 2022" -ForegroundColor Green
-$vs2022Url = "https://aka.ms/vs/17/release/vs_enterprise.exe";
-$vs2022Exe = "$PSScriptRoot\vs_enterprise.exe";
+Write-Host "`n Install VS 2025" -ForegroundColor Green
+$vs2025Url = "https://aka.ms/vs/18/pre/vs_enterprise.exe";
+$vs2025Exe = "$PSScriptRoot\vs_enterprise.exe";
 $start_time = Get-Date
 
-Invoke-WebRequest -Uri $vs2022Url -OutFile $vs2022Exe
-Write-Output "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, at $vs2022Exe"
+Invoke-WebRequest -Uri $vs2025Url -OutFile $vs2025Exe
+Write-Output "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, at $vs2025Exe"
 
-Start-Process -FilePath $vs2022Exe -ArgumentList `
+Start-Process -FilePath $vs2025Exe -ArgumentList `
 "--addProductLang", "En-us", `
 "--add", "Microsoft.VisualStudio.Workload.Azure", `
 "--add", "Microsoft.VisualStudio.Workload.ManagedDesktop", `
@@ -710,6 +710,8 @@ Start-Process -FilePath $vs2022Exe -ArgumentList `
 "--add", "Microsoft.NetCore.Component.Runtime.6.0", `
 "--add", "Microsoft.NetCore.Component.Runtime.7.0", `
 "--add", "Microsoft.NetCore.Component.Runtime.8.0", `
+"--add", "Microsoft.NetCore.Component.Runtime.9.0", `
+"--add", "Microsoft.NetCore.Component.Runtime.10.0", `
 "--add", "Microsoft.NetCore.ComponentGroup.DevelopmentTools.2.1", `
 "--add", "Microsoft.NetCore.ComponentGroup.Web.2.1", `
 "--add", "Component.Dotfuscator", `
