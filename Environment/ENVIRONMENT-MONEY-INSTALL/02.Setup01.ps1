@@ -161,7 +161,7 @@ choco install -y autohotkey
 choco install -y gsudo
 choco install -y powerbi
 choco install -y openvpn-connect
-choco install -y starship
+choco install -y starship # Cross-shell prompt (requires Nerd Fonts for proper icon display)
 choco install -y rdcman
 choco install -y claude
 choco install -y nssm
@@ -364,6 +364,7 @@ Set-ItemProperty -Path "HKLM:\Software\Microsoft\Command Processor" -Name Autoru
 # Config PowerShell Profile
 ## https://gist.github.com/doggy8088/d3f3925452e2d7b923d01142f755d2ae
 ## https://dotblogs.com.tw/yc421206/2021/08/17/several_packages_to_enhance_posh_Powershell
+## Starship initialization is included in the profile (requires Nerd Fonts)
 Show-Section -Message "Config PowerShell Profile" -Emoji "⚙️" -Color "Green"
 $powerhellProfileContent = @'
 Import-Module PSReadLine
@@ -516,8 +517,13 @@ dotnet tool install --global dotnet-ef
 netsh interface ipv6 set prefixpolicy ::ffff:0:0/96 45 4
 
 ## Install Developer Font
+##### Nerd Fonts are required for starship to display icons and special characters correctly
+##### Reference: https://www.nerdfonts.com/
+##### Installation Script References:
 ##### https://gist.github.com/anthonyeden/0088b07de8951403a643a8485af2709b
 ##### https://gist.github.com/cosine83/e83c44878a6bdeac0c7c59e3dbfd1f71
+Show-Section -Message "Install Nerd Fonts for Starship" -Emoji "🔤" -Color "Cyan"
+Show-Info -Message "Installing Nerd Fonts (FiraCode) for proper starship prompt display..." -Emoji "ℹ️"
 Write-Host "`n Install Developer Font" -ForegroundColor Green
 $fontUrl = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/YaHei%20Consolas.ttf";
 $fontFile = "$PSScriptRoot\YaHei.ttf";
@@ -597,6 +603,8 @@ Invoke-WebRequest -Uri $fontNoto8Url -OutFile $fontNoto8File
 Write-Host "`n Download fontNoto9File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontNoto9Url -OutFile $fontNoto9File
 
+Write-Host "`n Downloading FiraCode Nerd Font (18 variants)..." -ForegroundColor Gray
+Write-Host "   These fonts contain icon glyphs needed for starship prompt display" -ForegroundColor Gray
 Write-Host "`n Download fontFira01File..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $fontFira01Url -OutFile $fontFira01File
 Write-Host "`n Download fontFira02File..." -ForegroundColor Gray
@@ -667,7 +675,9 @@ $objFolder.CopyHere($fontFira15File, 0x10)
 $objFolder.CopyHere($fontFira16File, 0x10)
 $objFolder.CopyHere($fontFira17File, 0x10)
 $objFolder.CopyHere($fontFira18File, 0x10)
-Write-Host "`n FiraCode fonts installed..." -ForegroundColor Gray
+Write-Host "`n FiraCode Nerd Fonts installed successfully" -ForegroundColor Gray
+Write-Host "   Starship will now be able to display icons and special characters correctly" -ForegroundColor Gray
+Show-Success -Message "Nerd Fonts (FiraCode) installed for starship support."
 
 ## Install VS 2025
 # https://learn.microsoft.com/en-us/visualstudio/install/workload-and-component-ids
