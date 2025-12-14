@@ -48,13 +48,13 @@ Show-Success -Message "EdgeExtensions.md file loaded."
 Show-Section -Message "Parse Extension IDs" -Emoji "🔍" -Color "Cyan"
 
 # Match URLs from Microsoft Edge Addons store: https://microsoftedge.microsoft.com/addons/detail/{name}/{extensionId}
+# The regex captures the extension ID from the last path segment of the URL (the {extensionId} part after the extension name).
 $edgeUrlPattern = 'https://microsoftedge\.microsoft\.com/addons/detail/[^/]+/([a-zA-Z0-9-]+)'
 $edgeMatches = [regex]::Matches($content, $edgeUrlPattern)
 
-$extensionIds = @()
-foreach ($match in $edgeMatches) {
-    $extensionId = $match.Groups[1].Value
-    $extensionIds += $extensionId
+# Collect extension IDs efficiently and deduplicate
+$extensionIds = $edgeMatches | ForEach-Object { $_.Groups[1].Value } | Select-Object -Unique
+foreach ($extensionId in $extensionIds) {
     Show-Info -Message "Found Edge extension ID: $extensionId" -Emoji "🔗"
 }
 
@@ -63,7 +63,7 @@ if ($extensionIds.Count -eq 0) {
     exit
 }
 
-Show-Success -Message "Found $($extensionIds.Count) Edge extension(s) to install."
+Show-Success -Message "Found $(@($extensionIds).Count) Edge extension(s) to install."
 
 # Configure Microsoft Edge to force-install extensions via registry
 # Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-manage-extensions-ref-guide
@@ -109,9 +109,13 @@ foreach ($extensionId in $extensionIds) {
     }
     
     if (-not $alreadyExists) {
-        Set-ItemProperty -Path $edgeExtensionsRegPath -Name $nextIndex -Value $extensionValue
-        Show-Success -Message "Added extension $extensionId at index $nextIndex"
-        $nextIndex++
+        try {
+            Set-ItemProperty -Path $edgeExtensionsRegPath -Name $nextIndex -Value $extensionValue
+            Show-Success -Message "Added extension $extensionId at index $nextIndex"
+            $nextIndex++
+        } catch {
+            Show-Error -Message "Failed to add extension $extensionId at index $nextIndex. Error: $($_.Exception.Message)"
+        }
     }
 }
 
@@ -151,9 +155,35 @@ Show-Success -Message "Google search suggestions URL configured."
 Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderKeyword" -Value "google.com" -Type String
 Show-Success -Message "Google keyword configured."
 
+# Enable Extension Developer Mode
+# Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#developertoolsavailability
+Show-Section -Message "Configure Extension Developer Mode" -Emoji "🛠️" -Color "Green"
+
+# DeveloperToolsAvailability: 0 = Disabled, 1 = Enabled, 2 = Enabled for extensions installed by enterprise policy
+Set-ItemProperty -Path $edgePoliciesRegPath -Name "DeveloperToolsAvailability" -Value 1 -Type DWord
+Show-Success -Message "Developer Tools enabled."
+
+# ExtensionDeveloperModeSettings: Enable developer mode for extensions
+# Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#extensionsenabled
+Set-ItemProperty -Path $edgePoliciesRegPath -Name "ExtensionsEnabled" -Value 1 -Type DWord
+Show-Success -Message "Extensions enabled."
+
+# Allow unpacked extensions (developer mode)
+# Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#extensionsettings
+$edgeExtensionSettingsPath = "HKLM:\SOFTWARE\Policies\Microsoft\Edge\ExtensionSettings"
+if (-not (Test-Path $edgeExtensionSettingsPath)) {
+    New-Item -Path $edgeExtensionSettingsPath -Force | Out-Null
+}
+
+# Enable developer mode for all extensions using wildcard policy
+$developerModeSettings = '{"*": {"installation_mode": "allowed"}}'
+Set-ItemProperty -Path $edgeExtensionSettingsPath -Name "*" -Value $developerModeSettings -Type String
+Show-Success -Message "Extension Developer Mode configured."
+
 Show-Section -Message "Installation Complete" -Emoji "🎉" -Color "Green"
 Show-Success -Message "Edge extensions have been configured for force installation."
 Show-Success -Message "Google has been set as the default search engine for Edge."
+Show-Success -Message "Extension Developer Mode has been enabled."
 Show-Info -Message "Extensions will be installed automatically when Microsoft Edge is launched." -Emoji "ℹ️"
 
 if ($chromeMatches.Count -gt 0) {
