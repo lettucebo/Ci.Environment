@@ -120,8 +120,10 @@ foreach ($extensionId in $extensionIds) {
 }
 
 # Check for Chrome Web Store URLs that cannot be automatically installed
-$chromeUrlPattern = 'https://chromewebstore\.google\.com/detail/[^/]+/([a-zA-Z0-9-]+)'
+# Uses a simpler pattern without capturing group since we extract extension names separately
+$chromeUrlPattern = 'https://chromewebstore\.google\.com/detail/([^/]+)/[a-zA-Z0-9-]+'
 $chromeMatches = [regex]::Matches($content, $chromeUrlPattern)
+$chromeExtensionNames = $chromeMatches | ForEach-Object { $_.Groups[1].Value } | Select-Object -Unique
 
 # Configure Google as the default search engine
 # Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#defaultsearchproviderenabled
@@ -186,8 +188,11 @@ Show-Success -Message "Google has been set as the default search engine for Edge
 Show-Success -Message "Extension Developer Mode has been enabled."
 Show-Info -Message "Extensions will be installed automatically when Microsoft Edge is launched." -Emoji "ℹ️"
 
-if ($chromeMatches.Count -gt 0) {
-    Show-Warning -Message "Note: $($chromeMatches.Count) extension(s) from Chrome Web Store were found and require manual installation."
+if ($chromeExtensionNames.Count -gt 0) {
+    Show-Warning -Message "Note: $($chromeExtensionNames.Count) extension(s) from Chrome Web Store require manual installation:"
+    foreach ($chromeName in $chromeExtensionNames) {
+        Show-Info -Message "  - $chromeName" -Emoji "🔗"
+    }
 }
 
 Write-Host -NoNewLine "`n Press any key to continue...";
