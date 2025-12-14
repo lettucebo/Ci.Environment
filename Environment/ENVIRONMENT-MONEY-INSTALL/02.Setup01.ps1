@@ -572,12 +572,15 @@ Show-Success -Message "Git and GPG configured."
 
 ## Install .NET Core Tools
 Show-Section -Message "Install .NET Core Tools" -Emoji "🔧" -Color "Green"
-try {
-    dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org -ErrorAction Stop
-    dotnet tool install --global dotnet-ef -ErrorAction Stop
-    Show-Success -Message ".NET Core Tools installed."
-} catch {
+$dotnetFailed = $false
+dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
+if ($LASTEXITCODE -ne 0) { $dotnetFailed = $true }
+dotnet tool install --global dotnet-ef
+if ($LASTEXITCODE -ne 0) { $dotnetFailed = $true }
+if ($dotnetFailed) {
     Show-Error -Message "Failed to install .NET Core Tools. Please check the error above."
+} else {
+    Show-Success -Message ".NET Core Tools installed."
 }
 
 ## Set IPv4 priority
