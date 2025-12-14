@@ -36,7 +36,7 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercon
 安裝核心開發工具與應用程式。
 
 ```powershell
-iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/lettucebo/Ci.Environment/raw/master/Environment/ENVIRONMENT-MONEY-INSTALL/02.Setup01.ps1'))
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/02.Setup01.ps1'))
 ```
 
 ### 步驟 3：附加工具
@@ -44,7 +44,7 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/lettuc
 安裝附加開發工具與設定。
 
 ```powershell
-iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/lettucebo/Ci.Environment/raw/master/Environment/ENVIRONMENT-MONEY-INSTALL/03.Setup02.ps1'))
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/03.Setup02.ps1'))
 ```
 
 ## Windows Sandbox
@@ -52,7 +52,7 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/lettuc
 於 Windows Sandbox 環境中測試：
 
 ```powershell
-iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/lettucebo/Ci.Environment/raw/master/Environment/ENVIRONMENT-MONEY-SANDBOX.ps1'))
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-SANDBOX.ps1'))
 ```
 
 ## 伺服器設定腳本

@@ -36,7 +36,7 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercon
 Install core development tools and applications.
 
 ```powershell
-iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/lettucebo/Ci.Environment/raw/master/Environment/ENVIRONMENT-MONEY-INSTALL/02.Setup01.ps1'))
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/02.Setup01.ps1'))
 ```
 
 ### Step 3: Additional Tools
@@ -44,7 +44,7 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/lettuc
 Install additional development tools and configurations.
 
 ```powershell
-iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/lettucebo/Ci.Environment/raw/master/Environment/ENVIRONMENT-MONEY-INSTALL/03.Setup02.ps1'))
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/03.Setup02.ps1'))
 ```
 
 ## Windows Sandbox
@@ -52,7 +52,7 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/lettuc
 For testing in Windows Sandbox environment:
 
 ```powershell
-iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/lettucebo/Ci.Environment/raw/master/Environment/ENVIRONMENT-MONEY-SANDBOX.ps1'))
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-SANDBOX.ps1'))
 ```
 
 ## Server Setup Scripts
