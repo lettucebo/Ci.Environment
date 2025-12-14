@@ -43,7 +43,6 @@ try {
     Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -ErrorAction Stop
 } catch {
     Show-Warning -Message "NuGet provider installation via Install-PackageProvider failed, trying alternative method..."
-    # Alternative: Register NuGet source directly if provider install fails
     try {
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         Install-PackageProvider -Name NuGet -Force -ErrorAction SilentlyContinue
