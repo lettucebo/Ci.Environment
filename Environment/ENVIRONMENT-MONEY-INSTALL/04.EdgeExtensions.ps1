@@ -1,6 +1,6 @@
 # =========================
-# PowerShell 7 Microsoft Edge Extensions Installation Script
-# This script reads EdgeExtensions.md and installs listed extensions for Microsoft Edge.
+# PowerShell 7 Microsoft Edge Configuration Script
+# This script reads EdgeExtensions.md, installs listed extensions, and configures Edge settings.
 # =========================
 
 # Message display helper functions for better UX
@@ -119,8 +119,41 @@ foreach ($extensionId in $extensionIds) {
 $chromeUrlPattern = 'https://chromewebstore\.google\.com/detail/[^/]+/([a-zA-Z0-9-]+)'
 $chromeMatches = [regex]::Matches($content, $chromeUrlPattern)
 
+# Configure Google as the default search engine
+# Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#defaultsearchproviderenabled
+Show-Section -Message "Configure Default Search Engine (Google)" -Emoji "🔎" -Color "Green"
+
+$edgePoliciesRegPath = "HKLM:\SOFTWARE\Policies\Microsoft\Edge"
+
+# Create the registry key if it doesn't exist
+if (-not (Test-Path $edgePoliciesRegPath)) {
+    New-Item -Path $edgePoliciesRegPath -Force | Out-Null
+    Show-Info -Message "Created registry key: $edgePoliciesRegPath" -Emoji "📝"
+}
+
+# Enable default search provider
+Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderEnabled" -Value 1 -Type DWord
+Show-Success -Message "Default search provider enabled."
+
+# Set Google as the default search provider
+Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderName" -Value "Google" -Type String
+Show-Success -Message "Default search provider set to Google."
+
+# Set Google search URL (used for address bar searches)
+Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderSearchURL" -Value "{google:baseURL}search?q={searchTerms}&{google:RLZ}{google:originalQueryForSuggestion}{google:assistedQueryStats}{google:searchFieldtrialParameter}{google:searchClient}{google:sourceId}ie={inputEncoding}" -Type String
+Show-Success -Message "Google search URL configured for address bar."
+
+# Set Google suggest URL for search suggestions
+Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderSuggestURL" -Value "{google:baseURL}complete/search?output=chrome&q={searchTerms}" -Type String
+Show-Success -Message "Google search suggestions URL configured."
+
+# Set Google as keyword for address bar
+Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderKeyword" -Value "google.com" -Type String
+Show-Success -Message "Google keyword configured."
+
 Show-Section -Message "Installation Complete" -Emoji "🎉" -Color "Green"
 Show-Success -Message "Edge extensions have been configured for force installation."
+Show-Success -Message "Google has been set as the default search engine for Edge."
 Show-Info -Message "Extensions will be installed automatically when Microsoft Edge is launched." -Emoji "ℹ️"
 
 if ($chromeMatches.Count -gt 0) {
