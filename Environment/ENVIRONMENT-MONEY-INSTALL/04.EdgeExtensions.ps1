@@ -49,6 +49,7 @@ Show-Section -Message "Parse Extension IDs" -Emoji "🔍" -Color "Cyan"
 
 # Match URLs from Microsoft Edge Addons store: https://microsoftedge.microsoft.com/addons/detail/{name}/{extensionId}
 # The regex captures the extension ID from the last path segment of the URL (the {extensionId} part after the extension name).
+# The regex captures the extension ID from the last path segment of the URL (the {extensionId} part after the extension name).
 $edgeUrlPattern = 'https://microsoftedge\.microsoft\.com/addons/detail/[^/]+/([a-zA-Z0-9-]+)'
 $edgeMatches = [regex]::Matches($content, $edgeUrlPattern)
 
