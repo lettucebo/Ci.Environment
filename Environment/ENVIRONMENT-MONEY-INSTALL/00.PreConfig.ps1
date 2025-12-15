@@ -18,7 +18,7 @@ function Show-Section {
 function Show-Info {
     param(
         [string]$Message,
-        [string]$Emoji = "ℹ",
+        [string]$Emoji = "ℹ️",
         [string]$Color = "Gray"
     )
     Write-Host "$Emoji $Message" -ForegroundColor $Color
@@ -26,7 +26,7 @@ function Show-Info {
 function Show-Warning {
     param(
         [string]$Message,
-        [string]$Emoji = "⚠"
+        [string]$Emoji = "⚠️"
     )
     Write-Host "$Emoji $Message" -ForegroundColor Yellow
 }
@@ -71,13 +71,13 @@ Install-PackageProvider -Name NuGet -Force
 Show-Success -Message "Nuget Provider installed."
 
 # Install PowerShell 7 using the official Microsoft script
-Show-Section -Message "Install PowerShell 7" -Emoji "⬇" -Color "Green"
+Show-Section -Message "Install PowerShell 7" -Emoji "⬇️" -Color "Green"
 # Reference: https://github.com/PowerShell/PowerShell/blob/master/tools/install-powershell.ps1-README.md
 Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet"
 Show-Success -Message "PowerShell 7 installation triggered."
 
 # Set PSGallery as a trusted repository
-Show-Section -Message "Set PSGallery as Trusted" -Emoji "🗂" -Color "Green"
+Show-Section -Message "Set PSGallery as Trusted" -Emoji "🗂️" -Color "Green"
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 Show-Success -Message "PSGallery set as trusted."
 
@@ -87,7 +87,7 @@ Add-WindowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0
 Show-Success -Message "MediaFeaturePack added."
 
 # Enable .NET Framework 3.5 (required for some legacy applications)
-Show-Section -Message "Enable .NET Framework 3.5" -Emoji "⚙" -Color "Green"
+Show-Section -Message "Enable .NET Framework 3.5" -Emoji "⚙️" -Color "Green"
 Enable-WindowsOptionalFeature -Online -FeatureName "NetFx3" -NoRestart
 Show-Success -Message ".NET Framework 3.5 enabled."
 
