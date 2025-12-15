@@ -10,6 +10,37 @@ Automated Windows development environment setup scripts using PowerShell and [Ch
 - Automated Windows configuration
 - Support for Windows Sandbox environment
 - Server environment setup scripts
+- AI-powered development tools (Claude, GitHub Copilot)
+- Multiple .NET SDK versions (.NET Core 2.1 through .NET 10)
+
+## What's Included
+
+### Development Tools
+- Visual Studio 2025 Enterprise
+- Visual Studio Code & VS Code Insiders
+- SQL Server Management Studio
+- Docker Desktop
+- Git & TortoiseGit
+
+### SDKs & Runtimes
+- .NET Framework 4.8
+- .NET Core 2.1, 2.2, 3.1
+- .NET 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
+- Node.js (via nvm)
+- Python
+- OpenJDK
+
+### Cloud & DevOps
+- Azure CLI & Azure Functions Core Tools
+- Azure Storage Explorer
+- Terraform
+
+### Productivity & AI
+- 1Password
+- Claude
+- GitHub Copilot
+- PowerToys
+- Microsoft Teams
 
 ## Quick Start
 
