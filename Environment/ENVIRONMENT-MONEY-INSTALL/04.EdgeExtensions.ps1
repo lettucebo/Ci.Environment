@@ -34,15 +34,28 @@ if($PSversionTable.PsVersion.Major -lt 7){
 
 # Read EdgeExtensions.md file
 Show-Section -Message "Read Edge Extensions List" -Emoji "📄" -Color "Cyan"
-$extensionsFile = Join-Path $PSScriptRoot "EdgeExtensions.md"
 
-if (-not (Test-Path $extensionsFile)) {
-    Show-Error -Message "EdgeExtensions.md not found at: $extensionsFile"
-    exit
+# Handle remote execution (via iex) where $PSScriptRoot is empty
+if ([string]::IsNullOrEmpty($PSScriptRoot)) {
+    Show-Info -Message "Running in remote execution mode, downloading EdgeExtensions.md from GitHub..." -Emoji "⬇️"
+    # URL matches the location of this script in the repository
+    $extensionsUrl = "https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/EdgeExtensions.md"
+    try {
+        $content = (Invoke-RestMethod -Uri $extensionsUrl -UseBasicParsing)
+        Show-Success -Message "EdgeExtensions.md downloaded from GitHub."
+    } catch {
+        Show-Error -Message "Failed to download EdgeExtensions.md from GitHub: $($_.Exception.Message)"
+        exit
+    }
+} else {
+    $extensionsFile = Join-Path $PSScriptRoot "EdgeExtensions.md"
+    if (-not (Test-Path $extensionsFile)) {
+        Show-Error -Message "EdgeExtensions.md not found at: $extensionsFile"
+        exit
+    }
+    $content = Get-Content $extensionsFile -Raw
+    Show-Success -Message "EdgeExtensions.md file loaded."
 }
-
-$content = Get-Content $extensionsFile -Raw
-Show-Success -Message "EdgeExtensions.md file loaded."
 
 # Parse extension IDs from Microsoft Edge Addons URLs
 Show-Section -Message "Parse Extension IDs" -Emoji "🔍" -Color "Cyan"
