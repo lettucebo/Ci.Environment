@@ -5,8 +5,8 @@
 
 # Message display helper functions for better UX
 function Show-Section { param([string]$Message,[string]$Emoji="➤",[string]$Color="Cyan") Write-Host ""; Write-Host ("="*60) -ForegroundColor DarkGray; Write-Host "$Emoji $Message" -ForegroundColor $Color -BackgroundColor Black; Write-Host ("="*60) -ForegroundColor DarkGray }
-function Show-Info { param([string]$Message,[string]$Emoji="ℹ️",[string]$Color="Gray") Write-Host "$Emoji $Message" -ForegroundColor $Color }
-function Show-Warning { param([string]$Message,[string]$Emoji="⚠️") Write-Host "$Emoji $Message" -ForegroundColor Yellow }
+function Show-Info { param([string]$Message,[string]$Emoji="ℹ",[string]$Color="Gray") Write-Host "$Emoji $Message" -ForegroundColor $Color }
+function Show-Warning { param([string]$Message,[string]$Emoji="⚠") Write-Host "$Emoji $Message" -ForegroundColor Yellow }
 function Show-Error { param([string]$Message,[string]$Emoji="❌") Write-Host "$Emoji $Message" -ForegroundColor Red }
 function Show-Success { param([string]$Message,[string]$Emoji="✅") Write-Host "$Emoji $Message" -ForegroundColor Green }
 
@@ -31,7 +31,7 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 } else { Show-Success -Message "Administrator rights confirmed." }
 
 # Check PowerShell version
-Show-Section -Message "Check PowerShell Version" -Emoji "🛡️" -Color "Yellow"
+Show-Section -Message "Check PowerShell Version" -Emoji "🛡" -Color "Yellow"
 if($PSversionTable.PsVersion.Major -lt 7){
     Show-Error -Message "Please use Powershell 7 to execute this script!"
     exit
@@ -49,7 +49,7 @@ Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 Show-Success -Message "PSGallery set as trusted."
 
 # Install PSWindowsUpdate module
-Show-Section -Message "Install PSWindowsUpdate" -Emoji "⬇️" -Color "Green"
+Show-Section -Message "Install PSWindowsUpdate" -Emoji "⬇" -Color "Green"
 Install-Module -Name PSWindowsUpdate
 Import-Module PSWindowsUpdate
 Show-Success -Message "PSWindowsUpdate module installed."

@@ -18,7 +18,7 @@ function Show-Section {
 function Show-Info {
     param(
         [string]$Message,
-        [string]$Emoji = "ℹ️",
+        [string]$Emoji = "ℹ",
         [string]$Color = "Gray"
     )
     Write-Host "$Emoji $Message" -ForegroundColor $Color
@@ -26,7 +26,7 @@ function Show-Info {
 function Show-Warning {
     param(
         [string]$Message,
-        [string]$Emoji = "⚠️"
+        [string]$Emoji = "⚠"
     )
     Write-Host "$Emoji $Message" -ForegroundColor Yellow
 }
@@ -49,7 +49,7 @@ Show-Section -Message "Step 2: Extended Setup" -Emoji "🚀" -Color "Magenta"
 Show-Info -Message ("Current Time: " + (Get-Date)) -Emoji "⏰"
 
 # Check PowerShell version first before making any system changes
-Show-Section -Message "Check PowerShell Version" -Emoji "🛡️" -Color "Yellow"
+Show-Section -Message "Check PowerShell Version" -Emoji "🛡" -Color "Yellow"
 if ($PSversionTable.PsVersion.Major -lt 7) {
   Show-Error -Message "Please use Powershell 7 to execute this script!"
   exit
@@ -160,7 +160,7 @@ $vsixInstallScript = "$PSScriptRoot\install-vsix.ps1"
 
 # Check if local install-vsix.ps1 exists, otherwise download from GitHub (fallback for remote execution)
 if (-not (Test-Path $vsixInstallScript)) {
-    Show-Info -Message "Downloading install-vsix.ps1 from GitHub..." -Emoji "⬇️"
+    Show-Info -Message "Downloading install-vsix.ps1 from GitHub..." -Emoji "⬇"
     # Note: Using 'master' branch as it is the default branch for this repository
     $vsixScriptUrl = "https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/install-vsix.ps1"
     Invoke-WebRequest -Uri $vsixScriptUrl -OutFile $vsixInstallScript

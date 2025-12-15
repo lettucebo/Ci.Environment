@@ -18,7 +18,7 @@ function Show-Section {
 function Show-Info {
     param(
         [string]$Message,
-        [string]$Emoji = "ℹ️",
+        [string]$Emoji = "ℹ",
         [string]$Color = "Gray"
     )
     Write-Host "$Emoji $Message" -ForegroundColor $Color
@@ -26,7 +26,7 @@ function Show-Info {
 function Show-Warning {
     param(
         [string]$Message,
-        [string]$Emoji = "⚠️"
+        [string]$Emoji = "⚠"
     )
     Write-Host "$Emoji $Message" -ForegroundColor Yellow
 }
@@ -45,7 +45,7 @@ function Show-Success {
     Write-Host "$Emoji $Message" -ForegroundColor Green
 }
 
-Show-Section -Message "Step 2: System & Environment Setup" -Emoji "🛠️" -Color "Magenta"
+Show-Section -Message "Step 2: System & Environment Setup" -Emoji "🛠" -Color "Magenta"
 Show-Info -Message ("Current Time: " + (Get-Date)) -Emoji "⏰"
 
 # Set ExecutionPolicy to RemoteSigned for script execution
@@ -66,14 +66,14 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 } else { Show-Success -Message "Administrator rights confirmed." }
 
 # Check PowerShell version
-Show-Section -Message "Check PowerShell Version" -Emoji "🛡️" -Color "Yellow"
+Show-Section -Message "Check PowerShell Version" -Emoji "🛡" -Color "Yellow"
 if($PSversionTable.PsVersion.Major -lt 7){
     Show-Error -Message "Please use Powershell 7 to execute this script!"
     exit
 } else { Show-Success -Message "PowerShell version is $($PSversionTable.PsVersion.Major)." }
 
 # Set traditional context menu
-Show-Section -Message "Set Traditional Context Menu" -Emoji "🖱️" -Color "Green"
+Show-Section -Message "Set Traditional Context Menu" -Emoji "🖱" -Color "Green"
 reg.exe add "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f
 Show-Success -Message "Traditional context menu set."
 
@@ -94,7 +94,7 @@ mkdir "C:/Users/$Env:UserName/Source/Repos" | Out-Null
 Show-Success -Message "Custom folder created."
 
 # Change Explorer home screen back to "This PC"
-Show-Info -Message "Setting Explorer home to 'This PC'..." -Emoji "🖥️"
+Show-Info -Message "Setting Explorer home to 'This PC'..." -Emoji "🖥"
 Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name LaunchTo -Type DWord -Value 1
 Show-Success -Message "Explorer home set."
 
@@ -152,7 +152,7 @@ Set-ItemProperty -Path $personalizeKey -Name ColorPrevalence -Type DWord -Value 
 Show-Success -Message "Windows theme configured: Dark mode enabled with automatic accent color."
 
 # Uninstall built-in APPs
-Show-Section -Message "Uninstall Built-in Apps" -Emoji "🗑️" -Color "Green"
+Show-Section -Message "Uninstall Built-in Apps" -Emoji "🗑" -Color "Green"
 Import-Module Appx -usewindowspowershell
 Get-AppxPackage king.com.CandyCrushSaga | Remove-AppxPackage -ErrorAction SilentlyContinue
 Get-AppxPackage Microsoft.BingNews | Remove-AppxPackage -ErrorAction SilentlyContinue
@@ -237,7 +237,7 @@ choco install -y snagit --ignorechecksum --version=2022.1.4
 Show-Success -Message "Chocolatey and packages installed."
 
 # Install Little Big Mouse
-Show-Section -Message "Install Little Big Mouse" -Emoji "🖱️" -Color "Green"
+Show-Section -Message "Install Little Big Mouse" -Emoji "🖱" -Color "Green"
 $lbmUrl = "https://github.com/mgth/LittleBigMouse/releases/download/v5.2.3/LittleBigMouse-5.2.3.0.exe";
 $lbmFile = "$PSScriptRoot\LittleBigMouse-5.2.3.0.exe";
 Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
@@ -246,7 +246,7 @@ Show-Success -Message "Little Big Mouse installed."
 
 # Download Azure Storage Emulator
 ## The app as been retired
-# Show-Section -Message "Install Azure Storage Emulator" -Emoji "☁️" -Color "Green"
+# Show-Section -Message "Install Azure Storage Emulator" -Emoji "☁" -Color "Green"
 # $storFile = "$PSScriptRoot\microsoftazurestorageemulator.msi";
 # Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=717179&clcid=0x409" -OutFile $storFile
 # Start-Process msiexec -ArgumentList "/i $storFile /qn /norestart /l*v install.log " -Wait -PassThru
@@ -254,7 +254,7 @@ Show-Success -Message "Little Big Mouse installed."
 
 # Install Redis Desktop Manager
 ## The app as been retired
-# Show-Section -Message "Install Redis Desktop Manager" -Emoji "🗄️" -Color "Green"
+# Show-Section -Message "Install Redis Desktop Manager" -Emoji "🗄" -Color "Green"
 # $rdmFile = "$PSScriptRoot\resp-2022.5.1.exe";
 # Invoke-WebRequest -Uri "https://github.com/FuckDoctors/rdm-builder/releases/download/2022.5.1/resp-2022.5.1.exe" -OutFile $rdmFile
 # Start-Process $rdmFile -ArgumentList "/q"
@@ -268,12 +268,12 @@ Install-PackageProvider -Name NuGet -Force
 Show-Success -Message "Nuget Provider installed."
 
 # Set PSGallery as trusted
-Show-Section -Message "Set PSGallery as Trusted" -Emoji "🗂️" -Color "Green"
+Show-Section -Message "Set PSGallery as Trusted" -Emoji "🗂" -Color "Green"
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 Show-Success -Message "PSGallery set as trusted."
 
 # Install Azure PowerShell
-Show-Section -Message "Install Azure PowerShell" -Emoji "☁️" -Color "Green"
+Show-Section -Message "Install Azure PowerShell" -Emoji "☁" -Color "Green"
 Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
 if ($PSVersionTable.PSEdition -eq 'Desktop' -and (Get-Module -Name AzureRM -ListAvailable)) {
     # Do nothing
@@ -283,14 +283,14 @@ if ($PSVersionTable.PSEdition -eq 'Desktop' -and (Get-Module -Name AzureRM -List
 Show-Success -Message "Azure PowerShell checked."
 
 # File Explorer show hidden file and file extensions
-Show-Section -Message "File Explorer: Show Hidden Files and Extensions" -Emoji "🗂️" -Color "Green"
+Show-Section -Message "File Explorer: Show Hidden Files and Extensions" -Emoji "🗂" -Color "Green"
 $explorerKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
 Set-ItemProperty $explorerKey Hidden 1
 Set-ItemProperty $explorerKey HideFileExt 0
 Show-Success -Message "File Explorer configured."
 
 # Remove Folders from This PC
-Show-Section -Message "Remove Folders from This PC" -Emoji "🗑️" -Color "Green"
+Show-Section -Message "Remove Folders from This PC" -Emoji "🗑" -Color "Green"
 $regPath1 = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\'
 $regPath2 = 'HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\'
 
@@ -308,7 +308,7 @@ $videosItem2 = '{f86fa3ab-70d2-4fc7-9c99-fcbf05467f3a}'
 $3dObjectsItem = '{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}'
 
 # Remove Desktop From This PC
-Show-Info -Message "Remove Desktop From This PC" -Emoji "🗑️" -Color "Yellow"
+Show-Info -Message "Remove Desktop From This PC" -Emoji "🗑" -Color "Yellow"
 If (Get-Item -Path $regPath1$desktopItem -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$desktopItem -Recurse
     Remove-Item -Path $regPath2$desktopItem -Recurse
@@ -318,7 +318,7 @@ Else {
 }
 
 # Remove Documents From This PC
-Show-Info -Message "Remove Documents From This PC" -Emoji "🗑️" -Color "Yellow"
+Show-Info -Message "Remove Documents From This PC" -Emoji "🗑" -Color "Yellow"
 If (Get-Item -Path $regPath1$documentsItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$documentsItem1 -Recurse
     Remove-Item -Path $regPath2$documentsItem1 -Recurse
@@ -330,7 +330,7 @@ Else {
 }
 
 # Remove Downloads From This PC
-Show-Info -Message "Remove Downloads From This PC" -Emoji "🗑️" -Color "Yellow"
+Show-Info -Message "Remove Downloads From This PC" -Emoji "🗑" -Color "Yellow"
 If (Get-Item -Path $regPath1$downloadsItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$downloadsItem1 -Recurse
     Remove-Item -Path $regPath2$downloadsItem1 -Recurse
@@ -342,7 +342,7 @@ Else {
 }
 
 # Remove Music From This PC
-Show-Info -Message "Remove Music From This PC" -Emoji "🗑️" -Color "Yellow"
+Show-Info -Message "Remove Music From This PC" -Emoji "🗑" -Color "Yellow"
 If (Get-Item -Path $regPath1$musicItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$musicItem1 -Recurse
     Remove-Item -Path $regPath2$musicItem1 -Recurse
@@ -354,7 +354,7 @@ Else {
 }
 
 # Remove Pictures From This PC
-Show-Info -Message "Remove Pictures From This PC" -Emoji "🗑️" -Color "Yellow"
+Show-Info -Message "Remove Pictures From This PC" -Emoji "🗑" -Color "Yellow"
 If (Get-Item -Path $regPath1$picturesItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$picturesItem1 -Recurse
     Remove-Item -Path $regPath2$picturesItem1 -Recurse
@@ -366,7 +366,7 @@ Else {
 }
 
 # Remove Videos From This PC
-Show-Info -Message "Remove Videos From This PC" -Emoji "🗑️" -Color "Yellow"
+Show-Info -Message "Remove Videos From This PC" -Emoji "🗑" -Color "Yellow"
 If (Get-Item -Path $regPath1$videosItem1 -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$videosItem1 -Recurse
     Remove-Item -Path $regPath2$videosItem1 -Recurse
@@ -378,7 +378,7 @@ Else {
 }
 
 # Remove 3D Objects From This PC
-Show-Info -Message "Remove 3DObjects From This PC" -Emoji "🗑️" -Color "Yellow"
+Show-Info -Message "Remove 3DObjects From This PC" -Emoji "🗑" -Color "Yellow"
 If (Get-Item -Path $regPath1$3dObjectsItem -ErrorAction SilentlyContinue) {
     Remove-Item -Path $regPath1$3dObjectsItem -Recurse
     Remove-Item -Path $regPath2$3dObjectsItem -Recurse
@@ -389,7 +389,7 @@ Else {
 
 ## Let me set a different input method for each app window
 # https://social.technet.microsoft.com/Forums/ie/en-US/c6e76806-3b64-47e6-876e-ffbbc7438784/the-option-let-me-set-a-different-input-method-for-each-app-window?forum=w8itprogeneral
-Show-Info -Message "Enable Let me set a different input method for each app window" -Emoji "⌨️" -Color "Green"
+Show-Info -Message "Enable Let me set a different input method for each app window" -Emoji "⌨" -Color "Green"
 $prefMask = (Get-ItemProperty -Path 'HKCU:\Control Panel\Desktop' -Name 'UserPreferencesMask').UserPreferencesMask
 if (($prefMask[4] -band 0x80) -eq 0) {
   $prefMask[4] = ($prefMask[4] -bor 0x80)
@@ -418,7 +418,7 @@ Set-ItemProperty -Path "HKLM:\Software\Microsoft\Command Processor" -Name Autoru
 # Config PowerShell Profile
 ## https://gist.github.com/doggy8088/d3f3925452e2d7b923d01142f755d2ae
 ## https://dotblogs.com.tw/yc421206/2021/08/17/several_packages_to_enhance_posh_Powershell
-Show-Section -Message "Config PowerShell Profile" -Emoji "⚙️" -Color "Green"
+Show-Section -Message "Config PowerShell Profile" -Emoji "⚙" -Color "Green"
 $powerhellProfileContent = @'
 Import-Module PSReadLine
 
@@ -460,7 +460,7 @@ wsl --set-default-version 2
 Show-Section -Message "Install Windows Terminal Canary" -Emoji "💻" -Color "Green"
 $canaryInstallerUrl = "https://terminalbuilds-grbmacf3f6bsbma8.z01.azurefd.net/nightly/Microsoft.WindowsTerminalCanary.appinstaller"
 $canaryInstallerPath = "$PSScriptRoot\WindowsTerminalCanary.appinstaller"
-Show-Info -Message "Downloading Windows Terminal Canary installer..." -Emoji "⬇️"
+Show-Info -Message "Downloading Windows Terminal Canary installer..." -Emoji "⬇"
 Invoke-WebRequest -Uri $canaryInstallerUrl -OutFile $canaryInstallerPath
 Start-Process -FilePath "explorer.exe" -ArgumentList $canaryInstallerPath
 Show-Info -Message "Windows Terminal Canary .appinstaller launched. Please follow the App Installer prompts to complete installation." -Emoji "🟡"
@@ -515,7 +515,7 @@ try {
 }
 
 # Enable Hyper-V
-Show-Info -Message "Enable Hyper-V" -Emoji "🖥️"
+Show-Info -Message "Enable Hyper-V" -Emoji "🖥"
 try {
     Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Hyper-V -All -ErrorAction Stop
 } catch {
@@ -553,7 +553,7 @@ refreshenv
 
 # Install Azure Artifacts Credential Provider
 ## https://github.com/microsoft/artifacts-credprovider
-Show-Section -Message "Install Azure Artifacts Credential Provider" -Emoji "☁️" -Color "Green"
+Show-Section -Message "Install Azure Artifacts Credential Provider" -Emoji "☁" -Color "Green"
 try {
     iex "& { $(irm https://aka.ms/install-artifacts-credprovider.ps1) } -AddNetfx"
     Show-Success -Message "Azure Artifacts Credential Provider installed."
@@ -668,28 +668,28 @@ $fontFira17File = "$PSScriptRoot\FiraCodeNerdFont-Retina.ttf";
 $fontFira18Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFont-SemiBold.ttf"
 $fontFira18File = "$PSScriptRoot\FiraCodeNerdFont-SemiBold.ttf";
 
-Show-Info -Message "Downloading YaHei Consolas font..." -Emoji "⬇️"
+Show-Info -Message "Downloading YaHei Consolas font..." -Emoji "⬇"
 Invoke-WebRequest -Uri $fontUrl -OutFile $fontFile
-Show-Info -Message "Downloading NotoSansCJKtc-Black font..." -Emoji "⬇️"
+Show-Info -Message "Downloading NotoSansCJKtc-Black font..." -Emoji "⬇"
 Invoke-WebRequest -Uri $fontNoto1Url -OutFile $fontNoto1File
-Show-Info -Message "Downloading NotoSansCJKtc-Bold font..." -Emoji "⬇️"
+Show-Info -Message "Downloading NotoSansCJKtc-Bold font..." -Emoji "⬇"
 Invoke-WebRequest -Uri $fontNoto2Url -OutFile $fontNoto2File
-Show-Info -Message "Downloading NotoSansCJKtc-DemiLight font..." -Emoji "⬇️"
+Show-Info -Message "Downloading NotoSansCJKtc-DemiLight font..." -Emoji "⬇"
 Invoke-WebRequest -Uri $fontNoto3Url -OutFile $fontNoto3File
-Show-Info -Message "Downloading NotoSansCJKtc-Light font..." -Emoji "⬇️"
+Show-Info -Message "Downloading NotoSansCJKtc-Light font..." -Emoji "⬇"
 Invoke-WebRequest -Uri $fontNoto4Url -OutFile $fontNoto4File
-Show-Info -Message "Downloading NotoSansCJKtc-Medium font..." -Emoji "⬇️"
+Show-Info -Message "Downloading NotoSansCJKtc-Medium font..." -Emoji "⬇"
 Invoke-WebRequest -Uri $fontNoto5Url -OutFile $fontNoto5File
-Show-Info -Message "Downloading NotoSansCJKtc-Regular font..." -Emoji "⬇️"
+Show-Info -Message "Downloading NotoSansCJKtc-Regular font..." -Emoji "⬇"
 Invoke-WebRequest -Uri $fontNoto6Url -OutFile $fontNoto6File
-Show-Info -Message "Downloading NotoSansCJKtc-Thin font..." -Emoji "⬇️"
+Show-Info -Message "Downloading NotoSansCJKtc-Thin font..." -Emoji "⬇"
 Invoke-WebRequest -Uri $fontNoto7Url -OutFile $fontNoto7File
-Show-Info -Message "Downloading NotoSansMonoCJKtc-Bold font..." -Emoji "⬇️"
+Show-Info -Message "Downloading NotoSansMonoCJKtc-Bold font..." -Emoji "⬇"
 Invoke-WebRequest -Uri $fontNoto8Url -OutFile $fontNoto8File
-Show-Info -Message "Downloading NotoSansMonoCJKtc-Regular font..." -Emoji "⬇️"
+Show-Info -Message "Downloading NotoSansMonoCJKtc-Regular font..." -Emoji "⬇"
 Invoke-WebRequest -Uri $fontNoto9Url -OutFile $fontNoto9File
 
-Show-Info -Message "Downloading FiraCode Nerd fonts (18 files - this may take a while)..." -Emoji "⬇️"
+Show-Info -Message "Downloading FiraCode Nerd fonts (18 files - this may take a while)..." -Emoji "⬇"
 Invoke-WebRequest -Uri $fontFira01Url -OutFile $fontFira01File
 Invoke-WebRequest -Uri $fontFira02Url -OutFile $fontFira02File
 Invoke-WebRequest -Uri $fontFira03Url -OutFile $fontFira03File
@@ -754,7 +754,7 @@ $vs2025Exe = "$PSScriptRoot\vs_enterprise.exe";
 $start_time = Get-Date
 
 Invoke-WebRequest -Uri $vs2025Url -OutFile $vs2025Exe
-Show-Info -Message "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, at $vs2025Exe" -Emoji "⏱️"
+Show-Info -Message "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, at $vs2025Exe" -Emoji "⏱"
 
 Start-Process -FilePath $vs2025Exe -ArgumentList `
 "--addProductLang", "En-us", `
