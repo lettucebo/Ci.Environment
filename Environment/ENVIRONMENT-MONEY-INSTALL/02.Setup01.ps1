@@ -185,6 +185,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.We
 
 choco install -y netfx-4.8-devpack
 choco install -y vscode --params "/NoDesktopIcon"
+choco install -y vscode-insiders --params "/NoDesktopIcon"
 choco install -y 7zip.install
 choco install -y openjdk
 choco install -y git.install --params "/NoShellIntegration"
