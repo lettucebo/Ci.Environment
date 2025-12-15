@@ -5,8 +5,8 @@
 
 # Message display helper functions for better UX
 function Show-Section { param([string]$Message,[string]$Emoji="➤",[string]$Color="Cyan") Write-Host ""; Write-Host ("="*60) -ForegroundColor DarkGray; Write-Host "$Emoji $Message" -ForegroundColor $Color -BackgroundColor Black; Write-Host ("="*60) -ForegroundColor DarkGray }
-function Show-Info { param([string]$Message,[string]$Emoji="ℹ",[string]$Color="Gray") Write-Host "$Emoji $Message" -ForegroundColor $Color }
-function Show-Warning { param([string]$Message,[string]$Emoji="⚠") Write-Host "$Emoji $Message" -ForegroundColor Yellow }
+function Show-Info { param([string]$Message,[string]$Emoji="ℹ️",[string]$Color="Gray") Write-Host "$Emoji $Message" -ForegroundColor $Color }
+function Show-Warning { param([string]$Message,[string]$Emoji="⚠️") Write-Host "$Emoji $Message" -ForegroundColor Yellow }
 function Show-Error { param([string]$Message,[string]$Emoji="❌") Write-Host "$Emoji $Message" -ForegroundColor Red }
 function Show-Success { param([string]$Message,[string]$Emoji="✅") Write-Host "$Emoji $Message" -ForegroundColor Green }
 
@@ -26,7 +26,7 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 } else { Show-Success -Message "Administrator rights confirmed." }
 
 # Check PowerShell version
-Show-Section -Message "Check PowerShell Version" -Emoji "🛡" -Color "Yellow"
+Show-Section -Message "Check PowerShell Version" -Emoji "🛡️" -Color "Yellow"
 if($PSversionTable.PsVersion.Major -lt 7){
     Show-Error -Message "Please use PowerShell 7 to execute this script!"
     exit
@@ -37,7 +37,7 @@ Show-Section -Message "Read Edge Extensions List" -Emoji "📄" -Color "Cyan"
 
 # Handle remote execution (via iex) where $PSScriptRoot is empty
 if ([string]::IsNullOrEmpty($PSScriptRoot)) {
-    Show-Info -Message "Running in remote execution mode, downloading EdgeExtensions.md from GitHub..." -Emoji "⬇"
+    Show-Info -Message "Running in remote execution mode, downloading EdgeExtensions.md from GitHub..." -Emoji "⬇️"
     # URL matches the location of this script in the repository
     $extensionsUrl = "https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/EdgeExtensions.md"
     try {
@@ -81,7 +81,7 @@ Show-Success -Message "Found $(@($extensionIds).Count) Edge extension(s) to inst
 
 # Configure Microsoft Edge to force-install extensions via registry
 # Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-manage-extensions-ref-guide
-Show-Section -Message "Configure Edge Extensions via Registry" -Emoji "⚙" -Color "Green"
+Show-Section -Message "Configure Edge Extensions via Registry" -Emoji "⚙️" -Color "Green"
 
 $edgeExtensionsRegPath = "HKLM:\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist"
 
@@ -118,7 +118,7 @@ foreach ($extensionId in $extensionIds) {
         $existingValues = $existingEntries.PSObject.Properties | Where-Object { $_.Name -match '^\d+$' -and $_.Value -like "$extensionId;*" }
         if ($existingValues) {
             $alreadyExists = $true
-            Show-Info -Message "Extension $extensionId is already configured, skipping..." -Emoji "⏭"
+            Show-Info -Message "Extension $extensionId is already configured, skipping..." -Emoji "⏭️"
         }
     }
     
@@ -178,7 +178,7 @@ Show-Success -Message "New tab page search configured to use address bar."
 
 # Enable Extension Developer Mode
 # Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#developertoolsavailability
-Show-Section -Message "Configure Extension Developer Mode" -Emoji "🛠" -Color "Green"
+Show-Section -Message "Configure Extension Developer Mode" -Emoji "🛠️" -Color "Green"
 
 # DeveloperToolsAvailability: 0 = Disabled, 1 = Enabled, 2 = Enabled for extensions installed by enterprise policy
 Set-ItemProperty -Path $edgePoliciesRegPath -Name "DeveloperToolsAvailability" -Value 1 -Type DWord
@@ -206,7 +206,7 @@ Show-Success -Message "Edge extensions have been configured for force installati
 Show-Success -Message "Google has been set as the default search engine for Edge."
 Show-Success -Message "New tab page search redirects to address bar."
 Show-Success -Message "Extension Developer Mode has been enabled."
-Show-Info -Message "Extensions will be installed automatically when Microsoft Edge is launched." -Emoji "ℹ"
+Show-Info -Message "Extensions will be installed automatically when Microsoft Edge is launched." -Emoji "ℹ️"
 
 if ($chromeExtensionNames.Count -gt 0) {
     Show-Warning -Message "Note: $($chromeExtensionNames.Count) extension(s) from Chrome Web Store require manual installation:"
