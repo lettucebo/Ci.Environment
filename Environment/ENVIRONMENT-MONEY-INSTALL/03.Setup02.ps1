@@ -218,10 +218,10 @@ Show-Success -Message "Ports excluded from Windows NAT."
 # [7/8] Run basic Docker containers for SQL Server, Redis, and Postgres
 Show-Section -Message "[7/8] Run Basic Docker Containers" -Emoji "🐳" -Color "Green"
 docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=P@ssw0rd" `
-  -p 1433:1433 --name mssql2022 --hostname mssql2022 `
+  -p 1433:1433 --name mssql2025 --hostname mssql2025 `
   -d `
   --restart unless-stopped `
-  mcr.microsoft.com/mssql/server:2022-latest
+  mcr.microsoft.com/mssql/server:2025-latest
  
 docker run --name redis `
   -p 6379:6379 `
