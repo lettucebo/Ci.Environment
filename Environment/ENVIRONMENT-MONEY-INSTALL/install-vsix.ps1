@@ -2,6 +2,7 @@
 # Script to download and install Visual Studio extensions from the VS Marketplace
 # Based on http://nuts4.net/post/automated-download-and-installation-of-visual-studio-extensions-via-powershell
 # Enhanced with dynamic VS path detection, timeout support, and VS 2022/2026 compatibility
+# Version: 2.0.0
 
 param(
     [Parameter(Mandatory = $true)]
@@ -12,6 +13,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+Write-Host "install-vsix.ps1 v2.0.0 - Installing $PackageName with $TimeoutSeconds second timeout" -ForegroundColor Cyan
 
 $baseProtocol = "https:"
 $baseHostName = "marketplace.visualstudio.com"
@@ -96,7 +99,10 @@ Write-Host "VsixLocation is $($VsixLocation)"
 Write-Host "Installing $($PackageName) with timeout of $($TimeoutSeconds) seconds..."
 
 # Start the installation process with timeout support
-$process = Start-Process -FilePath $VSIXInstallerPath -ArgumentList "/q /a `"$VsixLocation`"" -PassThru
+# Using /q (quiet), /a (admin), and /f (force) flags to minimize user interaction
+$process = Start-Process -FilePath $VSIXInstallerPath -ArgumentList "/q /a /f `"$VsixLocation`"" -PassThru
+
+Write-Host "VSIXInstaller started with PID: $($process.Id)"
 
 # Wait for the process with timeout
 $completed = $process.WaitForExit($TimeoutSeconds * 1000)
@@ -107,6 +113,7 @@ if (-not $completed) {
         # Kill only the specific process we started, not other VSIXInstaller instances
         if (-not $process.HasExited) {
             $process.Kill()
+            Write-Host "Process $($process.Id) terminated."
         }
     }
     catch {
@@ -116,11 +123,12 @@ if (-not $completed) {
 }
 else {
     $exitCode = $process.ExitCode
+    Write-Host "VSIXInstaller exited with code: $exitCode"
     if ($exitCode -eq 0) {
-        Write-Host "Installation of $($PackageName) completed successfully!"
+        Write-Host "Installation of $($PackageName) completed successfully!" -ForegroundColor Green
     }
     elseif ($exitCode -eq 1001) {
-        Write-Host "Extension $($PackageName) is already installed."
+        Write-Host "Extension $($PackageName) is already installed." -ForegroundColor Yellow
     }
     elseif ($exitCode -eq 2001) {
         Write-Warning "Extension $($PackageName) requires a newer version of Visual Studio."
