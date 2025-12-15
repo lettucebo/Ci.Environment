@@ -70,7 +70,7 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercon
 Additional scripts are available for server environment setup in the [Work](./Work) folder:
 
 - `ENVIRONMENT-GATEWAY-INSTALL.ps1` - Gateway server setup
-- `ENVIRONMENT-MONEY-MS-INSTALL.ps1` - Microsoft streaming tools setup
+- `ENVIRONMENT-MONEY-MS-INSTALL.ps1` - Streaming and presentation tools setup (StreamDeck, OBS Studio, PowerBI, OBS-NDI, Zoomit)
 - `ENVIRONMENT-WIN-SERVER-API-INSTALL.ps1` - API server setup
 - `ENVIRONMENT-WIN-SERVER-DB-INSTALL.ps1` - Database server setup
 - `ENVIRONMENT-WIN-SERVER-WEB-INSTALL.ps1` - Web server setup
