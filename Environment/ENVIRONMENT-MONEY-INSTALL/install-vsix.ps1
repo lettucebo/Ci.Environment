@@ -104,9 +104,10 @@ $completed = $process.WaitForExit($TimeoutSeconds * 1000)
 if (-not $completed) {
     Write-Warning "Installation of $($PackageName) timed out after $($TimeoutSeconds) seconds. Terminating process..."
     try {
-        $process.Kill()
-        # Also kill any child VSIXInstaller processes that might be stuck
-        Get-Process -Name "VSIXInstaller" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+        # Kill only the specific process we started, not other VSIXInstaller instances
+        if (-not $process.HasExited) {
+            $process.Kill()
+        }
     }
     catch {
         Write-Warning "Failed to terminate VSIXInstaller process: $_"

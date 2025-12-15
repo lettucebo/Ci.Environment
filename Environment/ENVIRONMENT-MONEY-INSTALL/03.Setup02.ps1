@@ -158,9 +158,10 @@ if ($nssmFailed) {
 Show-Section -Message "[3/7] Install Visual Studio Extensions" -Emoji "🧩" -Color "Green"
 $vsixInstallScript = "$PSScriptRoot\install-vsix.ps1"
 
-# Check if local install-vsix.ps1 exists, otherwise download from GitHub
+# Check if local install-vsix.ps1 exists, otherwise download from GitHub (fallback for remote execution)
 if (-not (Test-Path $vsixInstallScript)) {
     Show-Info -Message "Downloading install-vsix.ps1 from GitHub..." -Emoji "⬇️"
+    # Note: Using 'master' branch as it is the default branch for this repository
     $vsixScriptUrl = "https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/install-vsix.ps1"
     Invoke-WebRequest -Uri $vsixScriptUrl -OutFile $vsixInstallScript
 }
