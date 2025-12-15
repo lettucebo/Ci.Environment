@@ -10,6 +10,37 @@
 - 自動化 Windows 設定
 - 支援 Windows Sandbox 環境
 - 伺服器環境設定腳本
+- AI 輔助開發工具（Claude、GitHub Copilot）
+- 多版本 .NET SDK 支援（.NET Core 2.1 至 .NET 10）
+
+## 包含工具
+
+### 開發工具
+- Visual Studio 2025 Enterprise
+- Visual Studio Code 與 VS Code Insiders
+- SQL Server Management Studio
+- Docker Desktop
+- Git 與 TortoiseGit
+
+### SDK 與執行環境
+- .NET Framework 4.8
+- .NET Core 2.1、2.2、3.1
+- .NET 5.0、6.0、7.0、8.0、9.0、10.0
+- Node.js（透過 nvm）
+- Python
+- OpenJDK
+
+### 雲端與 DevOps
+- Azure CLI 與 Azure Functions Core Tools
+- Azure Storage Explorer
+- Terraform
+
+### 生產力與 AI
+- 1Password
+- Claude
+- GitHub Copilot
+- PowerToys
+- Microsoft Teams
 
 ## 快速開始
 
