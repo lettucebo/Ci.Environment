@@ -171,6 +171,11 @@ Show-Success -Message "Google search suggestions URL configured."
 Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderKeyword" -Value "google.com" -Type String
 Show-Success -Message "Google keyword configured."
 
+# Configure new tab page search box to redirect to address bar
+# Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#newtabpagesearchbox
+Set-ItemProperty -Path $edgePoliciesRegPath -Name "NewTabPageSearchBox" -Value "redirect" -Type String
+Show-Success -Message "New tab page search configured to use address bar."
+
 # Enable Extension Developer Mode
 # Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#developertoolsavailability
 Show-Section -Message "Configure Extension Developer Mode" -Emoji "🛠️" -Color "Green"
@@ -199,6 +204,7 @@ Show-Success -Message "Extension Developer Mode configured."
 Show-Section -Message "Installation Complete" -Emoji "🎉" -Color "Green"
 Show-Success -Message "Edge extensions have been configured for force installation."
 Show-Success -Message "Google has been set as the default search engine for Edge."
+Show-Success -Message "New tab page search redirects to address bar."
 Show-Success -Message "Extension Developer Mode has been enabled."
 Show-Info -Message "Extensions will be installed automatically when Microsoft Edge is launched." -Emoji "ℹ️"
 
