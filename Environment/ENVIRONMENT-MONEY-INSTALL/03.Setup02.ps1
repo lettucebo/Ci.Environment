@@ -101,8 +101,8 @@ if ($LASTEXITCODE -eq 0) {
   Show-Error -Message "Failed to trigger Ubuntu Linux installation. Exit code: $LASTEXITCODE"
 }
 
-# [1/7] Install Node.js using nvm (auto select LTS and Current)
-Show-Section -Message "[1/7] Install Node.js using nvm" -Emoji "📦" -Color "Green"
+# [1/8] Install Node.js using nvm (auto select LTS and Current)
+Show-Section -Message "[1/8] Install Node.js using nvm" -Emoji "📦" -Color "Green"
 
 $nvmList = cmd.exe /c "nvm list available"
 
@@ -136,8 +136,8 @@ elseif ($ltsVersion) {
 }
 Show-Success -Message "Node.js installation completed."
 
-# [2/7] Install GPG agent as a Windows service using NSSM
-Show-Section -Message "[2/7] Install GPG agent auto start service" -Emoji "🔑" -Color "Green"
+# [2/8] Install GPG agent as a Windows service using NSSM
+Show-Section -Message "[2/8] Install GPG agent auto start service" -Emoji "🔑" -Color "Green"
 # Reference: https://stackoverflow.com/a/51407128/1799047
 $nssmFailed = $false
 nssm install GpgAgentService "C:\Program Files (x86)\GnuPG\bin\gpg-agent.exe"
@@ -154,8 +154,8 @@ if ($nssmFailed) {
   Show-Success -Message "GPG agent service installed."
 }
 
-# [3/7] Install Visual Studio extensions via helper script
-Show-Section -Message "[3/7] Install Visual Studio Extensions" -Emoji "🧩" -Color "Green"
+# [3/8] Install Visual Studio extensions via helper script
+Show-Section -Message "[3/8] Install Visual Studio Extensions" -Emoji "🧩" -Color "Green"
 $vsixInstallScript = "$PSScriptRoot\install-vsix.ps1"
 
 # Check if local install-vsix.ps1 exists, otherwise download from GitHub (fallback for remote execution)
@@ -178,8 +178,8 @@ if (-not (Test-Path $vsixInstallScript)) {
 & $vsixInstallScript -PackageName "sergeb.GhostDoc" -TimeoutSeconds 300
 Show-Success -Message "Visual Studio extensions installed."
 
-# [4/7] Install developer tools using Chocolatey
-Show-Section -Message "[4/7] Install Developer Tools" -Emoji "🍫" -Color "Green"
+# [4/8] Install developer tools using Chocolatey
+Show-Section -Message "[4/8] Install Developer Tools" -Emoji "🍫" -Color "Green"
 #choco install -y dotpeek
 #choco install -y resharper
 choco install -y dotultimate --params "'/NoCpp /NoTeamCityAddin'"
@@ -189,8 +189,8 @@ choco install -y dotultimate --params "'/NoCpp /NoTeamCityAddin'"
 choco install -y sqltoolbelt --params "/products:'SQL Compare, SQL Data Compare, SQL Prompt, SQL Search, SQL Data Generator, SQL Doc, SQL Dependency Tracker, SQL Backup, SSMS Integration Pack'"
 Show-Success -Message "Developer tools installed."
 
-# [5/7] Reset Windows TCP NAT service to clear reserved port ranges
-Show-Section -Message "[5/7] Reset Windows TCP" -Emoji "🔄" -Color "Green"
+# [5/8] Reset Windows TCP NAT service to clear reserved port ranges
+Show-Section -Message "[5/8] Reset Windows TCP" -Emoji "🔄" -Color "Green"
 # Reference: https://blog.darkthread.net/blog/clear-reserved-tcp-port-ranges/
 net stop winnat
 $stopExitCode = $LASTEXITCODE
@@ -202,8 +202,8 @@ if ($stopExitCode -eq 0 -and $startExitCode -eq 0) {
     Show-Error -Message "Failed to reset Windows TCP NAT service. (stop exit code: $stopExitCode, start exit code: $startExitCode)"
 }
 
-# [6/7] Exclude commonly used ports from Windows NAT to avoid conflicts
-Show-Section -Message "[6/7] Exclude Ports from Windows NAT" -Emoji "🔌" -Color "Green"
+# [6/8] Exclude commonly used ports from Windows NAT to avoid conflicts
+Show-Section -Message "[6/8] Exclude Ports from Windows NAT" -Emoji "🔌" -Color "Green"
 # Reference: https://blog.miniasp.com/post/2019/03/31/Ports-blocked-by-Windows-10-for-unknown-reason
 netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=1433
 netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=3000
@@ -215,8 +215,8 @@ netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=8080
 netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=8888
 Show-Success -Message "Ports excluded from Windows NAT."
 
-# [7/7] Run basic Docker containers for SQL Server, Redis, and Postgres
-Show-Section -Message "[7/7] Run Basic Docker Containers" -Emoji "🐳" -Color "Green"
+# [7/8] Run basic Docker containers for SQL Server, Redis, and Postgres
+Show-Section -Message "[7/8] Run Basic Docker Containers" -Emoji "🐳" -Color "Green"
 docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=P@ssw0rd" `
   -p 1433:1433 --name mssql2022 --hostname mssql2022 `
   -d `
@@ -235,6 +235,82 @@ docker run -e "POSTGRES_PASSWORD=P@ssw0rd" `
   --restart unless-stopped `
   postgres
 Show-Success -Message "Docker containers started."
+
+# [8/8] Install Office 64-bit Chinese (Traditional) Language Pack
+# Reference: https://learn.microsoft.com/en-us/deployoffice/overview-deploying-languages-microsoft-365-apps
+# Reference: https://learn.microsoft.com/en-us/deployoffice/office-deployment-tool-configuration-options
+Show-Section -Message "[8/8] Install Office Chinese (Traditional) Language Pack" -Emoji "🌐" -Color "Green"
+
+# Create temporary directory for Office Deployment Tool
+$odtTempDir = "$env:TEMP\OfficeLangPack"
+if (-not (Test-Path $odtTempDir)) {
+    New-Item -ItemType Directory -Path $odtTempDir -Force | Out-Null
+}
+Show-Info -Message "Created temporary directory: $odtTempDir" -Emoji "📁"
+
+# Download Office Deployment Tool
+# Note: This URL points to a specific ODT version. Check https://www.microsoft.com/en-us/download/details.aspx?id=49117 for updates.
+$odtUrl = "https://download.microsoft.com/download/2/7/A/27AF1BE6-DD20-4CB4-B154-EBAB8A7D4A7E/officedeploymenttool_18129-20158.exe"
+$odtExe = "$odtTempDir\officedeploymenttool.exe"
+$odtInstallSuccess = $true
+Show-Info -Message "Downloading Office Deployment Tool..." -Emoji "⬇️"
+try {
+    Invoke-WebRequest -Uri $odtUrl -OutFile $odtExe -ErrorAction Stop
+    Show-Success -Message "Office Deployment Tool downloaded."
+} catch {
+    Show-Error -Message "Failed to download Office Deployment Tool: $_"
+    $odtInstallSuccess = $false
+}
+
+if ($odtInstallSuccess -and (Test-Path $odtExe)) {
+    # Extract Office Deployment Tool
+    Show-Info -Message "Extracting Office Deployment Tool..." -Emoji "📦"
+    $extractProcess = Start-Process -FilePath $odtExe -ArgumentList "/quiet /extract:$odtTempDir" -Wait -PassThru
+    if ($extractProcess.ExitCode -ne 0) {
+        Show-Error -Message "Failed to extract Office Deployment Tool. Exit code: $($extractProcess.ExitCode)"
+        $odtInstallSuccess = $false
+    } else {
+        Show-Success -Message "Office Deployment Tool extracted."
+    }
+}
+
+if ($odtInstallSuccess) {
+    # Create configuration XML for Chinese Traditional Language Pack (64-bit)
+    $configXml = @"
+<Configuration>
+  <Add OfficeClientEdition="64">
+    <Product ID="LanguagePack">
+      <Language ID="zh-TW" />
+    </Product>
+  </Add>
+  <Display Level="None" AcceptEULA="TRUE" />
+</Configuration>
+"@
+    $configPath = "$odtTempDir\langpack-zh-TW.xml"
+    $configXml | Out-File -FilePath $configPath -Encoding UTF8
+    Show-Info -Message "Created language pack configuration: $configPath" -Emoji "📝"
+
+    # Install Chinese Traditional Language Pack
+    $setupExe = "$odtTempDir\setup.exe"
+    if (Test-Path $setupExe) {
+        Show-Info -Message "Installing Office Chinese (Traditional) Language Pack (zh-TW)..." -Emoji "🔧"
+        $process = Start-Process -FilePath $setupExe -ArgumentList "/configure `"$configPath`"" -Wait -PassThru
+        if ($process.ExitCode -eq 0) {
+            Show-Success -Message "Office Chinese (Traditional) Language Pack installed successfully."
+        } else {
+            Show-Warning -Message "Office Language Pack installation completed with exit code: $($process.ExitCode)"
+        }
+    } else {
+        Show-Error -Message "setup.exe not found. Office Deployment Tool extraction may have failed."
+    }
+} else {
+    Show-Warning -Message "Skipping Office Language Pack installation due to previous errors."
+}
+
+# Cleanup temporary files
+Show-Info -Message "Cleaning up temporary files..." -Emoji "🧹"
+Remove-Item -Path $odtTempDir -Recurse -Force -ErrorAction SilentlyContinue
+Show-Success -Message "Temporary files cleaned up."
 
 # Script complete
 Show-Section -Message "Setup Complete" -Emoji "🎉" -Color "Magenta"
