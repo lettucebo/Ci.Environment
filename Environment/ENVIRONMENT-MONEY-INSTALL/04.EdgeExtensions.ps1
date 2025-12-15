@@ -160,11 +160,11 @@ Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderName" -V
 Show-Success -Message "Default search provider set to Google."
 
 # Set Google search URL (used for address bar searches)
-Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderSearchURL" -Value "{google:baseURL}search?q={searchTerms}&{google:RLZ}{google:originalQueryForSuggestion}{google:assistedQueryStats}{google:searchFieldtrialParameter}{google:searchClient}{google:sourceId}ie={inputEncoding}" -Type String
+Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderSearchURL" -Value "https://www.google.com/search?q={searchTerms}" -Type String
 Show-Success -Message "Google search URL configured for address bar."
 
 # Set Google suggest URL for search suggestions
-Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderSuggestURL" -Value "{google:baseURL}complete/search?output=chrome&q={searchTerms}" -Type String
+Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderSuggestURL" -Value "https://www.google.com/complete/search?output=chrome&q={searchTerms}" -Type String
 Show-Success -Message "Google search suggestions URL configured."
 
 # Set Google as keyword for address bar
