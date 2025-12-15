@@ -47,6 +47,16 @@ Install additional development tools and configurations.
 iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/03.Setup02.ps1'))
 ```
 
+### Step 4: Edge Extensions (Optional)
+
+Configure Microsoft Edge extensions and settings (requires PowerShell 7).
+
+```powershell
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/04.EdgeExtensions.ps1'))
+```
+
+For the list of extensions to be installed, see [EdgeExtensions.md](./Environment/ENVIRONMENT-MONEY-INSTALL/EdgeExtensions.md)
+
 ## Windows Sandbox
 
 For testing in Windows Sandbox environment:
@@ -60,6 +70,7 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercon
 Additional scripts are available for server environment setup in the [Work](./Work) folder:
 
 - `ENVIRONMENT-GATEWAY-INSTALL.ps1` - Gateway server setup
+- `ENVIRONMENT-MONEY-MS-INSTALL.ps1` - Streaming and presentation tools setup (StreamDeck, OBS Studio, PowerBI, OBS-NDI, Zoomit)
 - `ENVIRONMENT-WIN-SERVER-API-INSTALL.ps1` - API server setup
 - `ENVIRONMENT-WIN-SERVER-DB-INSTALL.ps1` - Database server setup
 - `ENVIRONMENT-WIN-SERVER-WEB-INSTALL.ps1` - Web server setup

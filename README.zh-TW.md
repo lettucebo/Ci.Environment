@@ -47,6 +47,16 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercon
 iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/03.Setup02.ps1'))
 ```
 
+### 步驟 4：Edge 擴充功能（選擇性）
+
+設定 Microsoft Edge 擴充功能與設定（需要 PowerShell 7）。
+
+```powershell
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/04.EdgeExtensions.ps1'))
+```
+
+擴充功能清單請參閱 [EdgeExtensions.md](./Environment/ENVIRONMENT-MONEY-INSTALL/EdgeExtensions.md)
+
 ## Windows Sandbox
 
 於 Windows Sandbox 環境中測試：
@@ -60,6 +70,7 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercon
 伺服器環境設定腳本位於 [Work](./Work) 資料夾：
 
 - `ENVIRONMENT-GATEWAY-INSTALL.ps1` - Gateway 伺服器設定
+- `ENVIRONMENT-MONEY-MS-INSTALL.ps1` - Microsoft 串流與簡報工具設定（安裝 StreamDeck、OBS、PowerBI、Zoomit 等）
 - `ENVIRONMENT-WIN-SERVER-API-INSTALL.ps1` - API 伺服器設定
 - `ENVIRONMENT-WIN-SERVER-DB-INSTALL.ps1` - 資料庫伺服器設定
 - `ENVIRONMENT-WIN-SERVER-WEB-INSTALL.ps1` - 網頁伺服器設定
