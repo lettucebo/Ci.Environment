@@ -147,8 +147,9 @@ Set-ItemProperty -Path $personalizeKey -Name SystemUsesLightTheme -Type DWord -V
 # Show accent color on title bars and window borders (1 = Show, 0 = Hide)
 Set-ItemProperty -Path $personalizeKey -Name ColorPrevalence -Type DWord -Value 1 -ErrorAction SilentlyContinue
 
-# Note: Accent color is set to automatic by default when not explicitly configured
-# Windows will automatically choose accent color based on wallpaper
+# Enable automatic accent color selection based on wallpaper (1 = Auto, 0 = Manual)
+Set-ItemProperty -Path $personalizeKey -Name AutoColorization -Type DWord -Value 1 -ErrorAction SilentlyContinue
+
 Show-Success -Message "Windows theme configured: Dark mode enabled with automatic accent color."
 
 # Uninstall built-in APPs
