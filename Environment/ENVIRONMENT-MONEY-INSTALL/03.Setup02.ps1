@@ -156,17 +156,26 @@ if ($nssmFailed) {
 
 # [3/7] Install Visual Studio extensions via helper script
 Show-Section -Message "[3/7] Install Visual Studio Extensions" -Emoji "🧩" -Color "Green"
-$vsixInstallScript = "$PSScriptRoot\install-vsix.ps1";
-Invoke-WebRequest -Uri "https://gist.githubusercontent.com/lettucebo/1c791b21bf56f467254bc85fd70631f4/raw/5dc3ff85b38058208d203383c54d8b7818365566/install-vsix.ps1" -OutFile $vsixInstallScript
-& $vsixInstallScript -PackageName "MadsKristensen.FileIcons"
-& $vsixInstallScript -PackageName "MadsKristensen.ZenCoding"
-& $vsixInstallScript -PackageName "MadsKristensen.EditorConfig"
-& $vsixInstallScript -PackageName "MadsKristensen.Tweaks"
-& $vsixInstallScript -PackageName "ErikEJ.EFCorePowerTools"
-& $vsixInstallScript -PackageName "MadsKristensen.RainbowBraces"
-& $vsixInstallScript -PackageName "GitHub.copilotvs"
-& $vsixInstallScript -PackageName "NikolayBalakin.Outputenhancer"
-& $vsixInstallScript -PackageName "sergeb.GhostDoc"
+$vsixInstallScript = "$PSScriptRoot\install-vsix.ps1"
+
+# Check if local install-vsix.ps1 exists, otherwise download from GitHub (fallback for remote execution)
+if (-not (Test-Path $vsixInstallScript)) {
+    Show-Info -Message "Downloading install-vsix.ps1 from GitHub..." -Emoji "⬇️"
+    # Note: Using 'master' branch as it is the default branch for this repository
+    $vsixScriptUrl = "https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/install-vsix.ps1"
+    Invoke-WebRequest -Uri $vsixScriptUrl -OutFile $vsixInstallScript
+}
+
+# Install each extension with a 5-minute timeout to prevent hanging
+& $vsixInstallScript -PackageName "MadsKristensen.FileIcons" -TimeoutSeconds 300
+& $vsixInstallScript -PackageName "MadsKristensen.ZenCoding" -TimeoutSeconds 300
+& $vsixInstallScript -PackageName "MadsKristensen.EditorConfig" -TimeoutSeconds 300
+& $vsixInstallScript -PackageName "MadsKristensen.Tweaks" -TimeoutSeconds 300
+& $vsixInstallScript -PackageName "ErikEJ.EFCorePowerTools" -TimeoutSeconds 300
+& $vsixInstallScript -PackageName "MadsKristensen.RainbowBraces" -TimeoutSeconds 300
+& $vsixInstallScript -PackageName "GitHub.copilotvs" -TimeoutSeconds 300
+& $vsixInstallScript -PackageName "NikolayBalakin.Outputenhancer" -TimeoutSeconds 300
+& $vsixInstallScript -PackageName "sergeb.GhostDoc" -TimeoutSeconds 300
 Show-Success -Message "Visual Studio extensions installed."
 
 # [4/7] Install developer tools using Chocolatey
