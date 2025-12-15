@@ -92,4 +92,4 @@ macOS 使用者請參閱 [ENVIRONMENT-MONEY-INSTALL-MAC.sh](./Environment/ENVIRO
 
 ## 授權
 
-此專案為開源專案，歡迎使用。
+此專案採用 MIT 授權條款 - 詳情請參閱 [LICENSE](LICENSE) 檔案。
