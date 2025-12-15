@@ -201,12 +201,31 @@ $developerModeSettings = '{"*": {"installation_mode": "allowed"}}'
 Set-ItemProperty -Path $edgeExtensionSettingsPath -Name "*" -Value $developerModeSettings -Type String
 Show-Success -Message "Extension Developer Mode configured."
 
+# =========================
+# Configure Vertical Tabs and Hide Title Bar
+# Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#verticaltabsallowed
+# =========================
+Show-Section -Message "Configure Vertical Tabs and Hide Title Bar" -Emoji "📐" -Color "Green"
+
+# VerticalTabsAllowed: Allow users to enable vertical tabs
+# Value: 1 = Allowed (default), 0 = Disabled
+Set-ItemProperty -Path $edgePoliciesRegPath -Name "VerticalTabsAllowed" -Value 1 -Type DWord
+Show-Success -Message "Vertical tabs feature allowed."
+
+# Note: Hiding the title bar when using vertical tabs is a user preference setting.
+# There is no official Group Policy to enforce this setting.
+# Users can enable it via: Settings > Appearance > Hide title bar while in vertical tabs
+# Or by right-clicking on the vertical tabs panel and selecting "Hide title bar"
+Show-Info -Message "Hide title bar option is a user preference (Settings > Appearance > Hide title bar while in vertical tabs)." -Emoji "ℹ️"
+
 Show-Section -Message "Installation Complete" -Emoji "🎉" -Color "Green"
 Show-Success -Message "Edge extensions have been configured for force installation."
 Show-Success -Message "Google has been set as the default search engine for Edge."
 Show-Success -Message "New tab page search redirects to address bar."
 Show-Success -Message "Extension Developer Mode has been enabled."
+Show-Success -Message "Vertical tabs feature has been allowed."
 Show-Info -Message "Extensions will be installed automatically when Microsoft Edge is launched." -Emoji "ℹ️"
+Show-Info -Message "To hide title bar: Settings > Appearance > Hide title bar while in vertical tabs" -Emoji "💡"
 
 if ($chromeExtensionNames.Count -gt 0) {
     Show-Warning -Message "Note: $($chromeExtensionNames.Count) extension(s) from Chrome Web Store require manual installation:"
