@@ -9,3 +9,6 @@ https://microsoftedge.microsoft.com/addons/detail/adobe-acrobat-pdf-edit-/elheki
 
 Dark Reader
 https://microsoftedge.microsoft.com/addons/detail/dark-reader/ifoakfbpdcdoeenechcleahebpibofpc
+
+1Password – Password Manager
+https://microsoftedge.microsoft.com/addons/detail/1password-%E2%80%93-password-mana/dppgmdbiimibapkepcbdbmkaabgiofem
