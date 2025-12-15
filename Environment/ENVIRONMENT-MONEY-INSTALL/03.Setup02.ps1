@@ -182,7 +182,7 @@ Show-Success -Message "Visual Studio extensions installed."
 Show-Section -Message "[4/8] Install Developer Tools" -Emoji "🍫" -Color "Green"
 #choco install -y dotpeek
 #choco install -y resharper
-choco install -y dotultimate --params "'/NoCpp /NoTeamCityAddin'"
+#choco install -y dotultimate --params "'/NoCpp /NoTeamCityAddin'"
 
 # Install Redgate SQL Toolbelt via Chocolatey
 # Reference: https://download.red-gate.com/installers/SQLToolbelt/
