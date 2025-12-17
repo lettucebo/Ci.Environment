@@ -7,10 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Initial CHANGELOG.md file
+## [1.1.1] - 2025-12-17
 
-## [1.0.0] - 2025-12-17
+### Added
+- CHANGELOG.md file following Keep a Changelog format (#41)
+- 1Password extension to Edge auto-install list (#37)
+- Edge vertical tabs configuration policy in 04.EdgeExtensions.ps1 (#33)
+- Office 64-bit Chinese (Traditional) Language Pack automatic installation in 03.Setup02.ps1 (#29)
+- MIT License to the repository (#26)
+- Edge new tab search box redirect to address bar policy (#27)
+- "What's Included" section in README files documenting installed tools by category (#38, #20)
+- EdgeExtensions.md documentation for Edge extensions (#20)
+- Remote execution support for 04.EdgeExtensions.ps1 via iex (#21)
+
+### Fixed
+- Accent color automatic setting by adding AutoColorization registry value in 02.Setup01.ps1 (#35)
+- VS Extension installation hang by adding timeout mechanism and dynamic VS path detection (#25)
+- Edge Google search engine configuration with correct URL format (#23)
+- Emoji variation selectors causing PowerShell parsing errors in 00.PreConfig.ps1 (#30)
+- $PSScriptRoot empty string error when 04.EdgeExtensions.ps1 is run via iex (#21)
+
+### Changed
+- Updated SQL Server Docker container to version 2025 in Work scripts (#40)
+- Updated README files with latest version information and tooling (#38, #20)
+- Minor improvements to 03.Setup02.ps1 (#39)
+
+## [1.1.0] - 2025-12-14
+
+### Added
+- Edge extensions, search engine, and developer mode configuration script (04.EdgeExtensions.ps1)
+- Traditional Chinese README (README.zh-TW.md)
+- Windows dark mode and accent color configuration
+- NuGet Provider installation improvements
+
+### Changed
+- Upgraded Visual Studio 2022 to Visual Studio 2025
+- Standardized script display format across ENVIRONMENT-MONEY-INSTALL scripts
+
+### Fixed
+- Restart-Computer failure when machine is locked
+- NuGet Provider installation error on PowerShell 7
+
+## [1.0.0] - 2025-05-24
 
 ### Added
 - Automated Windows development environment setup scripts using PowerShell and Chocolatey
@@ -80,5 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PowerShell with Administrator privileges
 - Internet connection
 
-[Unreleased]: https://github.com/lettucebo/Ci.Environment/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/lettucebo/Ci.Environment/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/lettucebo/Ci.Environment/compare/v1.1.0...v1.1.1
+[1.1.0]: https://github.com/lettucebo/Ci.Environment/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/lettucebo/Ci.Environment/releases/tag/v1.0.0
