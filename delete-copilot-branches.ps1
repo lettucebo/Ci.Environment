@@ -16,10 +16,14 @@ if ($confirmation -ne "yes") {
     exit 0
 }
 
-# Switch to master branch first
+# Switch to default branch first (master or main)
 Write-Host ""
-Write-Host "Switching to master branch..." -ForegroundColor Cyan
-git checkout master
+$defaultBranch = (git symbolic-ref refs/remotes/origin/HEAD 2>$null) -replace 'refs/remotes/origin/', ''
+if (-not $defaultBranch) {
+    $defaultBranch = "master"
+}
+Write-Host "Switching to $defaultBranch branch..." -ForegroundColor Cyan
+git checkout $defaultBranch
 
 # Delete all local copilot branches
 Write-Host ""

@@ -8,7 +8,7 @@
 
 ## 當前的 Copilot 分支列表
 
-以下是目前在遠程存儲庫中的所有 copilot 分支：
+以下是目前在遠程存儲庫中的所有 copilot 分支（共 26 個）：
 
 1. copilot/add-1password-extension-install
 2. copilot/add-changelog-file
@@ -59,7 +59,7 @@ chmod +x delete-copilot-branches.sh
 #### 刪除所有本地 copilot 分支：
 
 ```bash
-# 首先切換到 master 分支
+# 首先切換到默認分支（此存儲庫使用 master）
 git checkout master
 
 # 刪除所有本地 copilot 分支
@@ -76,7 +76,7 @@ git branch -r | grep "origin/copilot/" | sed 's|origin/||' | xargs -I {} git pus
 #### Windows PowerShell 版本：
 
 ```powershell
-# 首先切換到 master 分支
+# 首先切換到默認分支（此存儲庫使用 master）
 git checkout master
 
 # 刪除所有本地 copilot 分支

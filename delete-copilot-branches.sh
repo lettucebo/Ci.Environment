@@ -18,10 +18,11 @@ if [ "$confirmation" != "yes" ]; then
     exit 0
 fi
 
-# Switch to master branch first
+# Switch to default branch first (master or main)
 echo ""
-echo "Switching to master branch..."
-git checkout master
+DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "master")
+echo "Switching to $DEFAULT_BRANCH branch..."
+git checkout $DEFAULT_BRANCH
 
 # Delete all local copilot branches
 echo ""
