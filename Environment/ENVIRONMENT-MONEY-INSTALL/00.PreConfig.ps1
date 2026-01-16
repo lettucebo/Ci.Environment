@@ -133,6 +133,11 @@ if ($zhTWLang) {
 Set-WinUserLanguageList -LanguageList $UserLanguageList -Force
 Show-Success -Message "Language list configured with Zhuyin input method."
 
+# Set default input method override to English (US)
+Show-Section -Message "Set Default Input Method Override" -Emoji "⌨️" -Color "Green"
+Set-WinDefaultInputMethodOverride -InputTip "0409:00000409"  # English (US) - US Keyboard
+Show-Success -Message "Default input method set to English (US)."
+
 # Change the language for non-Unicode programs setting
 Show-Section -Message "Set System Locale" -Emoji "🌐" -Color "Green"
 Set-WinSystemLocale zh-TW
