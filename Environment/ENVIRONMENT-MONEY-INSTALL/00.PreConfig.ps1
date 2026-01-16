@@ -97,6 +97,47 @@ Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Windows-
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlatform
 Show-Success -Message "WSL and VirtualMachinePlatform enabled."
 
+# Install English (US) Language Pack with Speech Recognition
+Show-Section -Message "Install English (US) Language Pack" -Emoji "🌐" -Color "Green"
+try {
+    Add-WindowsCapability -Online -Name Language.Basic~~~en-US~0.0.1.0 -ErrorAction Stop
+    Add-WindowsCapability -Online -Name Language.TextToSpeech~~~en-US~0.0.1.0 -ErrorAction Stop
+    Add-WindowsCapability -Online -Name Language.Speech~~~en-US~0.0.1.0 -ErrorAction Stop
+    Show-Success -Message "English (US) Language Pack with Speech Recognition installed."
+} catch {
+    Show-Warning -Message "Failed to install some English (US) language features: $_"
+}
+
+# Install Chinese (Traditional, Taiwan) Language Pack
+Show-Section -Message "Install Chinese (Traditional, Taiwan) Language Pack" -Emoji "🇹🇼" -Color "Green"
+try {
+    Add-WindowsCapability -Online -Name Language.Basic~~~zh-TW~0.0.1.0 -ErrorAction Stop
+    Add-WindowsCapability -Online -Name Language.Fonts~~~zh-TW~0.0.1.0 -ErrorAction Stop
+    Add-WindowsCapability -Online -Name Language.Handwriting~~~zh-TW~0.0.1.0 -ErrorAction Stop
+    Add-WindowsCapability -Online -Name Language.TextToSpeech~~~zh-TW~0.0.1.0 -ErrorAction Stop
+    Show-Success -Message "Chinese (Traditional, Taiwan) Language Pack installed."
+} catch {
+    Show-Warning -Message "Failed to install some Chinese (Traditional, Taiwan) language features: $_"
+}
+
+# Configure User Language List with Input Methods
+Show-Section -Message "Configure Language List and Input Methods" -Emoji "⌨️" -Color "Green"
+$UserLanguageList = New-WinUserLanguageList -Language "en-US"
+$UserLanguageList.Add("zh-TW")
+# Enable Zhuyin (注音) input method for zh-TW
+$zhTWLang = $UserLanguageList | Where-Object { $_.LanguageTag -eq "zh-TW" }
+if ($zhTWLang) {
+    $zhTWLang.InputMethodTips.Clear()
+    $zhTWLang.InputMethodTips.Add('0404:00000404')  # Chinese (Traditional) - Phonetic (注音)
+}
+Set-WinUserLanguageList -LanguageList $UserLanguageList -Force
+Show-Success -Message "Language list configured with Zhuyin input method."
+
+# Set default input method override to English (US)
+Show-Section -Message "Set Default Input Method Override" -Emoji "⌨️" -Color "Green"
+Set-WinDefaultInputMethodOverride -InputTip "0409:00000409"  # English (US) - US Keyboard
+Show-Success -Message "Default input method set to English (US)."
+
 # Change the language for non-Unicode programs setting
 Show-Section -Message "Set System Locale" -Emoji "🌐" -Color "Green"
 Set-WinSystemLocale zh-TW
