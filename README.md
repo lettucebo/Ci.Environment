@@ -51,7 +51,7 @@ Open **PowerShell as Administrator** and run the following commands in order:
 Install PowerShell 7 and essential configurations. **This step must be executed first.**
 
 ```powershell
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/00.PreConfig.ps1'))
+iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/00.PreConfig.ps1')
 ```
 
 ### Step 1: Windows Update (Optional)
@@ -59,7 +59,7 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercon
 Run Windows Update to ensure your system is up to date.
 
 ```powershell
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/01.WinUpdate.ps1'))
+iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/01.WinUpdate.ps1')
 ```
 
 ### Step 2: Core Development Tools
@@ -67,7 +67,7 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercon
 Install core development tools and applications.
 
 ```powershell
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/02.Setup01.ps1'))
+iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/02.Setup01.ps1')
 ```
 
 ### Step 3: Additional Tools
@@ -75,7 +75,7 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercon
 Install additional development tools and configurations.
 
 ```powershell
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/03.Setup02.ps1'))
+iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/03.Setup02.ps1')
 ```
 
 ### Step 4: Edge Extensions (Optional)
@@ -83,7 +83,7 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercon
 Configure Microsoft Edge extensions and settings (requires PowerShell 7).
 
 ```powershell
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/04.EdgeExtensions.ps1'))
+iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/04.EdgeExtensions.ps1')
 ```
 
 For the list of extensions to be installed, see [EdgeExtensions.md](./Environment/ENVIRONMENT-MONEY-INSTALL/EdgeExtensions.md)
@@ -93,7 +93,7 @@ For the list of extensions to be installed, see [EdgeExtensions.md](./Environmen
 For testing in Windows Sandbox environment:
 
 ```powershell
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-SANDBOX.ps1'))
+iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-SANDBOX.ps1')
 ```
 
 ## Server Setup Scripts
