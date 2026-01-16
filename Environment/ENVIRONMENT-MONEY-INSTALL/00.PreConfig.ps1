@@ -97,6 +97,31 @@ Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Windows-
 Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlatform
 Show-Success -Message "WSL and VirtualMachinePlatform enabled."
 
+# Install English (US) Language Pack with Speech Recognition
+Show-Section -Message "Install English (US) Language Pack" -Emoji "🌐" -Color "Green"
+Add-WindowsCapability -Online -Name Language.Basic~~~en-US~0.0.1.0
+Add-WindowsCapability -Online -Name Language.TextToSpeech~~~en-US~0.0.1.0
+Add-WindowsCapability -Online -Name Language.Speech~~~en-US~0.0.1.0
+Show-Success -Message "English (US) Language Pack with Speech Recognition installed."
+
+# Install Chinese (Traditional, Taiwan) Language Pack
+Show-Section -Message "Install Chinese (Traditional, Taiwan) Language Pack" -Emoji "🇹🇼" -Color "Green"
+Add-WindowsCapability -Online -Name Language.Basic~~~zh-TW~0.0.1.0
+Add-WindowsCapability -Online -Name Language.Fonts~~~zh-TW~0.0.1.0
+Add-WindowsCapability -Online -Name Language.Handwriting~~~zh-TW~0.0.1.0
+Add-WindowsCapability -Online -Name Language.TextToSpeech~~~zh-TW~0.0.1.0
+Show-Success -Message "Chinese (Traditional, Taiwan) Language Pack installed."
+
+# Configure User Language List with Input Methods
+Show-Section -Message "Configure Language List and Input Methods" -Emoji "⌨️" -Color "Green"
+$UserLanguageList = New-WinUserLanguageList -Language "en-US"
+$UserLanguageList.Add("zh-TW")
+# Enable Zhuyin (注音) input method for zh-TW
+$UserLanguageList[1].InputMethodTips.Clear()
+$UserLanguageList[1].InputMethodTips.Add('0404:00000404')  # Chinese (Traditional) - Phonetic (注音)
+Set-WinUserLanguageList -LanguageList $UserLanguageList -Force
+Show-Success -Message "Language list configured with Zhuyin input method."
+
 # Change the language for non-Unicode programs setting
 Show-Section -Message "Set System Locale" -Emoji "🌐" -Color "Green"
 Set-WinSystemLocale zh-TW
