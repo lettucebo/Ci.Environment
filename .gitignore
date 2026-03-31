@@ -1,0 +1,22 @@
+# OS generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# Windows shortcuts
+*.lnk
+
+# Recycle Bin
+$RECYCLE.BIN/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.bak
+*.swp
+*~
+
+# PowerShell
+*.pssc
