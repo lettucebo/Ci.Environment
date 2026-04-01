@@ -135,6 +135,7 @@ apps=(
     1password
     claude
     fork
+    openinterminal
 )
 
 for app in "${apps[@]}"; do
@@ -230,6 +231,11 @@ sudo pmset -a sleep 0
 
 # Allow display to turn off after 10 minutes (does not affect RustDesk remote access)
 sudo pmset -a displaysleep 10
+
+# Finder: sort folders first, then files, sorted by name
+defaults write com.apple.finder _FXSortFoldersFirst -bool true
+defaults write com.apple.finder FXArrangeGroupViewBy -string "Name"
+killall Finder 2>/dev/null || true
 
 echo "=========================================="
 echo "macOS Environment Setup Complete!"
