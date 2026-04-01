@@ -209,7 +209,6 @@ choco install -y googlechrome --ignore-checksums
 # choco install -y microsoft-edge-insider-dev
 choco install -y powertoys
 choco install -y mobaxterm
-choco install -y sysinternals
 choco install -y openssl.light
 choco install -y autohotkey
 choco install -y gsudo
@@ -485,9 +484,9 @@ winget install 9PG2DK419DRG --accept-package-agreements --accept-source-agreemen
 # Xodo PDF
 # winget install 9WZDNCRDJXP4 --accept-package-agreements --accept-source-agreements
 # Disney
-winget install 9NXQXXLFST89 --accept-package-agreements --accept-source-agreements
+# winget install 9NXQXXLFST89 --accept-package-agreements --accept-source-agreements
 # BiliBili
-winget install XPDDVC6XTQQKMM --accept-package-agreements --accept-source-agreements
+# winget install XPDDVC6XTQQKMM --accept-package-agreements --accept-source-agreements
 # Region to Share
 winget install 9N4066W2R5Q4 --accept-package-agreements --accept-source-agreements
 # Bing Wallpaper
@@ -497,9 +496,9 @@ winget install Microsoft.BingWallpaper --accept-package-agreements --accept-sour
 # Redis Insight
 winget install RedisInsight.RedisInsight --accept-package-agreements --accept-source-agreements
 # Microsoft.WindowsTerminal.Preview
-winget install Microsoft.WindowsTerminal.Preview --accept-package-agreements --accept-source-agreements
+# winget install Microsoft.WindowsTerminal.Preview --accept-package-agreements --accept-source-agreements
 # GitHub.Copilot.CLI.Prerelease
-winget install GitHub.Copilot.Prerelease --accept-package-agreements --accept-source-agreements
+winget install GitHub.Copilot --accept-package-agreements --accept-source-agreements
 
 # Claude Code
 irm https://claude.ai/install.ps1 | iex
