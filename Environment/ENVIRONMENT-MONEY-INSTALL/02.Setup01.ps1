@@ -415,6 +415,109 @@ Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Search -N
 ## Set Cmd to UTF8 encode
 Set-ItemProperty -Path "HKLM:\Software\Microsoft\Command Processor" -Name Autorun -Type String -Value "chcp 65001>nul"
 
+# Config Starship Prompt
+## https://starship.rs/config/
+Show-Section -Message "Config Starship Prompt" -Emoji "🚀" -Color "Green"
+$starshipConfigDir = "$env:USERPROFILE\.config"
+if (!(Test-Path $starshipConfigDir)) { New-Item -Path $starshipConfigDir -ItemType Directory -Force | Out-Null }
+
+$starshipConfig = @'
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# 每次 prompt 前加一空行，視覺更清爽
+add_newline = true
+
+# ─── 核心模組 ────────────────────────────────────────────────
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+
+[directory]
+truncation_length = 3
+truncation_symbol = "…/"
+read_only = " 󰌾"
+
+[cmd_duration]
+min_time = 0
+show_milliseconds = true
+
+[line_break]
+disabled = false
+
+[os]
+disabled = false
+
+[os.symbols]
+Windows = "󰍲 "
+
+[time]
+disabled = false
+time_format = "%R"
+format = "at [$time]($style) "
+
+# ─── Git 模組 ────────────────────────────────────────────────
+
+[git_branch]
+symbol = " "
+
+[git_commit]
+tag_symbol = "  "
+
+[git_status]
+
+[git_state]
+
+# ─── 語言模組 ────────────────────────────────────────────────
+
+[dotnet]
+symbol = " "
+
+[nodejs]
+symbol = " "
+
+[python]
+symbol = " "
+
+[java]
+symbol = " "
+
+[package]
+symbol = "󰏗 "
+
+# ─── 雲端與 DevOps 模組 ──────────────────────────────────────
+
+[azure]
+symbol = " "
+format = "on [$symbol($subscription)]($style) "
+
+[docker_context]
+symbol = " "
+
+[terraform]
+symbol = " "
+
+[kubernetes]
+disabled = true
+
+# ─── 停用不需要的模組 ────────────────────────────────────────
+
+[aws]
+disabled = true
+
+[gcloud]
+disabled = true
+
+[hostname]
+disabled = true
+
+[username]
+disabled = true
+'@
+
+Set-Content -Path "$starshipConfigDir\starship.toml" -Value $starshipConfig -Encoding UTF8
+Show-Success -Message "Starship configuration deployed."
+
 # Config PowerShell Profile
 ## https://gist.github.com/doggy8088/d3f3925452e2d7b923d01142f755d2ae
 ## https://dotblogs.com.tw/yc421206/2021/08/17/several_packages_to_enhance_posh_Powershell
@@ -433,7 +536,9 @@ Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
 
 Invoke-Expression (&starship init powershell)
 '@
-Add-Content -Path C:\Users\${env:username}\Documents\Powershell\Microsoft.PowerShell_profile.ps1 -Value $powerhellProfileContent
+$profileDir = Split-Path $PROFILE -Parent
+if (!(Test-Path $profileDir)) { New-Item -Path $profileDir -ItemType Directory -Force | Out-Null }
+Add-Content -Path $PROFILE -Value $powerhellProfileContent
 Show-Success -Message "PowerShell profile configured."
 
 ## Install WSL2 Kernel udpate
