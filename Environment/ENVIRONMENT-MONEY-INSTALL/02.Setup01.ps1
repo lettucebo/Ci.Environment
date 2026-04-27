@@ -468,6 +468,9 @@ tag_symbol = "  "
 
 [git_state]
 
+[git_metrics]
+disabled = false
+
 # ─── 語言模組 ────────────────────────────────────────────────
 
 [dotnet]
@@ -499,6 +502,14 @@ symbol = " "
 
 [kubernetes]
 disabled = true
+
+[status]
+disabled = false
+symbol = "✘ "
+
+[container]
+symbol = "⬡ "
+disabled = false
 
 # ─── 停用不需要的模組 ────────────────────────────────────────
 
