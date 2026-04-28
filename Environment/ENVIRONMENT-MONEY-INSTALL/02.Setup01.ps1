@@ -888,6 +888,51 @@ $objFolder.CopyHere($fontFira17File, 0x10)
 $objFolder.CopyHere($fontFira18File, 0x10)
 Show-Success -Message "FiraCode fonts installed."
 
+# Config Terminal Nerd Font
+## 設定 VS Code、VS Code Insiders、Windows Terminal Canary 使用 FiraCode Nerd Font Mono
+## 讓 Starship 的 Nerd Font 圖示（如 OS icon）正確顯示，避免亂碼
+Show-Section -Message "Config Terminal Nerd Font" -Emoji "🔤" -Color "Green"
+$nerdFontFace = "FiraCode Nerd Font Mono"
+
+foreach ($appDataFolder in @("Code", "Code - Insiders")) {
+    $vsSettingsDir = "$env:APPDATA\$appDataFolder\User"
+    $vsSettingsPath = "$vsSettingsDir\settings.json"
+    if (!(Test-Path $vsSettingsDir)) { New-Item -Path $vsSettingsDir -ItemType Directory -Force | Out-Null }
+    if (Test-Path $vsSettingsPath) {
+        $vsJson = Get-Content $vsSettingsPath -Raw | ConvertFrom-Json
+    } else {
+        $vsJson = [PSCustomObject]@{}
+    }
+    if ($vsJson.PSObject.Properties['terminal.integrated.fontFamily']) {
+        $vsJson.'terminal.integrated.fontFamily' = $nerdFontFace
+    } else {
+        $vsJson | Add-Member -NotePropertyName 'terminal.integrated.fontFamily' -NotePropertyValue $nerdFontFace
+    }
+    $vsJson | ConvertTo-Json -Depth 10 | Set-Content -Path $vsSettingsPath -Encoding UTF8
+    Show-Info -Message "Set Nerd Font for $appDataFolder -> $vsSettingsPath" -Emoji "🔤"
+}
+
+$wtSettingsFile = Get-Item "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminalCanary_*\LocalState\settings.json" -ErrorAction SilentlyContinue
+if ($wtSettingsFile) {
+    $wtJson = Get-Content $wtSettingsFile.FullName -Raw | ConvertFrom-Json
+    if (-not $wtJson.PSObject.Properties['profiles']) {
+        $wtJson | Add-Member -NotePropertyName 'profiles' -NotePropertyValue ([PSCustomObject]@{})
+    }
+    if (-not $wtJson.profiles.PSObject.Properties['defaults']) {
+        $wtJson.profiles | Add-Member -NotePropertyName 'defaults' -NotePropertyValue ([PSCustomObject]@{})
+    }
+    if ($wtJson.profiles.defaults.PSObject.Properties['font']) {
+        $wtJson.profiles.defaults.font | Add-Member -NotePropertyName 'face' -NotePropertyValue $nerdFontFace -Force
+    } else {
+        $wtJson.profiles.defaults | Add-Member -NotePropertyName 'font' -NotePropertyValue ([PSCustomObject]@{ face = $nerdFontFace })
+    }
+    $wtJson | ConvertTo-Json -Depth 10 | Set-Content -Path $wtSettingsFile.FullName -Encoding UTF8
+    Show-Info -Message "Set Nerd Font for Windows Terminal Canary -> $($wtSettingsFile.FullName)" -Emoji "🔤"
+} else {
+    Show-Warning -Message "Windows Terminal Canary settings.json not found; skipping font config."
+}
+Show-Success -Message "Terminal Nerd Font configured."
+
 ## Install VS 2025
 # https://learn.microsoft.com/en-us/visualstudio/install/workload-and-component-ids
 # https://developercommunity.visualstudio.com/t/setup-does-not-wait-for-installation-to-complete-w/26668#T-N1137560
