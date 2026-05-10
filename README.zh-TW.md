@@ -88,6 +88,14 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 
 擴充功能清單請參閱 [EdgeExtensions.md](./Environment/ENVIRONMENT-MONEY-INSTALL/EdgeExtensions.md)
 
+### 步驟 5：NVIDIA 顯示卡驅動程式（選擇性）
+
+偵測是否有 NVIDIA GPU，若有則自動下載並安裝最新版 Game Ready Driver（GRD、DCH）。若系統未安裝 NVIDIA 顯示卡會自動跳過，並且不會自動重新開機。
+
+```powershell
+iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/05.Driver.ps1')
+```
+
 ## Windows Sandbox
 
 於 Windows Sandbox 環境中測試：

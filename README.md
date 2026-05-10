@@ -88,6 +88,14 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 
 For the list of extensions to be installed, see [EdgeExtensions.md](./Environment/ENVIRONMENT-MONEY-INSTALL/EdgeExtensions.md)
 
+### Step 5: NVIDIA Driver (Optional)
+
+Detect whether an NVIDIA GPU is present and, if so, automatically install the latest Game Ready Driver (GRD, DCH) from NVIDIA. The script auto-skips on machines without an NVIDIA GPU and never reboots automatically.
+
+```powershell
+iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/05.Driver.ps1')
+```
+
 ## Windows Sandbox
 
 For testing in Windows Sandbox environment:
