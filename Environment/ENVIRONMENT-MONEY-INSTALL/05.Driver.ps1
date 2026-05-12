@@ -130,6 +130,28 @@ if ($env:COMPUTERNAME -ieq 'MONEY-PC') {
 }
 
 # -------------------------
+# Install Wacom Tablet Driver
+# -------------------------
+# Installs the Wacom tablet driver on every host (no hostname gating).
+# Wacom drivers are harmless on machines without a tablet attached, and
+# matching NVIDIA's behavior this runs unconditionally.
+Show-Section -Message "Install Wacom Tablet Driver" -Emoji "🖊" -Color "Cyan"
+if ($chocoAvailable) {
+    try {
+        choco install -y wacom-drivers
+        if ($LASTEXITCODE -eq 0) {
+            Show-Success -Message "Wacom Tablet driver install completed (or already present)."
+        } else {
+            Show-Warning -Message "choco install wacom-drivers exited with code $LASTEXITCODE."
+        }
+    } catch {
+        Show-Warning -Message "Failed to install Wacom Tablet driver: $($_.Exception.Message)"
+    }
+} else {
+    Show-Warning -Message "Chocolatey is not available; skipping Wacom Tablet driver install."
+}
+
+# -------------------------
 # Step 1: Detect NVIDIA GPU
 # -------------------------
 Show-Section -Message "Detect NVIDIA GPU" -Emoji "🔍" -Color "Cyan"
