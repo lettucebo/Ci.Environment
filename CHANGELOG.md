@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 05.Driver.ps1 — auto-detect NVIDIA GPU and install the latest Game Ready Driver (GRD, DCH) via NVIDIA's lookup API; no automatic reboot
 - 05.Driver.ps1 — ensure Chocolatey is installed (self-bootstrap when missing) and install NZXT CAM via Chocolatey on `MONEY-PC`
+- 02.Setup01.ps1 — install GitHub CLI (`gh`) via Chocolatey and add the `gh-copilot` extension (matches the macOS install script)
 - Step 5 (NVIDIA Driver) sections in README.md and README.zh-TW.md
 
 ## [1.1.1] - 2025-12-17

@@ -21,6 +21,7 @@ Automated Windows development environment setup scripts using PowerShell and [Ch
 - SQL Server Management Studio
 - Docker Desktop
 - Git & TortoiseGit
+- GitHub CLI (`gh`) with the `gh-copilot` extension
 
 ### SDKs & Runtimes
 - .NET Framework 4.8

@@ -21,6 +21,7 @@
 - SQL Server Management Studio
 - Docker Desktop
 - Git 與 TortoiseGit
+- GitHub CLI（`gh`）與 `gh-copilot` 擴充功能
 
 ### SDK 與執行環境
 - .NET Framework 4.8

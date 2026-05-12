@@ -191,6 +191,7 @@ choco install -y 7zip.install
 choco install -y openjdk
 choco install -y git.install --params "/NoShellIntegration"
 choco install -y tortoisegit
+choco install -y gh
 choco install -y potplayer
 choco install -y docker-desktop
 choco install -y nvm
@@ -235,6 +236,27 @@ choco install -y dotnet-10.0-sdk
 choco install -y snagit --ignorechecksum --version=2022.1.4
 # choco install -y office365business
 Show-Success -Message "Chocolatey and packages installed."
+
+# Install GitHub Copilot CLI extension
+Show-Section -Message "Install GitHub Copilot CLI extension" -Emoji "🤖" -Color "Cyan"
+# Refresh PATH so the freshly installed gh.exe (from `choco install -y gh`)
+# is reachable in this same session.
+$env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' +
+            [Environment]::GetEnvironmentVariable('Path','User')
+if (Get-Command gh -ErrorAction SilentlyContinue) {
+    try {
+        gh extension install github/gh-copilot
+        if ($LASTEXITCODE -eq 0) {
+            Show-Success -Message "gh-copilot extension installed."
+        } else {
+            Show-Warning -Message "gh extension install github/gh-copilot exited with code $LASTEXITCODE. Run 'gh auth login' first if needed, then re-run the extension install."
+        }
+    } catch {
+        Show-Warning -Message "Failed to install gh-copilot extension: $($_.Exception.Message)"
+    }
+} else {
+    Show-Warning -Message "GitHub CLI ('gh') not found on PATH; skipping gh-copilot extension install."
+}
 
 # Install Little Big Mouse
 Show-Section -Message "Install Little Big Mouse" -Emoji "🖱️" -Color "Green"
