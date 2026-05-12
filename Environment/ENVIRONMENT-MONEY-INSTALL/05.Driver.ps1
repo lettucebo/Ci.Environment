@@ -152,6 +152,74 @@ if ($chocoAvailable) {
 }
 
 # -------------------------
+# Install Logi Options+ (via Qetesh/logi-options-plus-mini)
+# -------------------------
+# Drives the install via the upstream non-interactive PowerShell wrapper:
+#   https://github.com/Qetesh/logi-options-plus-mini   (main, last known-good
+#   commit: c286c18 — "feat: Support quiet installation, region detection")
+#
+# The upstream script is interactive (Read-Host for feature picking + confirm
+# + a final ReadKey). We patch it in-memory before execution so 05.Driver.ps1
+# stays fully non-interactive when invoked via `iex`. Four narrow regex
+# patches:
+#   1) `$selectedFeatures = "0 3 4 5 6"`   → Quiet, SSO, Update, DFU, Backlight
+#                                            (everything else stays "No")
+#   2) `$confirm = "y"`                    → auto-confirm
+#   3) Neutralize `[Console]::ReadKey($true)` so the script doesn't hang
+#   4) Replace the region-detection block with a hard-coded
+#      `$selectedDownloadUrl = $downloadUrl` so we always pull the English
+#      / international installer URL (per "default to English").
+#
+# The patched copy runs in a CHILD PowerShell process so upstream's
+# `exit 0` / `exit 1` cannot terminate this parent script.
+Show-Section -Message "Install Logi Options+ (mini)" -Emoji "🖱" -Color "Cyan"
+$logiPatchPath = $null
+try {
+    $logiSrcUrl    = 'https://raw.githubusercontent.com/Qetesh/logi-options-plus-mini/main/logi-options-plus-mini.ps1'
+    $logiPatchPath = Join-Path $env:TEMP ("logi-options-plus-mini-ci.{0}.ps1" -f ([guid]::NewGuid().ToString('N').Substring(0,8)))
+    Show-Info -Message "Fetching upstream wrapper from $logiSrcUrl" -Emoji "⬇"
+    $logiRaw = Invoke-RestMethod -Uri $logiSrcUrl -UseBasicParsing -ErrorAction Stop
+    $logiPatched = [string]$logiRaw
+
+    $logiPatched = $logiPatched -replace `
+        '(?m)^\s*\$selectedFeatures\s*=\s*Read-Host[^\r\n]*', `
+        '$$selectedFeatures = "0 3 4 5 6"  # Ci.Environment: Quiet/SSO/Update/DFU/Backlight'
+
+    $logiPatched = $logiPatched -replace `
+        '(?m)^\s*\$confirm\s*=\s*Read-Host[^\r\n]*', `
+        '$$confirm = "y"  # Ci.Environment: auto-confirm'
+
+    $logiPatched = $logiPatched -replace `
+        '\[void\]\[System\.Console\]::ReadKey\(\$true\)', `
+        '<# Ci.Environment: skip readkey #>'
+
+    $logiPatched = $logiPatched -replace `
+        '(?ms)Write-Host\s+"\$\(Get-Date\)\s*\|\s*Detecting region.*?\}\s*catch\s*\{[^}]*\}', `
+        '$$selectedDownloadUrl = $$downloadUrl  # Ci.Environment: force English / international URL'
+
+    Set-Content -LiteralPath $logiPatchPath -Value $logiPatched -Encoding UTF8 -ErrorAction Stop
+    Show-Info -Message "Running patched upstream script in a child PowerShell process..." -Emoji "🚀"
+    $logiProc = Start-Process -FilePath "powershell" `
+        -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $logiPatchPath) `
+        -Wait -PassThru -NoNewWindow
+    if ($logiProc.ExitCode -eq 0) {
+        Show-Success -Message "Logi Options+ install completed via upstream wrapper."
+    } else {
+        Show-Warning -Message "Upstream Logi Options+ script exited with code $($logiProc.ExitCode)."
+    }
+} catch {
+    Show-Warning -Message "Failed to install Logi Options+: $($_.Exception.Message)"
+} finally {
+    try {
+        if ($logiPatchPath -and (Test-Path -LiteralPath $logiPatchPath)) {
+            Remove-Item -LiteralPath $logiPatchPath -Force -ErrorAction Stop
+        }
+    } catch {
+        Show-Warning -Message "Could not remove temp script at ${logiPatchPath}: $($_.Exception.Message)"
+    }
+}
+
+# -------------------------
 # Step 1: Detect NVIDIA GPU
 # -------------------------
 Show-Section -Message "Detect NVIDIA GPU" -Emoji "🔍" -Color "Cyan"
