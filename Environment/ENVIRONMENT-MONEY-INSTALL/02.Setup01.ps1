@@ -637,6 +637,8 @@ winget install RedisInsight.RedisInsight --accept-package-agreements --accept-so
 # winget install Microsoft.WindowsTerminal.Preview --accept-package-agreements --accept-source-agreements
 # GitHub.Copilot.CLI.Prerelease
 winget install GitHub.Copilot --accept-package-agreements --accept-source-agreements
+# Typeless (AI voice dictation)
+winget install SimplyCA.Typeless --accept-package-agreements --accept-source-agreements
 
 # Claude Code
 irm https://claude.ai/install.ps1 | iex

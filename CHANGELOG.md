@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 05.Driver.ps1 — ensure Chocolatey is installed (self-bootstrap when missing) and install NZXT CAM via Chocolatey on `MONEY-PC`
 - 05.Driver.ps1 — install Wacom Tablet driver via Chocolatey on every host
 - 02.Setup01.ps1 — install GitHub CLI (`gh`) via Chocolatey and add the `gh-copilot` extension (matches the macOS install script)
+- 02.Setup01.ps1 — install Typeless (AI voice dictation) via winget (`SimplyCA.Typeless`)
 - Step 5 (NVIDIA Driver) sections in README.md and README.zh-TW.md
 
 ## [1.1.1] - 2025-12-17

@@ -42,6 +42,7 @@
 - GitHub Copilot
 - PowerToys
 - Microsoft Teams
+- Typeless（AI 語音聽寫）
 
 ## 快速開始
 

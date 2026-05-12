@@ -42,6 +42,7 @@ Automated Windows development environment setup scripts using PowerShell and [Ch
 - GitHub Copilot
 - PowerToys
 - Microsoft Teams
+- Typeless (AI voice dictation)
 
 ## Quick Start
 
