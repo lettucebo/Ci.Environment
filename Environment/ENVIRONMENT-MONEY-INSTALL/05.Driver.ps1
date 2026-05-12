@@ -155,8 +155,12 @@ if ($chocoAvailable) {
 # Install Logi Options+ (via Qetesh/logi-options-plus-mini)
 # -------------------------
 # Drives the install via the upstream non-interactive PowerShell wrapper:
-#   https://github.com/Qetesh/logi-options-plus-mini   (main, last known-good
-#   commit: c286c18 — "feat: Support quiet installation, region detection")
+#   https://github.com/Qetesh/logi-options-plus-mini
+# Pinned to commit c286c18 ("feat: Support quiet installation, region detection")
+# so the in-memory regex patches below cannot silently no-op if upstream
+# changes shape — bump deliberately after re-verifying the patches still
+# match. To update: replace the SHA below and re-run the four patch tests
+# against the new revision.
 #
 # The upstream script is interactive (Read-Host for feature picking + confirm
 # + a final ReadKey). We patch it in-memory before execution so 05.Driver.ps1
@@ -175,7 +179,7 @@ if ($chocoAvailable) {
 Show-Section -Message "Install Logi Options+ (mini)" -Emoji "🖱" -Color "Cyan"
 $logiPatchPath = $null
 try {
-    $logiSrcUrl    = 'https://raw.githubusercontent.com/Qetesh/logi-options-plus-mini/main/logi-options-plus-mini.ps1'
+    $logiSrcUrl    = 'https://raw.githubusercontent.com/Qetesh/logi-options-plus-mini/c286c18b0e23930bf1fccf26d4f1ba0b03948d30/logi-options-plus-mini.ps1'
     $logiPatchPath = Join-Path $env:TEMP ("logi-options-plus-mini-ci.{0}.ps1" -f ([guid]::NewGuid().ToString('N').Substring(0,8)))
     Show-Info -Message "Fetching upstream wrapper from $logiSrcUrl" -Emoji "⬇"
     $logiRaw = Invoke-RestMethod -Uri $logiSrcUrl -UseBasicParsing -ErrorAction Stop
