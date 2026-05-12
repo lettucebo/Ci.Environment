@@ -74,6 +74,62 @@ try {
 } catch { }
 
 # -------------------------
+# Ensure Chocolatey (general preflight)
+# -------------------------
+# We rely on Chocolatey for host-specific tool installs (e.g. NZXT CAM on
+# MONEY-PC). 02.Setup01.ps1 normally installs it, but 05.Driver.ps1 may be
+# invoked standalone via `iex`, so bootstrap it here when missing.
+Show-Section -Message "Ensure Chocolatey" -Emoji "🍫" -Color "Yellow"
+$chocoAvailable = $false
+if (Get-Command choco -ErrorAction SilentlyContinue) {
+    Show-Success -Message "Chocolatey is already installed."
+    $chocoAvailable = $true
+} else {
+    Show-Info -Message "Chocolatey not found. Bootstrapping..." -Emoji "⬇"
+    try {
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+        # Refresh PATH for the current session so the freshly installed choco.exe is reachable
+        $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' +
+                    [Environment]::GetEnvironmentVariable('Path','User')
+        if (Get-Command choco -ErrorAction SilentlyContinue) {
+            Show-Success -Message "Chocolatey installed successfully."
+            $chocoAvailable = $true
+        } else {
+            Show-Error -Message "Chocolatey installer ran but 'choco' is still not on PATH."
+        }
+    } catch {
+        Show-Error -Message "Failed to install Chocolatey: $($_.Exception.Message)"
+    }
+}
+
+# -------------------------
+# Host-Specific Tools (NZXT CAM)
+# -------------------------
+# On the MONEY-PC workstation we also install NZXT CAM (used to control NZXT
+# hardware such as coolers / RGB controllers). No-op on any other host.
+Show-Section -Message "Host-Specific Tools (NZXT CAM)" -Emoji "🧊" -Color "Cyan"
+if ($env:COMPUTERNAME -ieq 'MONEY-PC') {
+    Show-Info -Message "Host '$env:COMPUTERNAME' matches MONEY-PC; installing NZXT CAM." -Emoji "🖥"
+    if ($chocoAvailable) {
+        try {
+            choco install -y nzxt-cam
+            if ($LASTEXITCODE -eq 0) {
+                Show-Success -Message "NZXT CAM install completed (or already present)."
+            } else {
+                Show-Warning -Message "choco install nzxt-cam exited with code $LASTEXITCODE."
+            }
+        } catch {
+            Show-Warning -Message "Failed to install NZXT CAM: $($_.Exception.Message)"
+        }
+    } else {
+        Show-Warning -Message "Chocolatey is not available; skipping NZXT CAM install."
+    }
+} else {
+    Show-Info -Message "Host '$env:COMPUTERNAME' is not MONEY-PC; skipping NZXT CAM." -Emoji "⏭"
+}
+
+# -------------------------
 # Step 1: Detect NVIDIA GPU
 # -------------------------
 Show-Section -Message "Detect NVIDIA GPU" -Emoji "🔍" -Color "Cyan"
