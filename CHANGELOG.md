@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- 05.Driver.ps1 — auto-detect NVIDIA GPU and install the latest Game Ready Driver (GRD, DCH) via NVIDIA's lookup API; no automatic reboot
+- 05.Driver.ps1 — ensure Chocolatey is installed (self-bootstrap when missing) and install NZXT CAM via Chocolatey on `MONEY-PC`
+- 05.Driver.ps1 — install Wacom Tablet driver via Chocolatey on every host
+- 05.Driver.ps1 — drive Logi Options+ silent install via the upstream [`Qetesh/logi-options-plus-mini`](https://github.com/Qetesh/logi-options-plus-mini) PowerShell wrapper (Quiet/SSO/Update/DFU/Backlight enabled; telemetry & AI features off; forced English / international URL); credit Qetesh
+- 02.Setup01.ps1 — install GitHub CLI (`gh`) via Chocolatey and add the `gh-copilot` extension (matches the macOS install script)
+- 02.Setup01.ps1 — install Typeless (AI voice dictation) via winget (`SimplyCA.Typeless`)
+- Step 5 (NVIDIA Driver) sections in README.md and README.zh-TW.md
+
 ## [1.1.1] - 2025-12-17
 
 ### Added

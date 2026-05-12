@@ -21,6 +21,7 @@ Automated Windows development environment setup scripts using PowerShell and [Ch
 - SQL Server Management Studio
 - Docker Desktop
 - Git & TortoiseGit
+- GitHub CLI (`gh`) with the `gh-copilot` extension
 
 ### SDKs & Runtimes
 - .NET Framework 4.8
@@ -41,6 +42,7 @@ Automated Windows development environment setup scripts using PowerShell and [Ch
 - GitHub Copilot
 - PowerToys
 - Microsoft Teams
+- Typeless (AI voice dictation)
 
 ## Quick Start
 
@@ -87,6 +89,16 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 ```
 
 For the list of extensions to be installed, see [EdgeExtensions.md](./Environment/ENVIRONMENT-MONEY-INSTALL/EdgeExtensions.md)
+
+### Step 5: NVIDIA Driver + Host-Specific Tools (Optional)
+
+Detect whether an NVIDIA GPU is present and, if so, automatically install the latest Game Ready Driver (GRD, DCH) from NVIDIA. The script auto-skips on machines without an NVIDIA GPU and never reboots automatically.
+
+The script also ensures Chocolatey is installed (bootstraps it if missing) and installs the **Wacom Tablet driver** via Chocolatey on every host. It then drives the official Logi Options+ installer through the upstream [`Qetesh/logi-options-plus-mini`](https://github.com/Qetesh/logi-options-plus-mini) PowerShell wrapper (silent install; Quiet, SSO, Update, DFU and Backlight enabled; analytics / Flow / LogiVoice / AI Prompt Builder / Device Recommendation / Smart Actions / Actions Ring left off). On the `MONEY-PC` workstation it additionally installs **NZXT CAM** via Chocolatey to manage NZXT hardware (coolers / RGB controllers); this step is a no-op on any other host.
+
+```powershell
+iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/05.Driver.ps1')
+```
 
 ## Windows Sandbox
 
