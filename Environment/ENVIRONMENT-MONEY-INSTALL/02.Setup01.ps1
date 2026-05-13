@@ -129,6 +129,10 @@ Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\
 ## Reference: https://superuser.com/a/1829862/1720344
 [microsoft.win32.registry]::SetValue("HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders", "{B7BEDE81-DF94-4682-A7D8-57A52620B86F}", "%UserProfile%\Downloads\ScreenShots")
 
+# Set screen recording save location (used by Snipping Tool video & Xbox Game Bar)
+## Known folder: Captures (FOLDERID_Captures), default path %USERPROFILE%\Videos\Captures
+[microsoft.win32.registry]::SetValue("HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders", "{EDC0FE71-98D8-4F4A-B920-C8DC133CB165}", "%UserProfile%\Downloads\ScreenRecordings")
+
 # Set receive update for other Microsoft product
 $ServiceManager = New-Object -ComObject "Microsoft.Update.ServiceManager"
 $ServiceManager.ClientApplicationID = "My App"
