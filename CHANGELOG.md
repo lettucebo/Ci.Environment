@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- 04.EdgeExtensions.ps1 — make the "Google as default search engine" policy actually take effect on personal/non-domain-joined Windows devices:
+  - Add missing companion fields the Edge policy schema treats as required: `DefaultSearchProviderEncodings` (REG_MULTI_SZ, `UTF-8`) and `DefaultSearchProviderIconURL`. Without them, Edge can silently treat the provider record as malformed and fall back to Bing.
+  - Mirror the entire `DefaultSearchProvider*` policy set (plus `NewTabPageSearchBox`) to `HKCU:\SOFTWARE\Policies\Microsoft\Edge`. Unmanaged Windows devices often filter out HKLM Edge policies (visible at `edge://policy` as *Ignored because the device is not managed*); the HKCU mirror typically resolves this for unmanaged-device profiles.
+  - Stop all running `msedge.exe` processes before writing policy registry values so the next Edge launch actually re-reads the registry. Edge will restore the user's tabs on next launch.
+  - Add a diagnostic hint to the final summary directing the user to `edge://policy` for verification.
+  - Document a known Microsoft-imposed limitation: Edge 116+ "Edge for Business" profile separation causes personal-MSA profiles (`@outlook.com` / `@hotmail.com` / `@live.com`) to filter out `DefaultSearchProvider*` regardless of Group Policy. There is no supported override; for those profiles, the user must manually pick Google in Edge Settings.
+
 ## [1.2.0] - 2026-05-13
 
 ### Added

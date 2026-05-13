@@ -32,6 +32,18 @@ if($PSversionTable.PsVersion.Major -lt 7){
     exit
 } else { Show-Success -Message "PowerShell version is $($PSversionTable.PsVersion.Major)." }
 
+# Stop any running Edge processes so the policy registry is re-read on next launch
+# Edge reads policies only at process start; without this, policy changes wouldn't apply
+# to the currently running session (including background msedge.exe instances).
+Show-Section -Message "Stop Running Edge Processes" -Emoji "🛑" -Color "Yellow"
+$runningEdge = @(Get-Process msedge -ErrorAction SilentlyContinue)
+if ($runningEdge.Count -gt 0) {
+    $runningEdge | Stop-Process -Force -ErrorAction SilentlyContinue
+    Show-Info -Message "Stopped $($runningEdge.Count) running msedge process(es). Edge will restore your tabs on next launch." -Emoji "ℹ️"
+} else {
+    Show-Info -Message "No running Edge processes detected." -Emoji "ℹ️"
+}
+
 # Read EdgeExtensions.md file
 Show-Section -Message "Read Edge Extensions List" -Emoji "📄" -Color "Cyan"
 
@@ -171,10 +183,40 @@ Show-Success -Message "Google search suggestions URL configured."
 Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderKeyword" -Value "google.com" -Type String
 Show-Success -Message "Google keyword configured."
 
+# Required companion field: without DefaultSearchProviderEncodings Edge may silently
+# treat the provider record as malformed and fall back to Bing.
+# Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#defaultsearchproviderencodings
+Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderEncodings" -Value @('UTF-8') -Type MultiString
+Show-Success -Message "Google search encodings configured (UTF-8)."
+
+# Icon URL: completes the provider record (favicon shown in Settings UI)
+Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderIconURL" -Value "https://www.google.com/favicon.ico" -Type String
+Show-Success -Message "Google search provider icon URL configured."
+
 # Configure new tab page search box to redirect to address bar
 # Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#newtabpagesearchbox
 Set-ItemProperty -Path $edgePoliciesRegPath -Name "NewTabPageSearchBox" -Value "redirect" -Type String
 Show-Success -Message "New tab page search configured to use address bar."
+
+# Mirror the search provider policy to HKCU for the current user.
+# Unmanaged personal Windows devices often ignore HKLM\SOFTWARE\Policies\Microsoft\Edge\DefaultSearchProvider*
+# (visible at edge://policy as "Ignored because the device is not managed").
+# Writing to HKCU as well greatly increases the chance the policy actually applies.
+Show-Section -Message "Mirror Search Engine Policy to HKCU" -Emoji "👤" -Color "Green"
+$edgePoliciesRegPathHkcu = "HKCU:\SOFTWARE\Policies\Microsoft\Edge"
+if (-not (Test-Path $edgePoliciesRegPathHkcu)) {
+    New-Item -Path $edgePoliciesRegPathHkcu -Force | Out-Null
+    Show-Info -Message "Created registry key: $edgePoliciesRegPathHkcu" -Emoji "📝"
+}
+Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderEnabled"   -Value 1 -Type DWord
+Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderName"      -Value "Google" -Type String
+Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderKeyword"   -Value "google.com" -Type String
+Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderSearchURL" -Value "https://www.google.com/search?q={searchTerms}" -Type String
+Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderSuggestURL" -Value "https://www.google.com/complete/search?output=chrome&q={searchTerms}" -Type String
+Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderEncodings" -Value @('UTF-8') -Type MultiString
+Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderIconURL"   -Value "https://www.google.com/favicon.ico" -Type String
+Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "NewTabPageSearchBox"            -Value "redirect" -Type String
+Show-Success -Message "Search engine policy mirrored to HKCU for the current user."
 
 # Enable Extension Developer Mode
 # Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#developertoolsavailability
@@ -226,6 +268,8 @@ Show-Success -Message "Extension Developer Mode has been enabled."
 Show-Success -Message "Vertical tabs feature has been allowed."
 Show-Info -Message "Extensions will be installed automatically when Microsoft Edge is launched." -Emoji "ℹ️"
 Show-Info -Message "To hide title bar: Settings > Appearance > Hide title bar while in vertical tabs" -Emoji "💡"
+Show-Info -Message "If Google does not become the default after relaunching Edge, open edge://policy and confirm the DefaultSearchProvider* rows show status OK (not 'Ignored because the device is not managed'). The HKCU mirror added here typically resolves the unmanaged-device case." -Emoji "🔎"
+Show-Warning -Message "Known limitation: Edge personal profiles (signed in with @outlook.com / @hotmail.com / @live.com / consumer Microsoft accounts) will still show DefaultSearchProvider* as 'Ignored' at edge://policy. This is by design from Microsoft Edge 116+ (Edge for Business profile separation) and cannot be overridden via Group Policy. To set Google in such a profile: open the profile -> Settings -> Privacy, Search, and Services -> Address bar and search -> Search engine used in address bar -> Google."
 
 if ($chromeExtensionNames.Count -gt 0) {
     Show-Warning -Message "Note: $($chromeExtensionNames.Count) extension(s) from Chrome Web Store require manual installation:"
