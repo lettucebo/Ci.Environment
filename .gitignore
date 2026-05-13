@@ -20,6 +20,3 @@ $RECYCLE.BIN/
 
 # PowerShell
 *.pssc
-
-# Copilot CLI / agent runtime artifacts (auto-generated skill packs, not part of the repo)
-.github/skills/
