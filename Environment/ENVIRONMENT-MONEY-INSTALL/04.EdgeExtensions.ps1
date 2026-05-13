@@ -218,6 +218,59 @@ Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderIcon
 Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "NewTabPageSearchBox"            -Value "redirect" -Type String
 Show-Success -Message "Search engine policy mirrored to HKCU for the current user."
 
+# Seed default search engine for future / not-yet-created Edge profiles via initial_preferences.
+# This is the only programmatic path that survives "Edge for Business" personal-profile policy
+# filtering: Edge consults initial_preferences during a profile's first launch, BEFORE
+# classifying the profile as personal vs work, so the seeded default sticks even on personal
+# MSA profiles. It does NOT retroactively affect already-created profiles -- nothing does
+# (see expanded warning at the end of this script for the full investigation summary).
+# Reference: https://www.chromium.org/developers/design-documents/desktop-deployment/
+Show-Section -Message "Seed Default Search Engine for Future Edge Profiles" -Emoji "🌱" -Color "Green"
+$edgeApplicationDirs = @(
+    'C:\Program Files (x86)\Microsoft\Edge\Application',
+    'C:\Program Files\Microsoft\Edge\Application'
+) | Where-Object { Test-Path (Join-Path $_ 'msedge.exe') }
+
+if ($edgeApplicationDirs.Count -eq 0) {
+    Show-Warning -Message "Edge install directory not found under Program Files; skipping initial_preferences seeding."
+} else {
+    $initialPrefsJson = @'
+{
+  "distribution": {
+    "default_search_provider": {
+      "enabled": true,
+      "name": "Google",
+      "keyword": "google.com",
+      "search_url": "https://www.google.com/search?q={searchTerms}",
+      "suggest_url": "https://www.google.com/complete/search?output=chrome&q={searchTerms}",
+      "favicon_url": "https://www.google.com/favicon.ico",
+      "encoding": "UTF-8",
+      "id": 1
+    },
+    "set_default_search": true,
+    "do_not_create_desktop_shortcut": true,
+    "do_not_create_taskbar_shortcut": true,
+    "do_not_launch_chrome": true,
+    "make_chrome_default": false,
+    "make_chrome_default_for_user": false
+  }
+}
+'@
+    foreach ($dir in $edgeApplicationDirs) {
+        # Write both filenames; Chromium uses "initial_preferences" (modern) and "master_preferences" (legacy fallback)
+        foreach ($name in @('initial_preferences','master_preferences')) {
+            $target = Join-Path $dir $name
+            try {
+                [System.IO.File]::WriteAllText($target, $initialPrefsJson, [System.Text.UTF8Encoding]::new($false))
+                Show-Success -Message "Wrote $target"
+            } catch {
+                Show-Warning -Message "Failed to write ${target}: $($_.Exception.Message)"
+            }
+        }
+    }
+    Show-Info -Message "initial_preferences affects only profiles that have never launched Edge before. Existing personal profiles are not retroactively affected (see end-of-script warning)." -Emoji "ℹ️"
+}
+
 # Enable Extension Developer Mode
 # Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#developertoolsavailability
 Show-Section -Message "Configure Extension Developer Mode" -Emoji "🛠️" -Color "Green"
@@ -269,7 +322,17 @@ Show-Success -Message "Vertical tabs feature has been allowed."
 Show-Info -Message "Extensions will be installed automatically when Microsoft Edge is launched." -Emoji "ℹ️"
 Show-Info -Message "To hide title bar: Settings > Appearance > Hide title bar while in vertical tabs" -Emoji "💡"
 Show-Info -Message "If Google does not become the default after relaunching Edge, open edge://policy and confirm the DefaultSearchProvider* rows show status OK (not 'Ignored because the device is not managed'). The HKCU mirror added here typically resolves the unmanaged-device case." -Emoji "🔎"
-Show-Warning -Message "Known limitation: Edge personal profiles (signed in with @outlook.com / @hotmail.com / @live.com / consumer Microsoft accounts) will still show DefaultSearchProvider* as 'Ignored' at edge://policy. This is by design from Microsoft Edge 116+ (Edge for Business profile separation) and cannot be overridden via Group Policy. To set Google in such a profile: open the profile -> Settings -> Privacy, Search, and Services -> Address bar and search -> Search engine used in address bar -> Google."
+Show-Warning -Message @"
+Known limitation for *existing* personal Microsoft account profiles (signed in with @outlook.com / @hotmail.com / @live.com / consumer MSA): they will still show DefaultSearchProvider* as 'Ignored' at edge://policy and continue to use Bing. This is Microsoft Edge 116+ 'Edge for Business' profile separation -- enterprise policies are deliberately filtered out of personal profiles, and Microsoft has closed every known programmatic workaround:
+  - HKLM + HKCU Group Policy -> filtered for personal profiles
+  - Preferences JSON 'mirrored_template_url_data' injection -> stripped by Chromium 122+ on relaunch
+  - Preferences JSON 'template_url_data' (non-mirrored) injection -> also stripped
+  - Web Data SQLite 'keywords.is_default' -> column removed in modern schema; no replacement is honoured
+  - Force-installing an extension with chrome_settings_overrides.search_provider -> Edge Add-ons store rejects third-party search overrides
+  - BrowserSignin=2 -> too aggressive (blocks personal accounts entirely)
+  - EdgeManagementEnrollmentToken -> work-profile-only by Microsoft design
+For such existing profiles, the user must set Google manually: open the profile -> Settings -> Privacy, Search, and Services -> Address bar and search -> Search engine used in address bar -> Google. The initial_preferences seeded above will, however, set Google automatically for any NEW profile created on this machine from now on.
+"@
 
 if ($chromeExtensionNames.Count -gt 0) {
     Show-Warning -Message "Note: $($chromeExtensionNames.Count) extension(s) from Chrome Web Store require manual installation:"

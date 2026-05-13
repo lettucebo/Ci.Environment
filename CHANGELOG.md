@@ -7,13 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- 04.EdgeExtensions.ps1 — seed Google as the default search engine for **future Edge profiles** by writing `initial_preferences` (and the legacy `master_preferences` fallback) to the Edge install dir (`C:\Program Files (x86)\Microsoft\Edge\Application\`). Chromium reads this file during a profile's very first launch — *before* Edge for Business profile classification — so the seeded default sticks even when the new profile is later signed in with a personal Microsoft account. Idempotent; safe to re-run; Edge auto-update may delete the file, re-running the script restores it.
+
 ### Fixed
 - 04.EdgeExtensions.ps1 — make the "Google as default search engine" policy actually take effect on personal/non-domain-joined Windows devices:
   - Add missing companion fields the Edge policy schema treats as required: `DefaultSearchProviderEncodings` (REG_MULTI_SZ, `UTF-8`) and `DefaultSearchProviderIconURL`. Without them, Edge can silently treat the provider record as malformed and fall back to Bing.
   - Mirror the entire `DefaultSearchProvider*` policy set (plus `NewTabPageSearchBox`) to `HKCU:\SOFTWARE\Policies\Microsoft\Edge`. Unmanaged Windows devices often filter out HKLM Edge policies (visible at `edge://policy` as *Ignored because the device is not managed*); the HKCU mirror typically resolves this for unmanaged-device profiles.
   - Stop all running `msedge.exe` processes before writing policy registry values so the next Edge launch actually re-reads the registry. Edge will restore the user's tabs on next launch.
   - Add a diagnostic hint to the final summary directing the user to `edge://policy` for verification.
-  - Document a known Microsoft-imposed limitation: Edge 116+ "Edge for Business" profile separation causes personal-MSA profiles (`@outlook.com` / `@hotmail.com` / `@live.com`) to filter out `DefaultSearchProvider*` regardless of Group Policy. There is no supported override; for those profiles, the user must manually pick Google in Edge Settings.
+
+### Documentation
+- 04.EdgeExtensions.ps1 — expanded end-of-script warning enumerating seven approaches investigated to override the default search engine on **existing personal Microsoft account Edge profiles** (HKLM/HKCU policy, Preferences JSON `mirrored_template_url_data` injection, Preferences JSON `template_url_data` injection, `Web Data` SQLite, force-installed `chrome_settings_overrides.search_provider` extension, `BrowserSignin=2`, `EdgeManagementEnrollmentToken`) and documenting that all are blocked or actively reverted by Chromium 122+ / Edge for Business profile separation as of Edge 148. There is no supported programmatic override; users with existing personal MSA profiles must set Google manually for those profiles. *Future* profiles created on this machine are covered by the new `initial_preferences` seeding.
 
 ## [1.2.0] - 2026-05-13
 
