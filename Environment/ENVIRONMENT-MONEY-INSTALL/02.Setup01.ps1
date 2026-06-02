@@ -450,8 +450,11 @@ if (!(Test-Path $starshipConfigDir)) { New-Item -Path $starshipConfigDir -ItemTy
 $starshipConfig = @'
 "$schema" = 'https://starship.rs/config-schema.json'
 
-# 每次 prompt 前加一空行，視覺更清爽
-add_newline = true
+# 關閉預設換行，改用自訂 format 控制間距
+add_newline = false
+
+# 每個指令區間結尾：花費時間 → 全寬淡灰虛線 → 空一行 → 下一個 prompt
+format = "$cmd_duration\n$fill\n\n$all"
 
 # ─── 核心模組 ────────────────────────────────────────────────
 
@@ -467,6 +470,11 @@ read_only = " 󰌾"
 [cmd_duration]
 min_time = 0
 show_milliseconds = true
+
+# 全寬分隔線，標示每個指令區間範圍
+[fill]
+symbol = "─"
+style = "dimmed"
 
 [line_break]
 disabled = false
