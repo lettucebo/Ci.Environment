@@ -651,6 +651,8 @@ winget install Microsoft.BingWallpaper --accept-package-agreements --accept-sour
 winget install GitHub.Copilot --accept-package-agreements --accept-source-agreements
 # Intelligent Terminal
 winget install Microsoft.IntelligentTerminal --accept-package-agreements --accept-source-agreements
+# Coreutils for Windows
+winget install Microsoft.Coreutils --accept-package-agreements --accept-source-agreements
 
 # Claude Code
 irm https://claude.ai/install.ps1 | iex
