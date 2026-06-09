@@ -607,13 +607,13 @@ wsl --set-default-version 2
 
 ## Using WinGet install MS Store and relate application
 # 安裝 Windows Terminal Canary
-Show-Section -Message "Install Windows Terminal Canary" -Emoji "💻" -Color "Green"
-$canaryInstallerUrl = "https://terminalbuilds-grbmacf3f6bsbma8.z01.azurefd.net/nightly/Microsoft.WindowsTerminalCanary.appinstaller"
-$canaryInstallerPath = "$PSScriptRoot\WindowsTerminalCanary.appinstaller"
-Show-Info -Message "Downloading Windows Terminal Canary installer..." -Emoji "⬇️"
-Invoke-WebRequest -Uri $canaryInstallerUrl -OutFile $canaryInstallerPath
-Start-Process -FilePath "explorer.exe" -ArgumentList $canaryInstallerPath
-Show-Info -Message "Windows Terminal Canary .appinstaller launched. Please follow the App Installer prompts to complete installation." -Emoji "🟡"
+#Show-Section -Message "Install Windows Terminal Canary" -Emoji "💻" -Color "Green"
+#$canaryInstallerUrl = "https://terminalbuilds-grbmacf3f6bsbma8.z01.azurefd.net/nightly/Microsoft.WindowsTerminalCanary.appinstaller"
+#$canaryInstallerPath = "$PSScriptRoot\WindowsTerminalCanary.appinstaller"
+#Show-Info -Message "Downloading Windows Terminal Canary installer..." -Emoji "⬇️"
+#Invoke-WebRequest -Uri $canaryInstallerUrl -OutFile $canaryInstallerPath
+#Start-Process -FilePath "explorer.exe" -ArgumentList $canaryInstallerPath
+#Show-Info -Message "Windows Terminal Canary .appinstaller launched. Please follow the App Installer prompts to complete installation." -Emoji "🟡"
 
 Show-Section -Message "Install MS Store Applications via WinGet" -Emoji "🏪" -Color "Green"
 # Microsoft.Whiteboard
@@ -644,13 +644,13 @@ winget install Microsoft.BingWallpaper --accept-package-agreements --accept-sour
 # Samsung Notes
 # winget install 9NBLGGH43VHV --accept-package-agreements --accept-source-agreements
 # Redis Insight
-winget install RedisInsight.RedisInsight --accept-package-agreements --accept-source-agreements
+# winget install RedisInsight.RedisInsight --accept-package-agreements --accept-source-agreements
 # Microsoft.WindowsTerminal.Preview
 # winget install Microsoft.WindowsTerminal.Preview --accept-package-agreements --accept-source-agreements
 # GitHub.Copilot.CLI.Prerelease
 winget install GitHub.Copilot --accept-package-agreements --accept-source-agreements
-# Typeless (AI voice dictation)
-winget install SimplyCA.Typeless --accept-package-agreements --accept-source-agreements
+# Intelligent Terminal
+winget install Microsoft.IntelligentTerminal --accept-package-agreements --accept-source-agreements
 
 # Claude Code
 irm https://claude.ai/install.ps1 | iex
