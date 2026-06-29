@@ -155,6 +155,26 @@ Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Pe
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name AutoColorization -Value 1
 Show-Success -Message "Windows 11 accent color 已設為自動。"
 
+# 一鍵啟用遠端桌面 (RDP) — 自動提權
+if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
+    Start-Process powershell "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+    exit
+}
+
+Write-Host "啟用遠端桌面..." -ForegroundColor Cyan
+Set-ItemProperty 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 0
+
+Write-Host "啟用 NLA..." -ForegroundColor Cyan
+Set-ItemProperty 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name UserAuthentication -Value 1
+
+Write-Host "服務設為自動並啟動..." -ForegroundColor Cyan
+Set-Service TermService -StartupType Automatic
+Start-Service TermService
+
+Write-Host "開啟防火牆並放行 RDP..." -ForegroundColor Cyan
+Set-NetFirewallProfile -All -Enabled True
+Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'
+
 # Restart the computer to apply changes
 Show-Section -Message "Restart Computer" -Emoji "🔄" -Color "Yellow"
 Install-Module -Name PSTimers
