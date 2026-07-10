@@ -104,13 +104,14 @@ if (Get-Command choco -ErrorAction SilentlyContinue) {
 }
 
 # -------------------------
-# Host-Specific Tools (NZXT CAM)
+# Host-Specific Tools (NZXT CAM + DisplayLink)
 # -------------------------
-# On the MONEY-PC workstation we also install NZXT CAM (used to control NZXT
-# hardware such as coolers / RGB controllers). No-op on any other host.
-Show-Section -Message "Host-Specific Tools (NZXT CAM)" -Emoji "🧊" -Color "Cyan"
+# On the MONEY-PC workstation we install NZXT CAM (used to control NZXT
+# hardware such as coolers / RGB controllers) plus DisplayLink Graphics Driver
+# (via WinGet). No-op on any other host.
+Show-Section -Message "Host-Specific Tools (NZXT CAM + DisplayLink)" -Emoji "🧊" -Color "Cyan"
 if ($env:COMPUTERNAME -ieq 'MONEY-PC') {
-    Show-Info -Message "Host '$env:COMPUTERNAME' matches MONEY-PC; installing NZXT CAM." -Emoji "🖥"
+    Show-Info -Message "Host '$env:COMPUTERNAME' matches MONEY-PC; installing NZXT CAM and DisplayLink." -Emoji "🖥"
     if ($chocoAvailable) {
         try {
             choco install -y nzxt-cam
@@ -125,8 +126,44 @@ if ($env:COMPUTERNAME -ieq 'MONEY-PC') {
     } else {
         Show-Warning -Message "Chocolatey is not available; skipping NZXT CAM install."
     }
+    $winget = Get-Command winget -ErrorAction SilentlyContinue
+    if ($winget) {
+        try {
+            winget install `
+                --id DisplayLink.GraphicsDriver `
+                --exact `
+                --source winget `
+                --silent `
+                --accept-package-agreements `
+                --accept-source-agreements `
+                --disable-interactivity
+            $displayLinkExitCode = $LASTEXITCODE
+            switch ($displayLinkExitCode) {
+                0 {
+                    Show-Success -Message "DisplayLink Graphics Driver install/upgrade completed."
+                }
+                -1978335189 {
+                    Show-Success -Message "DisplayLink Graphics Driver is already at the latest available version."
+                }
+                -1978335135 {
+                    Show-Success -Message "DisplayLink Graphics Driver is already installed."
+                }
+                -1978334967 {
+                    Show-Success -Message "DisplayLink Graphics Driver installed, but a manual restart is required."
+                    Show-Warning -Message "DisplayLink Graphics Driver returned exit code $displayLinkExitCode; manual restart required."
+                }
+                default {
+                    Show-Warning -Message "DisplayLink Graphics Driver returned exit code $displayLinkExitCode."
+                }
+            }
+        } catch {
+            Show-Warning -Message "Failed to install or upgrade DisplayLink Graphics Driver: $($_.Exception.Message)"
+        }
+    } else {
+        Show-Warning -Message "WinGet is not available; skipping DisplayLink Graphics Driver install/upgrade."
+    }
 } else {
-    Show-Info -Message "Host '$env:COMPUTERNAME' is not MONEY-PC; skipping NZXT CAM." -Emoji "⏭"
+    Show-Info -Message "Host '$env:COMPUTERNAME' is not MONEY-PC; skipping NZXT CAM and DisplayLink." -Emoji "⏭"
 }
 
 # -------------------------

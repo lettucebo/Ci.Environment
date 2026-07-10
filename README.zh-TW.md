@@ -94,7 +94,7 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 
 偵測是否有 NVIDIA GPU，若有則自動下載並安裝最新版 Game Ready Driver（GRD、DCH）。若系統未安裝 NVIDIA 顯示卡會自動跳過，並且不會自動重新開機。
 
-此腳本也會確認 Chocolatey 是否已安裝（若無則自動安裝），並透過 Chocolatey 為所有主機安裝 **Wacom 數位板驅動程式**。接著會利用上游的 [`Qetesh/logi-options-plus-mini`](https://github.com/Qetesh/logi-options-plus-mini) PowerShell 包裝腳本以靜默模式安裝官方 **Logi Options+**（啟用 Quiet、SSO、Update、DFU、Backlight；關閉 analytics、Flow、LogiVoice、AI Prompt Builder、Device Recommendation、Smart Actions、Actions Ring）。當主機名稱為 `MONEY-PC` 時，會額外透過 Chocolatey 安裝 **NZXT CAM**（用於控制 NZXT 散熱器、RGB 等硬體）；在其他主機上此步驟會自動跳過。
+此腳本也會確認 Chocolatey 是否已安裝（若無則自動安裝），並透過 Chocolatey 為所有主機安裝 **Wacom 數位板驅動程式**。接著會利用上游的 [`Qetesh/logi-options-plus-mini`](https://github.com/Qetesh/logi-options-plus-mini) PowerShell 包裝腳本以靜默模式安裝官方 **Logi Options+**（啟用 Quiet、SSO、Update、DFU、Backlight；關閉 analytics、Flow、LogiVoice、AI Prompt Builder、Device Recommendation、Smart Actions、Actions Ring）。當主機名稱為 `MONEY-PC` 時，會額外透過 Chocolatey 安裝 **NZXT CAM**（用於控制 NZXT 散熱器、RGB 等硬體），並透過 WinGet 安裝或升級最新官方 **DisplayLink USB Graphics Driver**；在其他主機上這兩個步驟都會自動跳過。
 
 ```powershell
 iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/05.Driver.ps1')
