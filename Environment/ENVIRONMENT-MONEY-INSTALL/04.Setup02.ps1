@@ -45,7 +45,7 @@ function Show-Success {
     Write-Host "$Emoji $Message" -ForegroundColor Green
 }
 
-Show-Section -Message "Step 2: Extended Setup" -Emoji "🚀" -Color "Magenta"
+Show-Section -Message "Step 4: Extended Setup" -Emoji "🚀" -Color "Magenta"
 Show-Info -Message ("Current Time: " + (Get-Date)) -Emoji "⏰"
 
 # Check PowerShell version first before making any system changes

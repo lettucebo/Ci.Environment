@@ -10,7 +10,7 @@ function Show-Warning { param([string]$Message,[string]$Emoji="⚠️") Write-Ho
 function Show-Error { param([string]$Message,[string]$Emoji="❌") Write-Host "$Emoji $Message" -ForegroundColor Red }
 function Show-Success { param([string]$Message,[string]$Emoji="✅") Write-Host "$Emoji $Message" -ForegroundColor Green }
 
-Show-Section -Message "Microsoft Edge Extensions Installation" -Emoji "🌐" -Color "Magenta"
+Show-Section -Message "Step 5: Microsoft Edge Extensions Installation" -Emoji "🌐" -Color "Magenta"
 Show-Info -Message ("Current Time: " + (Get-Date)) -Emoji "⏰"
 
 # Set ExecutionPolicy to RemoteSigned for script execution

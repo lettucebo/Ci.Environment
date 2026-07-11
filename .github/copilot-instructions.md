@@ -17,12 +17,12 @@ Deep, file-type-specific conventions live in `.github/instructions/` and are aut
 ## Repository map
 
 - `Environment\ENVIRONMENT-MONEY-INSTALL\` — the canonical, ordered user-workstation setup. Numbered filename prefixes imply run order:
-  - `00.PreConfig.ps1` — bootstraps PowerShell 7 (the only script meant to run under Windows PowerShell 5.1)
-  - `01.WinUpdate.ps1`, `02.Setup01.ps1`, `03.Setup02.ps1`, `04.EdgeExtensions.ps1`, `05.Driver.ps1`
-  - `install-vsix.ps1` — helper invoked by **`03.Setup02.ps1`** to install VS Marketplace extensions
-  - `EdgeExtensions.md` — Edge addon URLs parsed at runtime by `04.EdgeExtensions.ps1`
+  - `00.PreConfig.ps1` — bootstraps PowerShell 7
+  - `01.WinUpdate.ps1`, `02.Driver.ps1`, `03.Setup01.ps1`, `04.Setup02.ps1`, `05.EdgeExtensions.ps1`
+  - `install-vsix.ps1` — helper invoked by **`04.Setup02.ps1`** to install VS Marketplace extensions
+  - `EdgeExtensions.md` — Edge addon URLs parsed at runtime by `05.EdgeExtensions.ps1`
 - `Environment\ENVIRONMENT-MONEY-SANDBOX.ps1` — Windows Sandbox variant (legacy, pre-`Show-*` style)
-- `Environment\ENVIRONMENT-MONEY-INSTALL-MAC.sh` — macOS counterpart (Homebrew / mas), kept loosely in sync with `02.Setup01.ps1`
+- `Environment\ENVIRONMENT-MONEY-INSTALL-MAC.sh` — macOS counterpart (Homebrew / mas), kept loosely in sync with `03.Setup01.ps1`
 - `Work\` — per-server-role bootstrap (`ENVIRONMENT-WIN-SERVER-{API,DB,WEB,SCHEDULE}-INSTALL.ps1`, `ENVIRONMENT-GATEWAY-INSTALL.ps1`, `ENVIRONMENT-MONEY-MS-INSTALL.ps1`) — legacy style
 - `Scripts\` — standalone utilities (`Cleanup.ps1`, `Optimize-WindowsServices.ps1`)
 - `Shells\` — one-off helpers (`AutoBingTeamsBg.ps1`, `UbuntuADOAgentInstall.sh`)
@@ -34,15 +34,15 @@ Deep, file-type-specific conventions live in `.github/instructions/` and are aut
 The only supported invocation (documented in the READMEs) is an elevated PowerShell session piping the raw GitHub URL through `iex`:
 
 ```powershell
-iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/02.Setup01.ps1')
+iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/03.Setup01.ps1')
 ```
 
 So **every script must work as a single self-contained file**, which forces two non-negotiable rules:
 
 1. **`master` is the production branch** — there is no `main` and no long-lived release branch; `master` is the target every raw URL points at (ephemeral `release/<x.y.z>` branches are still used briefly during release prep — see the CHANGELOG instructions). Every `raw.githubusercontent.com/lettucebo/Ci.Environment/master/...` URL is hardcoded to `master/`. If you move or rename a file under `Environment\ENVIRONMENT-MONEY-INSTALL\`, grep for and update its raw URLs.
-2. **Under `iex`, `$PSScriptRoot` is empty**, so a script cannot assume sibling files are on disk. Sibling *script/text* dependencies must fall back to downloading from the `master` raw URL (e.g. `04.EdgeExtensions.ps1` → `EdgeExtensions.md`; `03.Setup02.ps1` → `install-vsix.ps1`). The exact pattern is in the PowerShell instructions.
+2. **Under `iex`, `$PSScriptRoot` is empty**, so a script cannot assume sibling files are on disk. Sibling *script/text* dependencies must fall back to downloading from the `master` raw URL (e.g. `05.EdgeExtensions.ps1` → `EdgeExtensions.md`; `04.Setup02.ps1` → `install-vsix.ps1`). The exact pattern is in the PowerShell instructions.
 
-Fetch **this repo's own** scripts/text with `Invoke-RestMethod` / `Invoke-WebRequest`, not `WebClient.DownloadString` — `WebClient` corrupts their UTF-8 (emoji + Traditional Chinese); that was the #45 bug (which rewrote the READMEs' `iex` one-liners). The plain-ASCII Chocolatey bootstrap one-liner that uses `WebClient` is the deliberate exception and is still present in `02`, `05`, and the `Work\` scripts — don't "fix" it.
+Fetch **this repo's own** scripts/text with `Invoke-RestMethod` / `Invoke-WebRequest`, not `WebClient.DownloadString` — `WebClient` corrupts their UTF-8 (emoji + Traditional Chinese); that was the #45 bug (which rewrote the READMEs' `iex` one-liners). The plain-ASCII Chocolatey bootstrap one-liner that uses `WebClient` is the deliberate exception and is still present in `02.Driver.ps1`, `03.Setup01.ps1`, and the `Work\` scripts — don't "fix" it.
 
 ## Validating changes (the closest thing to tests)
 

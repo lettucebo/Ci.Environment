@@ -1,8 +1,9 @@
-# =========================
+﻿# =========================
 # NVIDIA Driver Auto-Install Script
 # Detects whether an NVIDIA GPU is present and installs the latest
-# Game Ready Driver (GRD, DCH) from NVIDIA. Designed for desktop
-# Windows 10/11 systems. No automatic reboot is performed.
+# Studio Driver (DCH) on MONEY-PC or Game Ready Driver (GRD, DCH) on
+# other hosts. Designed for desktop Windows 10/11 systems. No automatic
+# reboot is performed.
 #
 # Driver discovery uses NVIDIA's public Ajax driver lookup API:
 #   https://gfwsl.geforce.com/services_toolkit/services/com/nvidia/services/AjaxDriverService.php
@@ -50,7 +51,7 @@ function Show-Success {
     Write-Host "$Emoji $Message" -ForegroundColor Green
 }
 
-Show-Section -Message "Step 5: NVIDIA Driver Auto-Install" -Emoji "🎮" -Color "Magenta"
+Show-Section -Message "Step 2: NVIDIA Driver and Hardware Setup" -Emoji "🎮" -Color "Magenta"
 Show-Info -Message ("Current Time: " + (Get-Date)) -Emoji "⏰"
 
 # -------------------------
@@ -73,12 +74,43 @@ try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 } catch { }
 
+$isMoneyPc = $env:COMPUTERNAME -ieq 'MONEY-PC'
+
+# -------------------------
+# MONEY-PC Power Settings
+# -------------------------
+Show-Section -Message "Configure MONEY-PC Power Settings" -Emoji "⚡" -Color "Cyan"
+if ($isMoneyPc) {
+    try {
+        $powerKey = 'HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Power'
+        [Microsoft.Win32.Registry]::SetValue(
+            $powerKey,
+            'HiberbootEnabled',
+            0,
+            [Microsoft.Win32.RegistryValueKind]::DWord
+        )
+        $hiberbootEnabled = [Microsoft.Win32.Registry]::GetValue(
+            $powerKey,
+            'HiberbootEnabled',
+            $null
+        )
+        if ($hiberbootEnabled -ne 0) {
+            throw "Registry verification returned HiberbootEnabled=$hiberbootEnabled."
+        }
+        Show-Success -Message "Windows Fast Startup is disabled; Hibernate remains available."
+    } catch {
+        Show-Error -Message "Failed to disable Windows Fast Startup on MONEY-PC: $($_.Exception.Message)"
+    }
+} else {
+    Show-Info -Message "Host '$env:COMPUTERNAME' is not MONEY-PC; leaving Windows Fast Startup unchanged." -Emoji "⏭"
+}
+
 # -------------------------
 # Ensure Chocolatey (general preflight)
 # -------------------------
 # We rely on Chocolatey for host-specific tool installs (e.g. NZXT CAM on
-# MONEY-PC). 02.Setup01.ps1 normally installs it, but 05.Driver.ps1 may be
-# invoked standalone via `iex`, so bootstrap it here when missing.
+# MONEY-PC). This driver step runs before 03.Setup01.ps1, so bootstrap
+# Chocolatey here when missing; the later setup step reuses the installation.
 Show-Section -Message "Ensure Chocolatey" -Emoji "🍫" -Color "Yellow"
 $chocoAvailable = $false
 if (Get-Command choco -ErrorAction SilentlyContinue) {
@@ -110,7 +142,7 @@ if (Get-Command choco -ErrorAction SilentlyContinue) {
 # hardware such as coolers / RGB controllers) plus DisplayLink Graphics Driver
 # (via WinGet). No-op on any other host.
 Show-Section -Message "Host-Specific Tools (NZXT CAM + DisplayLink)" -Emoji "🧊" -Color "Cyan"
-if ($env:COMPUTERNAME -ieq 'MONEY-PC') {
+if ($isMoneyPc) {
     Show-Info -Message "Host '$env:COMPUTERNAME' matches MONEY-PC; installing NZXT CAM and DisplayLink." -Emoji "🖥"
     if ($chocoAvailable) {
         try {
@@ -200,7 +232,7 @@ if ($chocoAvailable) {
 # against the new revision.
 #
 # The upstream script is interactive (Read-Host for feature picking + confirm
-# + a final ReadKey). We patch it in-memory before execution so 05.Driver.ps1
+# + a final ReadKey). We patch it in-memory before execution so 02.Driver.ps1
 # stays fully non-interactive when invoked via `iex`. Four narrow regex
 # patches:
 #   1) `$selectedFeatures = "0 3 4 5 6"`   → Quiet, SSO, Update, DFU, Backlight
@@ -277,6 +309,15 @@ if (-not $nvidiaAdapter) {
 
 $gpuName = $nvidiaAdapter.Name
 Show-Success -Message "Detected NVIDIA GPU: $gpuName"
+
+if ($isMoneyPc) {
+    $driverTypeId = 4
+    $driverTypeName = 'Studio Driver'
+} else {
+    $driverTypeId = 1
+    $driverTypeName = 'Game Ready Driver'
+}
+Show-Info -Message "Selected NVIDIA driver type: $driverTypeName." -Emoji "🎛"
 
 # -------------------------
 # Step 2: Determine installed driver version (marketing format, e.g. 566.03)
@@ -391,13 +432,13 @@ if (-not $pfid) {
 }
 
 # -------------------------
-# Step 5: Query the latest Game Ready Driver (DCH, WHQL)
+# Step 5: Query the latest selected NVIDIA driver (DCH, WHQL)
 # -------------------------
-Show-Section -Message "Query Latest Game Ready Driver" -Emoji "📡" -Color "Cyan"
-# dtcid=1 → Game Ready Driver (Studio Driver would be dtcid=4)
+Show-Section -Message "Query Latest NVIDIA $driverTypeName" -Emoji "📡" -Color "Cyan"
+# dtcid=1 → Game Ready Driver; dtcid=4 → Studio Driver
 # dch=1 → DCH driver (modern Windows 10/11 default)
 # whql=1 → WHQL signed; numberOfResults=1 → newest only
-$driverLookupUri = "https://gfwsl.geforce.com/services_toolkit/services/com/nvidia/services/AjaxDriverService.php?func=DriverManualLookup&psid=$psid&pfid=$pfid&osID=$osID&languageCode=1033&beta=0&isWHQL=1&dltype=-1&dch=1&upCRD=0&qnf=0&sort1=0&numberOfResults=1&dtcid=1"
+$driverLookupUri = "https://gfwsl.geforce.com/services_toolkit/services/com/nvidia/services/AjaxDriverService.php?func=DriverManualLookup&psid=$psid&pfid=$pfid&osID=$osID&languageCode=1033&beta=0&isWHQL=1&dltype=-1&dch=1&upCRD=0&qnf=0&sort1=0&numberOfResults=1&dtcid=$driverTypeId"
 
 try {
     $driverResp = Invoke-RestMethod -Uri $driverLookupUri -UseBasicParsing -ErrorAction Stop
@@ -414,7 +455,7 @@ if (-not $driverResp.IDS -or $driverResp.IDS.Count -eq 0) {
 $latest = $driverResp.IDS[0].downloadInfo
 $latestVersion = $latest.Version
 $downloadUrl = $latest.DownloadURL
-Show-Success -Message "Latest GRD version available: $latestVersion"
+Show-Success -Message "Latest $driverTypeName version available: $latestVersion"
 Show-Info -Message "Download URL: $downloadUrl" -Emoji "🔗"
 
 # -------------------------
@@ -429,7 +470,8 @@ if ($installedVersion) {
         $invariant = [System.Globalization.CultureInfo]::InvariantCulture
         $installedNum = [decimal]::Parse($installedVersion, $invariant)
         $latestNum    = [decimal]::Parse($latestVersion,    $invariant)
-        if ($latestNum -le $installedNum) {
+        if (($isMoneyPc -and $latestNum -eq $installedNum) -or
+            (-not $isMoneyPc -and $latestNum -le $installedNum)) {
             $needsInstall = $false
         }
     } catch {
@@ -438,11 +480,12 @@ if ($installedVersion) {
 }
 
 if (-not $needsInstall) {
-    Show-Success -Message "Installed driver ($installedVersion) is already up to date. Nothing to do."
+    Show-Success -Message "No installation required for $driverTypeName (installed: $installedVersion; latest: $latestVersion)."
     return
 }
 
-Show-Info -Message "Update required: $installedVersion → $latestVersion" -Emoji "⬆"
+$installedDisplayVersion = if ($installedVersion) { $installedVersion } else { 'unknown' }
+Show-Info -Message "Driver installation required (installed: $installedDisplayVersion; target: $driverTypeName $latestVersion)." -Emoji "🔄"
 
 # -------------------------
 # Step 7: Download installer
@@ -460,7 +503,7 @@ try {
 # -------------------------
 # Step 8: Silent install (no reboot)
 # -------------------------
-Show-Section -Message "Install NVIDIA Driver (Silent, No Reboot)" -Emoji "⚙" -Color "Green"
+Show-Section -Message "Install NVIDIA $driverTypeName (Silent, No Reboot)" -Emoji "⚙" -Color "Green"
 # Documented NVIDIA installer switches:
 #   -s        : silent
 #   -noreboot : never reboot automatically
@@ -470,7 +513,7 @@ $installerArgs = @('-s', '-noreboot', '-clean', '-noeula')
 try {
     $proc = Start-Process -FilePath $installerPath -ArgumentList $installerArgs -Wait -PassThru -ErrorAction Stop
     if ($proc.ExitCode -eq 0) {
-        Show-Success -Message "NVIDIA driver $latestVersion installed successfully."
+        Show-Success -Message "NVIDIA $driverTypeName $latestVersion installed successfully."
     } else {
         Show-Warning -Message "NVIDIA installer exited with code $($proc.ExitCode). Driver may have installed but flagged a warning (e.g. reboot required)."
     }
@@ -492,4 +535,4 @@ try {
 }
 
 Show-Info -Message "A reboot may be required to finish loading the new driver. No automatic reboot has been performed." -Emoji "🔁"
-Show-Success -Message "NVIDIA driver step complete."
+Show-Success -Message "NVIDIA $driverTypeName step complete."

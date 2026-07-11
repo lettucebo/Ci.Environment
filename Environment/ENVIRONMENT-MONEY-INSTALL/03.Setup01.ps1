@@ -45,7 +45,7 @@ function Show-Success {
     Write-Host "$Emoji $Message" -ForegroundColor Green
 }
 
-Show-Section -Message "Step 2: System & Environment Setup" -Emoji "🛠️" -Color "Magenta"
+Show-Section -Message "Step 3: System and Environment Setup" -Emoji "🛠️" -Color "Magenta"
 Show-Info -Message ("Current Time: " + (Get-Date)) -Emoji "⏰"
 
 # Set ExecutionPolicy to RemoteSigned for script execution
