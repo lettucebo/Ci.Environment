@@ -203,25 +203,29 @@ if ($isMoneyPc) {
 # -------------------------
 # On MONEY-PC the RTX 3080 driver intermittently fails Code Integrity at cold
 # boot (Kernel-PnP 219 / STATUS_INVALID_IMAGE_HASH 0xC0000428), leaving the
-# screen at low resolution until it self-recovers a minute or two later. Root
-# cause is traced to the machine's memory-subsystem instability: a transient
-# bit-flip corrupts the ~114MB nvlddmkm.sys image while Code Integrity hashes
-# it at boot (each failure computes a different hash; storage is clean; it
-# survives OS reinstall). This task is a MITIGATION (band-aid), NOT a cure -
-# the real fix is memory-subsystem stabilization.
+# screen at low resolution until it self-recovers a minute or two later. The
+# root cause is attributed - as a high-confidence hypothesis, with the
+# microscopic mechanism unproven - to the machine's memory-subsystem
+# instability (a transient bit-flip corrupting the ~114MB nvlddmkm.sys image
+# while Code Integrity hashes it at boot: each failure computes a different
+# hash, storage is clean, and it survives OS reinstall). This task is a
+# MITIGATION (band-aid), NOT a cure - the real fix is memory-subsystem
+# stabilization.
 #
 # It writes C:\Tools\FixRTX3080.ps1 and registers the \FixRTX3080AtBoot task
-# (SYSTEM / at startup) which, 20s after boot, resets the NVIDIA GPU if its
-# device Status is not OK. The script resolves the NVIDIA PCI display device
-# dynamically (no hardcoded instance ID) so it keeps working across slot
-# changes / re-enumeration / GPU swaps. Idempotent: re-running overwrites the
+# (SYSTEM / at startup). The script observes the NVIDIA PCI display device for
+# a bounded window after boot and, on a confirmed Error, restarts it (prefers
+# 'pnputil /restart-device'; the Disable/Enable fallback always re-enables and
+# verifies OK) to force a clean driver re-load. Dynamic device resolution
+# (no hardcoded instance ID) + -PresentOnly keep it working across slot /
+# GPU changes and ignore ghost devices. Idempotent: re-running overwrites the
 # script and re-registers the task. No-op on any other host.
 Show-Section -Message "MONEY-PC GPU Boot-Recovery Task (RTX 3080)" -Emoji "🔧" -Color "Cyan"
 if ($isMoneyPc) {
     try {
         $toolsDir = 'C:\Tools'
         if (-not (Test-Path $toolsDir)) {
-            New-Item -ItemType Directory -Path $toolsDir -Force | Out-Null
+            New-Item -ItemType Directory -Path $toolsDir -Force -ErrorAction Stop | Out-Null
         }
 
         # Recovery script content. Single-quoted here-string so the $variables
@@ -229,54 +233,129 @@ if ($isMoneyPc) {
         # Keep ASCII-only: the file is executed by powershell.exe (5.1), which
         # misreads non-ASCII in a BOM-less .ps1.
         $fixScript = @'
-# FixRTX3080.ps1 - At boot, if the NVIDIA discrete GPU driver failed to load
-# (device Status != OK), reset it (Disable/Enable) to recover.
-# Run by scheduled task \FixRTX3080AtBoot (SYSTEM / BootTrigger).
-# Dynamic resolution of the NVIDIA PCI display device (no hardcoded instance
-# ID) so a slot change / PnP re-enumeration / GPU swap keeps working. If no
-# NVIDIA PCI device is found, log a WARNING instead of a false "OK". Log writes
-# use -Encoding Unicode (UTF-16LE) to stay consistent. Keep this file ASCII-only.
+# FixRTX3080.ps1 - Boot-time NVIDIA GPU driver-load recovery (mitigation).
+# If the RTX 3080 driver fails Code Integrity at cold boot (Kernel-PnP 219 /
+# STATUS_INVALID_IMAGE_HASH 0xC0000428) the device sits at Status=Error and low
+# resolution until Windows self-recovers a minute or two later. This script
+# watches the NVIDIA PCI display device for a bounded window after boot and, on
+# a confirmed Error, restarts it to force a clean driver re-load, speeding up
+# recovery. Run by scheduled task \FixRTX3080AtBoot (SYSTEM / BootTrigger).
+#
+# Hardened 2026-07-13 (Council + RubberDuck review):
+#  - Dynamic device resolution + -PresentOnly: survives slot/GPU changes and
+#    ignores ghost/phantom devices.
+#  - Bounded observation with a two-read confirmation (not a blind fixed sleep):
+#    catches a late failure and avoids acting on a still-initializing device or
+#    a blip Windows is already recovering.
+#  - Prefers 'pnputil /restart-device' (atomic, no disabled window). The
+#    Disable/Enable fallback re-enables in a finally block and verifies OK with
+#    bounded retries, so a failed reset never strands the GPU disabled.
+#  - Logs UTF-16LE. Keep this file ASCII-only (run by powershell.exe 5.1 as SYSTEM).
 $log = "C:\Tools\FixRTX3080.log"
-Start-Sleep -Seconds 20
+$observeSeconds = 45
 
-$devices = Get-PnpDevice -Class Display -ErrorAction SilentlyContinue |
-           Where-Object { $_.InstanceId -like 'PCI\VEN_10DE&*' }
+function Write-FixLog($msg) {
+    "$(Get-Date) - $msg" | Out-File -FilePath $log -Append -Encoding Unicode
+}
+function Get-NvGpu {
+    Get-PnpDevice -Class Display -PresentOnly -ErrorAction SilentlyContinue |
+        Where-Object { $_.InstanceId -like 'PCI\VEN_10DE&*' }
+}
 
-if (-not $devices) {
-    "$(Get-Date) - WARNING: no PCI NVIDIA display device found (dynamic resolution failed, no action)." | Out-File $log -Append -Encoding Unicode
+# Observe until a confirmed Error (two consecutive reads on the same device),
+# or until the window elapses.
+$observeUntil = (Get-Date).AddSeconds($observeSeconds)
+$targetId = $null
+while ((Get-Date) -lt $observeUntil) {
+    $bad = Get-NvGpu | Where-Object { $_.Status -ne 'OK' } | Select-Object -First 1
+    if ($bad) {
+        if ($bad.InstanceId -eq $targetId) { break }
+        $targetId = $bad.InstanceId
+    } else {
+        $targetId = $null
+    }
+    Start-Sleep -Seconds 4
+}
+
+if (-not $targetId) {
+    $present = @(Get-NvGpu)
+    if ($present.Count -gt 0) {
+        Write-FixLog "$($present[0].FriendlyName) OK, no action."
+    } else {
+        Write-FixLog "WARNING: no present PCI NVIDIA display device observed within ${observeSeconds}s; no action."
+    }
     return
 }
 
-foreach ($device in $devices) {
-    if ($device.Status -ne "OK") {
-        "$(Get-Date) - $($device.FriendlyName) Status=$($device.Status), resetting $($device.InstanceId)..." | Out-File $log -Append -Encoding Unicode
-        Disable-PnpDevice -InstanceId $device.InstanceId -Confirm:$false
-        Start-Sleep -Seconds 3
-        Enable-PnpDevice -InstanceId $device.InstanceId -Confirm:$false
-        Start-Sleep -Seconds 2
-        $after = Get-PnpDevice -InstanceId $device.InstanceId -ErrorAction SilentlyContinue
-        "$(Get-Date) - After reset Status=$($after.Status)" | Out-File $log -Append -Encoding Unicode
+$device = Get-PnpDevice -InstanceId $targetId -PresentOnly -ErrorAction SilentlyContinue
+Write-FixLog "$($device.FriendlyName) Status=$($device.Status); attempting recovery of $targetId..."
+$recovered = $false
+
+# Preferred: atomic restart (no disabled window).
+try {
+    & pnputil.exe /restart-device "$targetId" | Out-Null
+    Start-Sleep -Seconds 3
+    $after = Get-PnpDevice -InstanceId $targetId -PresentOnly -ErrorAction SilentlyContinue
+    if ($after -and $after.Status -eq 'OK') {
+        $recovered = $true
+        Write-FixLog "pnputil /restart-device succeeded (Status=OK)."
     } else {
-        "$(Get-Date) - $($device.FriendlyName) OK, no action." | Out-File $log -Append -Encoding Unicode
+        Write-FixLog "pnputil /restart-device did not reach OK (Status=$($after.Status))."
     }
+} catch {
+    Write-FixLog "pnputil /restart-device error: $($_.Exception.Message)"
+}
+
+# Fallback: Disable/Enable, always re-enabling in finally, with verify + retries.
+for ($i = 1; $i -le 3 -and -not $recovered; $i++) {
+    try {
+        Disable-PnpDevice -InstanceId $targetId -Confirm:$false -ErrorAction Stop
+        Start-Sleep -Seconds 3
+    } catch {
+        Write-FixLog "Disable attempt $i failed: $($_.Exception.Message)"
+    } finally {
+        try {
+            Enable-PnpDevice -InstanceId $targetId -Confirm:$false -ErrorAction Stop
+        } catch {
+            Write-FixLog "Enable attempt $i failed: $($_.Exception.Message)"
+        }
+    }
+    Start-Sleep -Seconds 2
+    $after = Get-PnpDevice -InstanceId $targetId -PresentOnly -ErrorAction SilentlyContinue
+    if ($after -and $after.Status -eq 'OK') {
+        $recovered = $true
+        Write-FixLog "Disable/Enable attempt $i succeeded (Status=OK)."
+    }
+}
+
+if (-not $recovered) {
+    $final = Get-PnpDevice -InstanceId $targetId -PresentOnly -ErrorAction SilentlyContinue
+    Write-FixLog "WARNING: recovery FAILED for $targetId (final Status=$($final.Status)); GPU left enabled."
 }
 '@
         $fixPath = Join-Path $toolsDir 'FixRTX3080.ps1'
-        Set-Content -Path $fixPath -Value $fixScript -Encoding Ascii -Force
+        Set-Content -Path $fixPath -Value $fixScript -Encoding Ascii -Force -ErrorAction Stop
         Show-Success -Message "Wrote GPU recovery script to $fixPath."
 
         $taskName = 'FixRTX3080AtBoot'
-        $action = New-ScheduledTaskAction -Execute 'powershell.exe' `
+        $psExe = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+        $action = New-ScheduledTaskAction -Execute $psExe `
             -Argument '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\Tools\FixRTX3080.ps1"'
         $trigger = New-ScheduledTaskTrigger -AtStartup
         $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
         $settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew `
-            -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 1)
-        Register-ScheduledTask -TaskName $taskName `
+            -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable `
+            -ExecutionTimeLimit (New-TimeSpan -Hours 1)
+        Register-ScheduledTask -TaskName $taskName -TaskPath '\' `
             -Action $action -Trigger $trigger -Principal $principal -Settings $settings `
             -Description 'Auto-reset RTX 3080 if driver fails to load at boot (mitigation for nvlddmkm 0xC0000428).' `
-            -Force | Out-Null
-        Show-Success -Message "Registered scheduled task '\$taskName' (SYSTEM, at startup)."
+            -Force -ErrorAction Stop | Out-Null
+        $verify = Get-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction SilentlyContinue
+        if ($verify) {
+            Show-Success -Message "Registered and verified scheduled task '\$taskName' (SYSTEM, at startup)."
+        } else {
+            Show-Warning -Message "Task '\$taskName' did not verify after Register-ScheduledTask."
+        }
     } catch {
         Show-Warning -Message "Failed to set up GPU boot-recovery task: $($_.Exception.Message)"
     }
