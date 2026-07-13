@@ -199,6 +199,92 @@ if ($isMoneyPc) {
 }
 
 # -------------------------
+# MONEY-PC GPU Boot-Recovery Task (nvlddmkm 0xC0000428)
+# -------------------------
+# On MONEY-PC the RTX 3080 driver intermittently fails Code Integrity at cold
+# boot (Kernel-PnP 219 / STATUS_INVALID_IMAGE_HASH 0xC0000428), leaving the
+# screen at low resolution until it self-recovers a minute or two later. Root
+# cause is traced to the machine's memory-subsystem instability: a transient
+# bit-flip corrupts the ~114MB nvlddmkm.sys image while Code Integrity hashes
+# it at boot (each failure computes a different hash; storage is clean; it
+# survives OS reinstall). This task is a MITIGATION (band-aid), NOT a cure -
+# the real fix is memory-subsystem stabilization.
+#
+# It writes C:\Tools\FixRTX3080.ps1 and registers the \FixRTX3080AtBoot task
+# (SYSTEM / at startup) which, 20s after boot, resets the NVIDIA GPU if its
+# device Status is not OK. The script resolves the NVIDIA PCI display device
+# dynamically (no hardcoded instance ID) so it keeps working across slot
+# changes / re-enumeration / GPU swaps. Idempotent: re-running overwrites the
+# script and re-registers the task. No-op on any other host.
+Show-Section -Message "MONEY-PC GPU Boot-Recovery Task (RTX 3080)" -Emoji "🔧" -Color "Cyan"
+if ($isMoneyPc) {
+    try {
+        $toolsDir = 'C:\Tools'
+        if (-not (Test-Path $toolsDir)) {
+            New-Item -ItemType Directory -Path $toolsDir -Force | Out-Null
+        }
+
+        # Recovery script content. Single-quoted here-string so the $variables
+        # below are written to disk literally (not expanded at install time).
+        # Keep ASCII-only: the file is executed by powershell.exe (5.1), which
+        # misreads non-ASCII in a BOM-less .ps1.
+        $fixScript = @'
+# FixRTX3080.ps1 - At boot, if the NVIDIA discrete GPU driver failed to load
+# (device Status != OK), reset it (Disable/Enable) to recover.
+# Run by scheduled task \FixRTX3080AtBoot (SYSTEM / BootTrigger).
+# Dynamic resolution of the NVIDIA PCI display device (no hardcoded instance
+# ID) so a slot change / PnP re-enumeration / GPU swap keeps working. If no
+# NVIDIA PCI device is found, log a WARNING instead of a false "OK". Log writes
+# use -Encoding Unicode (UTF-16LE) to stay consistent. Keep this file ASCII-only.
+$log = "C:\Tools\FixRTX3080.log"
+Start-Sleep -Seconds 20
+
+$devices = Get-PnpDevice -Class Display -ErrorAction SilentlyContinue |
+           Where-Object { $_.InstanceId -like 'PCI\VEN_10DE&*' }
+
+if (-not $devices) {
+    "$(Get-Date) - WARNING: no PCI NVIDIA display device found (dynamic resolution failed, no action)." | Out-File $log -Append -Encoding Unicode
+    return
+}
+
+foreach ($device in $devices) {
+    if ($device.Status -ne "OK") {
+        "$(Get-Date) - $($device.FriendlyName) Status=$($device.Status), resetting $($device.InstanceId)..." | Out-File $log -Append -Encoding Unicode
+        Disable-PnpDevice -InstanceId $device.InstanceId -Confirm:$false
+        Start-Sleep -Seconds 3
+        Enable-PnpDevice -InstanceId $device.InstanceId -Confirm:$false
+        Start-Sleep -Seconds 2
+        $after = Get-PnpDevice -InstanceId $device.InstanceId -ErrorAction SilentlyContinue
+        "$(Get-Date) - After reset Status=$($after.Status)" | Out-File $log -Append -Encoding Unicode
+    } else {
+        "$(Get-Date) - $($device.FriendlyName) OK, no action." | Out-File $log -Append -Encoding Unicode
+    }
+}
+'@
+        $fixPath = Join-Path $toolsDir 'FixRTX3080.ps1'
+        Set-Content -Path $fixPath -Value $fixScript -Encoding Ascii -Force
+        Show-Success -Message "Wrote GPU recovery script to $fixPath."
+
+        $taskName = 'FixRTX3080AtBoot'
+        $action = New-ScheduledTaskAction -Execute 'powershell.exe' `
+            -Argument '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\Tools\FixRTX3080.ps1"'
+        $trigger = New-ScheduledTaskTrigger -AtStartup
+        $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
+        $settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew `
+            -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 1)
+        Register-ScheduledTask -TaskName $taskName `
+            -Action $action -Trigger $trigger -Principal $principal -Settings $settings `
+            -Description 'Auto-reset RTX 3080 if driver fails to load at boot (mitigation for nvlddmkm 0xC0000428).' `
+            -Force | Out-Null
+        Show-Success -Message "Registered scheduled task '\$taskName' (SYSTEM, at startup)."
+    } catch {
+        Show-Warning -Message "Failed to set up GPU boot-recovery task: $($_.Exception.Message)"
+    }
+} else {
+    Show-Info -Message "Host '$env:COMPUTERNAME' is not MONEY-PC; skipping GPU boot-recovery task." -Emoji "⏭"
+}
+
+# -------------------------
 # Install Wacom Tablet Driver
 # -------------------------
 # Installs the Wacom tablet driver on every host (no hostname gating).
