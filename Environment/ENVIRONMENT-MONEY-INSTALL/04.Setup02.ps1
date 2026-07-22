@@ -171,8 +171,7 @@ $vsixExtensions = @(
     "MadsKristensen.Tweaks",
     "ErikEJ.EFCorePowerTools",
     "MadsKristensen.RainbowBraces",
-    "NikolayBalakin.Outputenhancer",
-    "sergeb.GhostDoc"
+    "NikolayBalakin.Outputenhancer"
 )
 $vsixFailed = @()
 foreach ($ext in $vsixExtensions) {
@@ -248,8 +247,8 @@ if (-not $dockerReady) {
     Show-Warning -Message "Docker daemon not ready after ~2 min; skipping container startup. Start Docker Desktop and re-run this step."
 } else {
     # Idempotent: reuse an existing container (start if stopped) instead of failing on a
-    # duplicate name. Ports bind to 127.0.0.1 only (not all interfaces); named volumes
-    # persist DB state so re-runs don't lose data.
+    # duplicate name. Ports are published on all interfaces; named volumes persist DB state
+    # so re-runs don't lose data.
     function Start-DevContainer {
         param([string]$Name, [string[]]$RunArgs)
         $exists = (docker ps -a --filter "name=^/$Name$" --format '{{.Names}}') -eq $Name
@@ -266,17 +265,17 @@ if (-not $dockerReady) {
 
     Start-DevContainer -Name 'mssql2025' -RunArgs @(
         '-e', 'ACCEPT_EULA=Y', '-e', "MSSQL_SA_PASSWORD=$devDbPassword",
-        '-p', '127.0.0.1:1433:1433', '--name', 'mssql2025', '--hostname', 'mssql2025',
+        '-p', '1433:1433', '--name', 'mssql2025', '--hostname', 'mssql2025',
         '-v', 'mssql2025-data:/var/opt/mssql', '-d', '--restart', 'unless-stopped',
         'mcr.microsoft.com/mssql/server:2025-latest')
 
     Start-DevContainer -Name 'redis' -RunArgs @(
-        '-p', '127.0.0.1:6379:6379', '--name', 'redis',
+        '-p', '6379:6379', '--name', 'redis',
         '-d', '--restart', 'unless-stopped', 'redis')
 
     Start-DevContainer -Name 'postgres' -RunArgs @(
         '-e', "POSTGRES_PASSWORD=$devDbPassword",
-        '-p', '127.0.0.1:5432:5432', '--name', 'postgres', '--hostname', 'postgres',
+        '-p', '5432:5432', '--name', 'postgres', '--hostname', 'postgres',
         '-v', 'postgres-data:/var/lib/postgresql/data', '-d', '--restart', 'unless-stopped', 'postgres')
 }
 
