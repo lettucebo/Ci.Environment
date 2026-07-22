@@ -67,6 +67,16 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
   exit
 } else { Show-Success -Message "Administrator rights confirmed." }
 
+# Performance tier: powerful hosts install everything; thin-and-light laptops (the default)
+# skip heavy-loading software. Keep $powerfulHosts in sync with 03.Setup01.ps1.
+$powerfulHosts = @('MONEY-PC', 'MONEY-SLS2')
+$isPowerfulPc  = $powerfulHosts -contains $env:COMPUTERNAME
+if ($isPowerfulPc) {
+    Show-Info -Message "Host '$env:COMPUTERNAME' is a powerful workstation; installing the full (heavy) toolset." -Emoji "💪"
+} else {
+    Show-Info -Message "Host '$env:COMPUTERNAME' is treated as a thin-and-light laptop; skipping heavy tools (VS extensions, Docker containers)." -Emoji "🪶"
+}
+
 # Visual Studio extensions are installed later via install-vsix.ps1, which locates a
 # complete VS instance with vswhere and fails gracefully if none is found. No interactive
 # confirmation is needed here (keeps the script unattended under `iex`).
@@ -123,24 +133,48 @@ if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
   }
 }
 
-# [2/8] Install GPG agent as a Windows service using NSSM
-Show-Section -Message "[2/8] Install GPG agent auto start service" -Emoji "🔑" -Color "Green"
-# Reference: https://stackoverflow.com/a/51407128/1799047
-$nssmFailed = $false
-nssm install GpgAgentService "C:\Program Files (x86)\GnuPG\bin\gpg-agent.exe"
-if ($LASTEXITCODE -ne 0) { $nssmFailed = $true }
-nssm set GpgAgentService AppDirectory "C:\Program Files (x86)\GnuPG\bin"
-if ($LASTEXITCODE -ne 0) { $nssmFailed = $true }
-nssm set GpgAgentService AppParameters "--launch gpg-agent"
-if ($LASTEXITCODE -ne 0) { $nssmFailed = $true }
-nssm set GpgAgentService Description "Auto start gpg-agent"
-if ($LASTEXITCODE -ne 0) { $nssmFailed = $true }
-if ($nssmFailed) {
-  Show-Error -Message "Failed to configure GPG agent service with NSSM."
-} else {
-  Show-Success -Message "GPG agent service installed."
+# [2/8] Auto-start gpg-agent for the current user at logon
+Show-Section -Message "[2/8] Auto-start GPG agent at logon" -Emoji "🔑" -Color "Green"
+# gpg-agent is PER-USER (it serves the caller's GNUPGHOME), so a LocalSystem Windows service
+# cannot serve the interactive user's socket - which is why the old NSSM 'GpgAgentService'
+# (running `gpg-agent.exe --launch gpg-agent`; --launch is a gpgconf verb, not a gpg-agent one)
+# did not work. Fix = remove that broken service and register a per-user logon task instead.
+try {
+    # Remove the broken NSSM-created LocalSystem service if a previous run left it behind (idempotent).
+    $oldGpgService = Get-Service -Name 'GpgAgentService' -ErrorAction SilentlyContinue
+    if ($oldGpgService) {
+        Show-Info -Message "Removing broken 'GpgAgentService' (old NSSM LocalSystem service)..." -Emoji "🧹"
+        if ($oldGpgService.Status -ne 'Stopped') { Stop-Service -Name 'GpgAgentService' -Force -ErrorAction SilentlyContinue }
+        & sc.exe delete 'GpgAgentService' | Out-Null
+    }
+
+    # Resolve gpgconf.exe. 64-bit Gpg4win installs under 'C:\Program Files\GnuPG\bin' (matching the
+    # gpg.program path configured in 03.Setup01.ps1); keep the legacy x86 path as a fallback, then PATH.
+    $gpgconf = @(
+        "C:\Program Files\GnuPG\bin\gpgconf.exe",
+        "C:\Program Files (x86)\GnuPG\bin\gpgconf.exe"
+    ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if (-not $gpgconf) { $gpgconf = (Get-Command gpgconf -ErrorAction SilentlyContinue).Source }
+    if (-not $gpgconf) { throw "gpgconf.exe not found (is Gpg4win installed?)." }
+
+    $gpgTaskName  = 'StartGpgAgentAtLogon'
+    $gpgAction    = New-ScheduledTaskAction -Execute $gpgconf -Argument '--launch gpg-agent'
+    $gpgTrigger   = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME"
+    $gpgPrincipal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive -RunLevel Limited
+    $gpgSettings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
+    Register-ScheduledTask -TaskName $gpgTaskName -Action $gpgAction -Trigger $gpgTrigger -Principal $gpgPrincipal `
+        -Settings $gpgSettings -Description 'Launch gpg-agent for the current user at logon.' -Force -ErrorAction Stop | Out-Null
+    # Run it now under the task's own (non-elevated, Limited) principal so the agent starts in the
+    # same context it will use at logon, without waiting for the next sign-in.
+    Start-ScheduledTask -TaskName $gpgTaskName -ErrorAction SilentlyContinue
+    Show-Success -Message "gpg-agent will auto-start at logon (task '$gpgTaskName') and was launched now."
+} catch {
+    Show-Warning -Message "Failed to set up gpg-agent auto-start: $($_.Exception.Message)"
 }
 
+# [3/8] Install Visual Studio extensions — powerful hosts only (they require VS Enterprise,
+# which 03.Setup01.ps1 only installs on powerful hosts).
+if ($isPowerfulPc) {
 # [3/8] Install Visual Studio extensions via helper script
 Show-Section -Message "[3/8] Install Visual Studio Extensions" -Emoji "🧩" -Color "Green"
 # Under `iex`, $PSScriptRoot is empty, so "$PSScriptRoot\install-vsix.ps1" would resolve to the
@@ -188,6 +222,9 @@ if ($vsixFailed.Count -eq 0) {
 } else {
     Show-Warning -Message "$($vsixFailed.Count) VS extension(s) did not install cleanly: $($vsixFailed -join ', ')"
 }
+} else {
+    Show-Info -Message "Thin-and-light host; skipping Visual Studio extensions (no VS Enterprise here)." -Emoji "🪶"
+}
 
 # [4/8] Install developer tools using Chocolatey
 Show-Section -Message "[4/8] Install Developer Tools" -Emoji "🍫" -Color "Green"
@@ -203,6 +240,8 @@ Show-Success -Message "Developer tools installed."
 # [5/8] Reset Windows TCP NAT service to clear reserved port ranges
 Show-Section -Message "[5/8] Reset Windows TCP" -Emoji "🔄" -Color "Green"
 # Reference: https://blog.darkthread.net/blog/clear-reserved-tcp-port-ranges/
+# Intentionally NOT gated by host tier: WinNAT's dynamic port reservation is driven by Hyper-V
+# networking (used by BOTH Docker Desktop and WSL2). Thin hosts keep WSL2, so this fix still applies.
 net stop winnat
 $stopExitCode = $LASTEXITCODE
 net start winnat
@@ -227,8 +266,14 @@ netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=8080
 netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=8888
 Show-Success -Message "Ports excluded from Windows NAT."
 
-# [7/8] Run basic Docker containers for SQL Server, Redis, and Postgres
+# [7/8] Run basic Docker containers for SQL Server, Redis, and Postgres — powerful hosts only,
+# and only when the docker CLI is present (Docker Desktop is gated to powerful hosts in 03).
 Show-Section -Message "[7/8] Run Basic Docker Containers" -Emoji "🐳" -Color "Green"
+if (-not $isPowerfulPc) {
+    Show-Info -Message "Thin-and-light host; skipping Docker dev containers." -Emoji "🪶"
+} elseif (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+    Show-Warning -Message "docker CLI not found (Docker Desktop may not be installed); skipping dev containers."
+} else {
 
 # Local-dev credentials ONLY (never reuse outside a dev workstation). Override via env var.
 $devDbPassword = if ($env:CI_DEV_DB_PASSWORD) { $env:CI_DEV_DB_PASSWORD } else { 'P@ssw0rd' }
@@ -277,6 +322,7 @@ if (-not $dockerReady) {
         '-e', "POSTGRES_PASSWORD=$devDbPassword",
         '-p', '5432:5432', '--name', 'postgres', '--hostname', 'postgres',
         '-v', 'postgres-data:/var/lib/postgresql/data', '-d', '--restart', 'unless-stopped', 'postgres')
+}
 }
 
 # [8/8] Install Office 64-bit Chinese (Traditional) Language Pack

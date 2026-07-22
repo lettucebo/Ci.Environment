@@ -89,7 +89,7 @@ Show-Section -Message "Set PSGallery as Trusted" -Emoji "🗂" -Color "Green"
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 Show-Success -Message "PSGallery set as trusted."
 
-# Install MediaFeaturePack before installing SnagIt (only present/needed on N/KN editions).
+# Install MediaFeaturePack so ShareX's ffmpeg screen recording has the media codecs it needs (only present/needed on N/KN editions).
 Show-Section -Message "Add Windows Optional Features - MediaFeaturePack" -Emoji "🪟" -Color "Green"
 try {
     Add-WindowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0 -ErrorAction Stop | Out-Null

@@ -216,20 +216,33 @@ Show-Success -Message "Built-in apps uninstalled."
 
 # Install Chocolatey and Packages
 Show-Section -Message "Install Chocolatey and Packages" -Emoji "🍫" -Color "Green"
+
+# Performance tier: powerful hosts install everything; thin-and-light laptops (the default)
+# skip heavy-loading software. Add hostnames to $powerfulHosts to treat them as powerful.
+$powerfulHosts = @('MONEY-PC', 'MONEY-SLS2')
+$isPowerfulPc  = $powerfulHosts -contains $env:COMPUTERNAME
+if ($isPowerfulPc) {
+    Show-Info -Message "Host '$env:COMPUTERNAME' is a powerful workstation; installing the full (heavy) toolset." -Emoji "💪"
+} else {
+    Show-Info -Message "Host '$env:COMPUTERNAME' is treated as a thin-and-light laptop; skipping heavy-loading tools." -Emoji "🪶"
+}
+
 Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
 # Only packages that WinGet cannot cleanly provide stay on Chocolatey:
 #   - nerd-fonts-hack: WinGet has no Nerd-patched Hack font (only the unpatched SourceFoundry.HackFonts)
 #   - git.install: preserves /NoShellIntegration (WinGet has no reliable equivalent switch)
 #   - line: not in the WinGet default source (Microsoft Store only)
-#   - snagit: pinned to 2022.1.4 (WinGet cannot pin this exact build; Snagit licenses are per-major-version)
 #   - dotnetcore-2.1/2.2-sdk: not available in WinGet (both are EOL)
 choco install -y nerd-fonts-hack
 choco install -y git.install --params "/NoShellIntegration"
 choco install -y line
-choco install -y snagit --ignorechecksum --version=2022.1.4
-choco install -y dotnetcore-2.1-sdk
-choco install -y dotnetcore-2.2-sdk
+# Heavy / powerful-host-only: Snagit (licensed, ~0.5GB) and the EOL .NET Core 2.1/2.2 SDKs.
+if ($isPowerfulPc) {
+    choco install -y snagit --ignorechecksum --version=2022.1.4
+    choco install -y dotnetcore-2.1-sdk
+    choco install -y dotnetcore-2.2-sdk
+}
 Show-Success -Message "Chocolatey and packages installed."
 
 # Install applications via WinGet (placed directly below Chocolatey so all installs live together)
@@ -245,16 +258,18 @@ $global:WingetFailures = @()
 # --- Developer tools, runtimes & apps (winget source) ---
 Install-WingetPackage -Id "Microsoft.DotNet.Framework.DeveloperPack_4" -Version "4.8"
 Install-WingetPackage -Id "Microsoft.VisualStudioCode"
-Install-WingetPackage -Id "Microsoft.VisualStudioCode.Insiders"
+if ($isPowerfulPc) { Install-WingetPackage -Id "Microsoft.VisualStudioCode.Insiders" }  # heavy: thin hosts use VS Code stable only
 Install-WingetPackage -Id "7zip.7zip"
 Install-WingetPackage -Id "TortoiseGit.TortoiseGit"
 Install-WingetPackage -Id "GitHub.cli"
 Install-WingetPackage -Id "Daum.PotPlayer"
-Install-WingetPackage -Id "Docker.DockerDesktop"
+# ShareX - screenshot + screen recording (free & open source; replaces the paid, version-pinned Snagit)
+Install-WingetPackage -Id "ShareX.ShareX"
+if ($isPowerfulPc) { Install-WingetPackage -Id "Docker.DockerDesktop" }  # heavy: WSL2/VM backend, constant RAM
 Install-WingetPackage -Id "CoreyButler.NVMforWindows"
 Install-WingetPackage -Id "Microsoft.Azure.StorageExplorer"
 Install-WingetPackage -Id "Microsoft.AzureCLI"
-Install-WingetPackage -Id "Microsoft.SQLServerManagementStudio.22"
+if ($isPowerfulPc) { Install-WingetPackage -Id "Microsoft.SQLServerManagementStudio.22" }  # heavy tool
 Install-WingetPackage -Id "Microsoft.Azure.FunctionsCoreTools"
 Install-WingetPackage -Id "Hashicorp.Terraform"
 Install-WingetPackage -Id "Python.Python.3.14"
@@ -265,7 +280,7 @@ Install-WingetPackage -Id "Mobatek.MobaXterm"
 Install-WingetPackage -Id "ShiningLight.OpenSSL.Light"
 Install-WingetPackage -Id "AutoHotkey.AutoHotkey"
 Install-WingetPackage -Id "gerardog.gsudo"
-Install-WingetPackage -Id "Microsoft.PowerBI"
+if ($isPowerfulPc) { Install-WingetPackage -Id "Microsoft.PowerBI" }  # heavy
 Install-WingetPackage -Id "Starship.Starship"
 Install-WingetPackage -Id "Anthropic.Claude"
 Install-WingetPackage -Id "NSSM.NSSM"
@@ -276,13 +291,17 @@ Install-WingetPackage -Id "Microsoft.OpenJDK.21"
 Install-WingetPackage -Id "Devolutions.RemoteDesktopManager"
 
 # --- .NET SDKs (winget source) ---
-Install-WingetPackage -Id "Microsoft.DotNet.SDK.3_1"
-Install-WingetPackage -Id "Microsoft.DotNet.SDK.5"
-Install-WingetPackage -Id "Microsoft.DotNet.SDK.6"
-Install-WingetPackage -Id "Microsoft.DotNet.SDK.7"
+# Thin-and-light hosts get the supported set (8 LTS + 10 LTS); powerful hosts also get the
+# older/EOL SDKs (3.1/5/6/7/9).
 Install-WingetPackage -Id "Microsoft.DotNet.SDK.8"
-Install-WingetPackage -Id "Microsoft.DotNet.SDK.9"
 Install-WingetPackage -Id "Microsoft.DotNet.SDK.10"
+if ($isPowerfulPc) {
+    Install-WingetPackage -Id "Microsoft.DotNet.SDK.3_1"
+    Install-WingetPackage -Id "Microsoft.DotNet.SDK.5"
+    Install-WingetPackage -Id "Microsoft.DotNet.SDK.6"
+    Install-WingetPackage -Id "Microsoft.DotNet.SDK.7"
+    Install-WingetPackage -Id "Microsoft.DotNet.SDK.9"
+}
 
 # --- GitHub Copilot CLI & terminal helpers (winget source) ---
 # GitHub Copilot CLI (standalone; replaces the retired `gh extension install github/gh-copilot`, deprecated 2025-10-25)
@@ -718,22 +737,26 @@ try {
     $featuresSucceeded = $false
 }
 
-# Enable Hyper-V
-Show-Info -Message "Enable Hyper-V" -Emoji "🖥️"
-try {
-    Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Hyper-V -All -ErrorAction Stop
-} catch {
-    Show-Warning -Message "Failed to enable Hyper-V: $($_.Exception.Message)"
-    $featuresSucceeded = $false
-}
+# Enable Hyper-V and Windows Sandbox — powerful hosts only (heavy virtualization; WSL2 works
+# without full Hyper-V, so thin-and-light laptops keep WSL2 but skip these).
+if ($isPowerfulPc) {
+    Show-Info -Message "Enable Hyper-V" -Emoji "🖥️"
+    try {
+        Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Hyper-V -All -ErrorAction Stop
+    } catch {
+        Show-Warning -Message "Failed to enable Hyper-V: $($_.Exception.Message)"
+        $featuresSucceeded = $false
+    }
 
-# Enable Sandbox
-Show-Info -Message "Enable Sandbox" -Emoji "📦"
-try {
-    Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Containers-DisposableClientVM -All -ErrorAction Stop
-} catch {
-    Show-Warning -Message "Failed to enable Sandbox: $($_.Exception.Message)"
-    $featuresSucceeded = $false
+    Show-Info -Message "Enable Sandbox" -Emoji "📦"
+    try {
+        Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Containers-DisposableClientVM -All -ErrorAction Stop
+    } catch {
+        Show-Warning -Message "Failed to enable Sandbox: $($_.Exception.Message)"
+        $featuresSucceeded = $false
+    }
+} else {
+    Show-Info -Message "Thin-and-light host; skipping Hyper-V and Windows Sandbox (WSL2 stays enabled)." -Emoji "🪶"
 }
 if ($featuresSucceeded) {
     Show-Success -Message "Windows optional features enabled."
@@ -1001,6 +1024,9 @@ Show-Success -Message "Terminal Nerd Font configured."
 # https://learn.microsoft.com/en-us/visualstudio/install/workload-and-component-ids
 # https://developercommunity.visualstudio.com/t/setup-does-not-wait-for-installation-to-complete-w/26668#T-N1137560
 # https://gist.github.com/Chenx221/6f4ed72cd785d80edb0bc50c9921daf7?permalink_comment_id=5876163
+# Visual Studio 2026 Enterprise — powerful hosts only (multi-GB install + heavy background
+# processes; thin-and-light laptops use the VS Code installed above).
+if ($isPowerfulPc) {
 Show-Section -Message "Install Visual Studio 2025" -Emoji "💻" -Color "Green"
 $vs2025Url = "https://aka.ms/vs/18/Stable/vs_enterprise.exe";
 # Under `iex`, $PSScriptRoot is empty, so "$PSScriptRoot\vs_enterprise.exe" would write to the
@@ -1071,6 +1097,9 @@ if ($vsProc.ExitCode -eq 0) {
     Show-Warning -Message "Visual Studio installed; a reboot is required (exit $($vsProc.ExitCode))."
 } else {
     Show-Warning -Message "Visual Studio installer exited with code $($vsProc.ExitCode); review the VS installer logs."
+}
+} else {
+    Show-Info -Message "Thin-and-light host; skipping Visual Studio 2026 Enterprise (VS Code is installed instead)." -Emoji "🪶"
 }
 
 # Restart (native shutdown; 03 previously relied on PSTimers installed by 00/01)
