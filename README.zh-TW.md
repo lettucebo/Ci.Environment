@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-使用 PowerShell 和 [Chocolatey](https://chocolatey.org/) 的 Windows 開發環境自動化設定腳本。
+使用 PowerShell、[WinGet](https://learn.microsoft.com/windows/package-manager/winget/) 與 [Chocolatey](https://chocolatey.org/) 的 Windows 開發環境自動化設定腳本。
 
 ## 功能特色
 
@@ -21,7 +21,7 @@
 - SQL Server Management Studio
 - Docker Desktop
 - Git 與 TortoiseGit
-- GitHub CLI（`gh`）與 `gh-copilot` 擴充功能
+- GitHub CLI（`gh`）與獨立的 GitHub Copilot CLI
 
 ### SDK 與執行環境
 - .NET Framework 4.8
@@ -43,6 +43,7 @@
 - PowerToys
 - Microsoft Teams
 - Typeless（AI 語音聽寫）
+- SayIt
 
 ## 快速開始
 

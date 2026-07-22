@@ -186,7 +186,7 @@ Show-Section -Message "[4/8] Install Developer Tools" -Emoji "🍫" -Color "Gree
 
 # Install Redgate SQL Toolbelt via Chocolatey
 # Reference: https://download.red-gate.com/installers/SQLToolbelt/
-choco install -y sqltoolbelt --params "/products:'SQL Compare, SQL Data Compare, SQL Prompt, SQL Search, SQL Data Generator, SQL Doc, SQL Dependency Tracker, SQL Backup, SSMS Integration Pack'"
+# choco install -y sqltoolbelt --params "/products:'SQL Compare, SQL Data Compare, SQL Prompt, SQL Search, SQL Data Generator, SQL Doc, SQL Dependency Tracker, SQL Backup, SSMS Integration Pack'"
 Show-Success -Message "Developer tools installed."
 
 # [5/8] Reset Windows TCP NAT service to clear reserved port ranges

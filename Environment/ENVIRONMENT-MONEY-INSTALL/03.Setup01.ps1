@@ -44,6 +44,36 @@ function Show-Success {
     )
     Write-Host "$Emoji $Message" -ForegroundColor Green
 }
+# Install a package via WinGet, log the outcome, and CONTINUE on failure so a single
+# bad package can never abort the whole (often unattended `iex`) run. Any package that
+# does not exit cleanly is recorded in $global:WingetFailures and reported at the end.
+function Install-WingetPackage {
+    param(
+        [Parameter(Mandatory)][string]$Id,
+        [string]$Source = "winget",
+        [string]$Version,
+        [string]$Custom
+    )
+    $wingetArgs = @(
+        "install", "--id", $Id, "--exact", "--source", $Source,
+        "--silent", "--accept-package-agreements", "--accept-source-agreements",
+        "--disable-interactivity"
+    )
+    if ($Version) { $wingetArgs += @("--version", $Version) }
+    if ($Custom)  { $wingetArgs += @("--custom", $Custom) }
+    try {
+        & winget @wingetArgs
+        if ($LASTEXITCODE -eq 0) {
+            Show-Success -Message "$Id installed."
+        } else {
+            Show-Warning -Message "winget install $Id exited with code $LASTEXITCODE; continuing."
+            $global:WingetFailures += $Id
+        }
+    } catch {
+        Show-Warning -Message "Failed to install ${Id}: $($_.Exception.Message)"
+        $global:WingetFailures += $Id
+    }
+}
 
 Show-Section -Message "Step 3: System and Environment Setup" -Emoji "🛠️" -Color "Magenta"
 Show-Info -Message ("Current Time: " + (Get-Date)) -Emoji "⏰"
@@ -188,79 +218,117 @@ Show-Success -Message "Built-in apps uninstalled."
 Show-Section -Message "Install Chocolatey and Packages" -Emoji "🍫" -Color "Green"
 Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
-choco install -y netfx-4.8-devpack
-choco install -y vscode --params "/NoDesktopIcon"
-choco install -y vscode-insiders --params "/NoDesktopIcon"
-choco install -y 7zip.install
-choco install -y openjdk
-choco install -y git.install --params "/NoShellIntegration"
-choco install -y tortoisegit
-choco install -y gh
-choco install -y potplayer
-choco install -y docker-desktop
-choco install -y nvm
-choco install -y microsoftazurestorageexplorer
-choco install -y azure-cli
-choco install -y line
-choco install -y sql-server-management-studio
-choco install -y azure-functions-core-tools
-choco install -y terraform
-choco install -y python
-choco install -y gpg4win
-# choco install -y studio3t
-choco install -y googlechrome --ignore-checksums
-# choco install -y firefox-dev --pre --params "l=en-US"
-# choco install -y opera
-# choco install -y microsoft-edge-insider-dev
-choco install -y powertoys
-choco install -y mobaxterm
-choco install -y openssl.light
-choco install -y autohotkey
-choco install -y gsudo
-choco install -y powerbi
-choco install -y openvpn-connect
-choco install -y starship
-choco install -y rdcman
-choco install -y claude
-choco install -y nssm
-choco install -y 1password
-choco install -y microsoft-teams-new-bootstrapper
+# Only packages that WinGet cannot cleanly provide stay on Chocolatey:
+#   - nerd-fonts-hack: WinGet has no Nerd-patched Hack font (only the unpatched SourceFoundry.HackFonts)
+#   - git.install: preserves /NoShellIntegration (WinGet has no reliable equivalent switch)
+#   - line: not in the WinGet default source (Microsoft Store only)
+#   - snagit: pinned to 2022.1.4 (WinGet cannot pin this exact build; Snagit licenses are per-major-version)
+#   - dotnetcore-2.1/2.2-sdk: not available in WinGet (both are EOL)
 choco install -y nerd-fonts-hack
-
+choco install -y git.install --params "/NoShellIntegration"
+choco install -y line
+choco install -y snagit --ignorechecksum --version=2022.1.4
 choco install -y dotnetcore-2.1-sdk
 choco install -y dotnetcore-2.2-sdk
-choco install -y dotnetcore-3.1-sdk
-choco install -y dotnet-5.0-sdk
-choco install -y dotnet-6.0-sdk
-choco install -y dotnet-7.0-sdk
-choco install -y dotnet-8.0-sdk
-choco install -y dotnet-9.0-sdk
-choco install -y dotnet-10.0-sdk
-
-choco install -y snagit --ignorechecksum --version=2022.1.4
-# choco install -y office365business
 Show-Success -Message "Chocolatey and packages installed."
 
-# Install GitHub Copilot CLI extension
-Show-Section -Message "Install GitHub Copilot CLI extension" -Emoji "🤖" -Color "Cyan"
-# Refresh PATH so the freshly installed gh.exe (from `choco install -y gh`)
-# is reachable in this same session.
+# Install applications via WinGet (placed directly below Chocolatey so all installs live together)
+Show-Section -Message "Install Applications via WinGet" -Emoji "🏪" -Color "Green"
+
+# The bulk of the toolchain now comes from WinGet, so make sure it is available first.
+if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+    Show-Error -Message "winget (App Installer) not found. Install 'App Installer' from the Microsoft Store, then re-run this script."
+    exit
+}
+$global:WingetFailures = @()
+
+# --- Developer tools, runtimes & apps (winget source) ---
+Install-WingetPackage -Id "Microsoft.DotNet.Framework.DeveloperPack_4" -Version "4.8"
+Install-WingetPackage -Id "Microsoft.VisualStudioCode"
+Install-WingetPackage -Id "Microsoft.VisualStudioCode.Insiders"
+Install-WingetPackage -Id "7zip.7zip"
+Install-WingetPackage -Id "TortoiseGit.TortoiseGit"
+Install-WingetPackage -Id "GitHub.cli"
+Install-WingetPackage -Id "Daum.PotPlayer"
+Install-WingetPackage -Id "Docker.DockerDesktop"
+Install-WingetPackage -Id "CoreyButler.NVMforWindows"
+Install-WingetPackage -Id "Microsoft.Azure.StorageExplorer"
+Install-WingetPackage -Id "Microsoft.AzureCLI"
+Install-WingetPackage -Id "Microsoft.SQLServerManagementStudio.22"
+Install-WingetPackage -Id "Microsoft.Azure.FunctionsCoreTools"
+Install-WingetPackage -Id "Hashicorp.Terraform"
+Install-WingetPackage -Id "Python.Python.3.14"
+Install-WingetPackage -Id "GnuPG.Gpg4win"
+Install-WingetPackage -Id "Google.Chrome"
+Install-WingetPackage -Id "Microsoft.PowerToys"
+Install-WingetPackage -Id "Mobatek.MobaXterm"
+Install-WingetPackage -Id "ShiningLight.OpenSSL.Light"
+Install-WingetPackage -Id "AutoHotkey.AutoHotkey"
+Install-WingetPackage -Id "gerardog.gsudo"
+Install-WingetPackage -Id "Microsoft.PowerBI"
+Install-WingetPackage -Id "Starship.Starship"
+Install-WingetPackage -Id "Anthropic.Claude"
+Install-WingetPackage -Id "NSSM.NSSM"
+Install-WingetPackage -Id "AgileBits.1Password"
+Install-WingetPackage -Id "Microsoft.Teams"
+Install-WingetPackage -Id "Microsoft.OpenJDK.21"
+# Remote Desktop Manager (replaces the retired RDCMan)
+Install-WingetPackage -Id "Devolutions.RemoteDesktopManager"
+
+# --- .NET SDKs (winget source) ---
+Install-WingetPackage -Id "Microsoft.DotNet.SDK.3_1"
+Install-WingetPackage -Id "Microsoft.DotNet.SDK.5"
+Install-WingetPackage -Id "Microsoft.DotNet.SDK.6"
+Install-WingetPackage -Id "Microsoft.DotNet.SDK.7"
+Install-WingetPackage -Id "Microsoft.DotNet.SDK.8"
+Install-WingetPackage -Id "Microsoft.DotNet.SDK.9"
+Install-WingetPackage -Id "Microsoft.DotNet.SDK.10"
+
+# --- GitHub Copilot CLI & terminal helpers (winget source) ---
+# GitHub Copilot CLI (standalone; replaces the retired `gh extension install github/gh-copilot`, deprecated 2025-10-25)
+Install-WingetPackage -Id "GitHub.Copilot"
+# Intelligent Terminal
+Install-WingetPackage -Id "Microsoft.IntelligentTerminal"
+# Coreutils for Windows
+Install-WingetPackage -Id "Microsoft.Coreutils"
+# Bing Wallpaper
+Install-WingetPackage -Id "Microsoft.BingWallpaper"
+
+# --- Microsoft Store apps (msstore source) ---
+# Microsoft.Whiteboard
+Install-WingetPackage -Id "9MSPC6MP8FM4" -Source "msstore"
+# NuGetPackageExplorer
+Install-WingetPackage -Id "9WZDNCRDMDM3" -Source "msstore"
+# Spotify
+Install-WingetPackage -Id "9NCBCSZSJRSB" -Source "msstore"
+# Netflix
+Install-WingetPackage -Id "9WZDNCRFJ3TJ" -Source "msstore"
+# Sysinternals Suite
+Install-WingetPackage -Id "9P7KNL5RWT25" -Source "msstore"
+# Media Extensions
+Install-WingetPackage -Id "9PMMSR1CGPWG" -Source "msstore"
+Install-WingetPackage -Id "9N4D0MSMP0PT" -Source "msstore"
+Install-WingetPackage -Id "9N5TDP8VCMHS" -Source "msstore"
+Install-WingetPackage -Id "9PG2DK419DRG" -Source "msstore"
+# Region to Share
+Install-WingetPackage -Id "9N4066W2R5Q4" -Source "msstore"
+# Xodo PDF
+# Install-WingetPackage -Id "9WZDNCRDJXP4" -Source "msstore"
+# Disney
+# Install-WingetPackage -Id "9NXQXXLFST89" -Source "msstore"
+# BiliBili
+# Install-WingetPackage -Id "XPDDVC6XTQQKMM" -Source "msstore"
+# Samsung Notes
+# Install-WingetPackage -Id "9NBLGGH43VHV" -Source "msstore"
+if ($global:WingetFailures.Count -eq 0) {
+    Show-Success -Message "WinGet applications installed."
+} else {
+    Show-Warning -Message "WinGet finished with $($global:WingetFailures.Count) package(s) that did not complete cleanly: $($global:WingetFailures -join ', ')"
+}
+
+# Refresh PATH so freshly installed tools (gh, dotnet, starship, etc.) are reachable in this same session.
 $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' +
             [Environment]::GetEnvironmentVariable('Path','User')
-if (Get-Command gh -ErrorAction SilentlyContinue) {
-    try {
-        gh extension install github/gh-copilot
-        if ($LASTEXITCODE -eq 0) {
-            Show-Success -Message "gh-copilot extension installed."
-        } else {
-            Show-Warning -Message "gh extension install github/gh-copilot exited with code $LASTEXITCODE. Run 'gh auth login' first if needed, then re-run the extension install."
-        }
-    } catch {
-        Show-Warning -Message "Failed to install gh-copilot extension: $($_.Exception.Message)"
-    }
-} else {
-    Show-Warning -Message "GitHub CLI ('gh') not found on PATH; skipping gh-copilot extension install."
-}
 
 # Install Little Big Mouse
 Show-Section -Message "Install Little Big Mouse" -Emoji "🖱️" -Color "Green"
@@ -269,6 +337,31 @@ $lbmFile = "$PSScriptRoot\LittleBigMouse-5.2.3.0.exe";
 Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
 Start-Process -FilePath $lbmFile -ArgumentList "/S" -PassThru
 Show-Success -Message "Little Big Mouse installed."
+
+# Install SayIt (latest GitHub release; not available in WinGet).
+# Use the MSI: SayIt's Tauri updater targets the .msi for windows-x86_64, so installing
+# via MSI keeps the initial install consistent with future auto-updates.
+Show-Section -Message "Install SayIt" -Emoji "🗣️" -Color "Green"
+try {
+    $sayItRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/lettucebo/SayIt/releases/latest" -Headers @{ "User-Agent" = "Ci.Environment" }
+    $sayItAsset = $sayItRelease.assets |
+        Where-Object { $_.name -like "*_x64*.msi" } |
+        Select-Object -First 1
+    if ($sayItAsset) {
+        $sayItFile = Join-Path $env:TEMP $sayItAsset.name
+        Invoke-WebRequest -Uri $sayItAsset.browser_download_url -OutFile $sayItFile
+        $sayItProc = Start-Process -FilePath "msiexec.exe" -ArgumentList "/i `"$sayItFile`" /qn /norestart" -Wait -PassThru
+        if ($sayItProc.ExitCode -eq 0 -or $sayItProc.ExitCode -eq 3010) {
+            Show-Success -Message "SayIt $($sayItRelease.tag_name) installed."
+        } else {
+            Show-Warning -Message "SayIt installer (msiexec) exited with code $($sayItProc.ExitCode); continuing."
+        }
+    } else {
+        Show-Warning -Message "SayIt: no Windows MSI asset found in the latest release."
+    }
+} catch {
+    Show-Warning -Message "Failed to install SayIt: $($_.Exception.Message)"
+}
 
 # Download Azure Storage Emulator
 ## The app as been retired
@@ -604,55 +697,6 @@ wsl --update
 ## Set wsl default version to 2
 Show-Info -Message "Set WSL default version to 2" -Emoji "🐧" -Color "Green"
 wsl --set-default-version 2
-
-## Using WinGet install MS Store and relate application
-# 安裝 Windows Terminal Canary
-#Show-Section -Message "Install Windows Terminal Canary" -Emoji "💻" -Color "Green"
-#$canaryInstallerUrl = "https://terminalbuilds-grbmacf3f6bsbma8.z01.azurefd.net/nightly/Microsoft.WindowsTerminalCanary.appinstaller"
-#$canaryInstallerPath = "$PSScriptRoot\WindowsTerminalCanary.appinstaller"
-#Show-Info -Message "Downloading Windows Terminal Canary installer..." -Emoji "⬇️"
-#Invoke-WebRequest -Uri $canaryInstallerUrl -OutFile $canaryInstallerPath
-#Start-Process -FilePath "explorer.exe" -ArgumentList $canaryInstallerPath
-#Show-Info -Message "Windows Terminal Canary .appinstaller launched. Please follow the App Installer prompts to complete installation." -Emoji "🟡"
-
-Show-Section -Message "Install MS Store Applications via WinGet" -Emoji "🏪" -Color "Green"
-# Microsoft.Whiteboard
-winget install 9MSPC6MP8FM4 --accept-package-agreements --accept-source-agreements
-# NuGetPackageExplorer
-winget install 9WZDNCRDMDM3 --accept-package-agreements --accept-source-agreements
-# Spotify
-winget install 9NCBCSZSJRSB --accept-package-agreements --accept-source-agreements
-# Netflix_mcm4njqhnhss8
-winget install 9WZDNCRFJ3TJ --accept-package-agreements --accept-source-agreements
-# Sysinternals Suite
-winget install 9P7KNL5RWT25 --accept-package-agreements --accept-source-agreements
-# Media Extensions
-winget install 9PMMSR1CGPWG --accept-package-agreements --accept-source-agreements
-winget install 9N4D0MSMP0PT --accept-package-agreements --accept-source-agreements
-winget install 9N5TDP8VCMHS --accept-package-agreements --accept-source-agreements
-winget install 9PG2DK419DRG --accept-package-agreements --accept-source-agreements
-# Xodo PDF
-# winget install 9WZDNCRDJXP4 --accept-package-agreements --accept-source-agreements
-# Disney
-# winget install 9NXQXXLFST89 --accept-package-agreements --accept-source-agreements
-# BiliBili
-# winget install XPDDVC6XTQQKMM --accept-package-agreements --accept-source-agreements
-# Region to Share
-winget install 9N4066W2R5Q4 --accept-package-agreements --accept-source-agreements
-# Bing Wallpaper
-winget install Microsoft.BingWallpaper --accept-package-agreements --accept-source-agreements
-# Samsung Notes
-# winget install 9NBLGGH43VHV --accept-package-agreements --accept-source-agreements
-# Redis Insight
-# winget install RedisInsight.RedisInsight --accept-package-agreements --accept-source-agreements
-# Microsoft.WindowsTerminal.Preview
-# winget install Microsoft.WindowsTerminal.Preview --accept-package-agreements --accept-source-agreements
-# GitHub.Copilot.CLI.Prerelease
-winget install GitHub.Copilot --accept-package-agreements --accept-source-agreements
-# Intelligent Terminal
-winget install Microsoft.IntelligentTerminal --accept-package-agreements --accept-source-agreements
-# Coreutils for Windows
-winget install Microsoft.Coreutils --accept-package-agreements --accept-source-agreements
 
 # Claude Code
 irm https://claude.ai/install.ps1 | iex

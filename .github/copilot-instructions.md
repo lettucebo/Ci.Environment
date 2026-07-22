@@ -1,6 +1,6 @@
 # Ci.Environment — Copilot instructions
 
-This repo is **not application code**. It is a collection of standalone PowerShell (plus a few Bash) scripts that bootstrap a Windows developer / server machine end-to-end: Windows configuration, Chocolatey/winget/Marketplace installs, registry tweaks, Edge policies, NVIDIA driver, per-server-role setup, etc. There is **no build, no test runner, and no CI**. The only validation is parse-checking a script (see "Validating changes") and reasoning about behavior — actually running a script needs an elevated session on a real Windows host and makes persistent, system-wide changes, so **never execute these scripts to "test" them.**
+This repo is **not application code**. It is a collection of standalone PowerShell (plus a few Bash) scripts that bootstrap a Windows developer / server machine end-to-end: Windows configuration, Chocolatey/winget/Marketplace installs, registry tweaks, Edge policies, NVIDIA driver, per-server-role setup, etc. There is **no build, test runner, lint command, or CI**. Validation is limited to syntax/static checks and reasoning about behavior — actually running a script needs an elevated session on a real host and makes persistent, system-wide changes, so **never execute these scripts to "test" them.**
 
 ## Path-specific instructions
 
@@ -14,22 +14,23 @@ Deep, file-type-specific conventions live in `.github/instructions/` and are aut
 
 (GitHub Copilot in VS Code and the coding agent load these automatically via their `applyTo` frontmatter; if your tool doesn't, open them manually.)
 
-## Repository map
+## Architecture and execution flow
 
-- `Environment\ENVIRONMENT-MONEY-INSTALL\` — the canonical, ordered user-workstation setup. Numbered filename prefixes imply run order:
+There is no shared runtime or central orchestrator: every `.ps1` / `.sh` file is an entry point. The main workstation setup is the one ordered pipeline; server-role and utility scripts are independent entry points that must not inherit workstation-only assumptions.
+
+- `Environment\ENVIRONMENT-MONEY-INSTALL\` — canonical workstation pipeline. Run the numbered scripts in filename order:
   - `00.PreConfig.ps1` — bootstraps PowerShell 7
   - `01.WinUpdate.ps1`, `02.Driver.ps1`, `03.Setup01.ps1`, `04.Setup02.ps1`, `05.EdgeExtensions.ps1`
   - `install-vsix.ps1` — helper invoked by **`04.Setup02.ps1`** to install VS Marketplace extensions
   - `EdgeExtensions.md` — Edge addon URLs parsed at runtime by `05.EdgeExtensions.ps1`
-- `Environment\ENVIRONMENT-MONEY-SANDBOX.ps1` — Windows Sandbox variant (legacy, pre-`Show-*` style)
+- `Environment\ENVIRONMENT-MONEY-SANDBOX.ps1` — independent Windows Sandbox variant (legacy, pre-`Show-*` style)
 - `Environment\ENVIRONMENT-MONEY-INSTALL-MAC.sh` — macOS counterpart (Homebrew / mas), kept loosely in sync with `03.Setup01.ps1`
-- `Work\` — per-server-role bootstrap (`ENVIRONMENT-WIN-SERVER-{API,DB,WEB,SCHEDULE}-INSTALL.ps1`, `ENVIRONMENT-GATEWAY-INSTALL.ps1`, `ENVIRONMENT-MONEY-MS-INSTALL.ps1`) — legacy style
-- `Scripts\` — standalone utilities (`Cleanup.ps1`, `Optimize-WindowsServices.ps1`)
-- `Shells\` — one-off helpers (`AutoBingTeamsBg.ps1`, `UbuntuADOAgentInstall.sh`)
+- `Work\` — independent per-server-role bootstrap scripts (legacy style)
+- `Scripts\` and `Shells\` — standalone maintenance and one-off utilities
 - `Fonts\`, `Installer\` — binary assets shipped with the repo
 - `README.md` + `README.zh-TW.md` — English / Traditional-Chinese, structurally parallel; `ENVIRONMENT-MONEY.md` — long-form manual-install software list (zh-TW)
 
-## How these scripts run — and the two rules it forces
+## Execution model and cross-cutting rules
 
 The only supported invocation (documented in the READMEs) is an elevated PowerShell session piping the raw GitHub URL through `iex`:
 
@@ -37,21 +38,61 @@ The only supported invocation (documented in the READMEs) is an elevated PowerSh
 iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/03.Setup01.ps1')
 ```
 
-So **every script must work as a single self-contained file**, which forces two non-negotiable rules:
+So **every script must work as a single self-contained file**, which forces these non-negotiable rules:
 
 1. **`master` is the production branch** — there is no `main` and no long-lived release branch; `master` is the target every raw URL points at (ephemeral `release/<x.y.z>` branches are still used briefly during release prep — see the CHANGELOG instructions). Every `raw.githubusercontent.com/lettucebo/Ci.Environment/master/...` URL is hardcoded to `master/`. If you move or rename a file under `Environment\ENVIRONMENT-MONEY-INSTALL\`, grep for and update its raw URLs.
 2. **Under `iex`, `$PSScriptRoot` is empty**, so a script cannot assume sibling files are on disk. Sibling *script/text* dependencies must fall back to downloading from the `master` raw URL (e.g. `05.EdgeExtensions.ps1` → `EdgeExtensions.md`; `04.Setup02.ps1` → `install-vsix.ps1`). The exact pattern is in the PowerShell instructions.
+3. **Numbering is an interface** — workstation filenames, top-level `Step N` messages, README section order, direct links, and raw URLs must stay aligned.
+4. **User-facing setup changes are bilingual** — update `README.md` and `README.zh-TW.md` together for new/removed tools, numbered steps, or changed `iex` URLs.
 
 Fetch **this repo's own** scripts/text with `Invoke-RestMethod` / `Invoke-WebRequest`, not `WebClient.DownloadString` — `WebClient` corrupts their UTF-8 (emoji + Traditional Chinese); that was the #45 bug (which rewrote the READMEs' `iex` one-liners). The plain-ASCII Chocolatey bootstrap one-liner that uses `WebClient` is the deliberate exception and is still present in `02.Driver.ps1`, `03.Setup01.ps1`, and the `Work\` scripts — don't "fix" it.
 
-## Validating changes (the closest thing to tests)
+## Commands and validation
 
-Parse-check any modified PowerShell file; do **not** run it:
+There are no build, test, or lint commands. Parse-check modified PowerShell and inspect the diff; do **not** run a setup script.
+
+### Single PowerShell file
 
 ```powershell
+$path = 'Environment\ENVIRONMENT-MONEY-INSTALL\02.Driver.ps1'
 $errors = $null; $tokens = $null
-[System.Management.Automation.Language.Parser]::ParseFile('path\to\script.ps1', [ref]$tokens, [ref]$errors) | Out-Null
-if ($errors) { $errors | ForEach-Object { Write-Host $_ -ForegroundColor Red } }
+[System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors) | Out-Null
+if ($errors.Count -gt 0) {
+    $errors | ForEach-Object { Write-Host $_ -ForegroundColor Red }
+    exit 1
+}
+Write-Host "Parse OK: $path"
+```
+
+### Every changed PowerShell file
+
+```powershell
+$failed = $false
+$files = @(
+    git diff --name-only --diff-filter=ACMR HEAD -- '*.ps1'
+    git ls-files --others --exclude-standard -- '*.ps1'
+) |
+    Sort-Object -Unique |
+    Where-Object { Test-Path -LiteralPath $_ }
+
+foreach ($path in $files) {
+    $errors = $null; $tokens = $null
+    [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors) | Out-Null
+    if ($errors.Count -gt 0) {
+        $failed = $true
+        $errors | ForEach-Object { Write-Host "${path}: $_" -ForegroundColor Red }
+    } else {
+        Write-Host "Parse OK: $path"
+    }
+}
+
+if ($failed) { exit 1 }
+```
+
+Also run:
+
+```powershell
+git diff --check
 ```
 
 ## Branch / commit / PR workflow
@@ -62,7 +103,6 @@ if ($errors) { $errors | ForEach-Object { Write-Host $_ -ForegroundColor Red } }
   Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
   ```
 - **PRs:** open against `master`; squash-merge (`gh pr merge <n> --squash --delete-branch`).
-- **User-facing changes** (a new `Step N` script, a tool added/removed, a changed `iex` URL) must update **both** READMEs in the same PR — see the README instructions.
 - **Releases** use lightweight tags with **no `v` prefix** (`1.2.0`) — full flow in the CHANGELOG instructions.
 
 ## MCP servers & skills

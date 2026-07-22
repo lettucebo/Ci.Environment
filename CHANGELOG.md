@@ -11,9 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 05.EdgeExtensions.ps1 — seed Google as the default search engine for **future Edge profiles** by writing `initial_preferences` (and the legacy `master_preferences` fallback) to the Edge install dir (`C:\Program Files (x86)\Microsoft\Edge\Application\`). Chromium reads this file during a profile's very first launch — *before* Edge for Business profile classification — so the seeded default sticks even when the new profile is later signed in with a personal Microsoft account. Idempotent; safe to re-run; Edge auto-update may delete the file, re-running the script restores it.
 - 02.Driver.ps1 — install the latest NVIDIA Studio Driver on `MONEY-PC` while preserving the latest Game Ready Driver behavior on other NVIDIA hosts.
 - 02.Driver.ps1 — disable Windows Fast Startup on `MONEY-PC` while keeping Hibernate available.
+- 03.Setup01.ps1 — install Devolutions Remote Desktop Manager (`Devolutions.RemoteDesktopManager`) via WinGet (replaces RDCMan).
+- 03.Setup01.ps1 — install the latest SayIt release (`lettucebo/SayIt`, Windows x64) from GitHub, resolved dynamically via the GitHub Releases API (not available in WinGet).
 
 ### Changed
 - Reorder the canonical workstation scripts to `00.PreConfig.ps1` → `01.WinUpdate.ps1` → `02.Driver.ps1` → `03.Setup01.ps1` → `04.Setup02.ps1` → `05.EdgeExtensions.ps1`; the renamed scripts use new raw GitHub URLs.
+- 03.Setup01.ps1 — migrate the bulk of the toolchain from Chocolatey to WinGet and consolidate all installs: the WinGet block now sits directly below the reduced Chocolatey block. ~36 packages install via WinGet through a new `Install-WingetPackage` helper (`--silent`, continue-on-failure) guarded by a `Get-Command winget` preflight; SQL Server Management Studio now targets `Microsoft.SQLServerManagementStudio.22`. Only WinGet-unavailable or version-pinned packages stay on Chocolatey (`nerd-fonts-hack`, `git.install` `/NoShellIntegration`, `line`, `snagit` 2022.1.4, `dotnetcore-2.1/2.2-sdk`).
+
+### Removed
+- 03.Setup01.ps1 — remove OpenVPN Connect (`openvpn-connect`) and RDCMan (`rdcman`); RDCMan is superseded by Devolutions Remote Desktop Manager.
+- 03.Setup01.ps1 — remove the retired `gh extension install github/gh-copilot` step (deprecated 2025-10-25); the standalone GitHub Copilot CLI (`GitHub.Copilot`) already installs via WinGet.
 
 ### Fixed
 - 05.EdgeExtensions.ps1 — make the "Google as default search engine" policy actually take effect on personal/non-domain-joined Windows devices:
@@ -25,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Documentation
 - 05.EdgeExtensions.ps1 — expanded end-of-script warning enumerating seven approaches investigated to override the default search engine on **existing personal Microsoft account Edge profiles** (HKLM/HKCU policy, Preferences JSON `mirrored_template_url_data` injection, Preferences JSON `template_url_data` injection, `Web Data` SQLite, force-installed `chrome_settings_overrides.search_provider` extension, `BrowserSignin=2`, `EdgeManagementEnrollmentToken`) and documenting that all are blocked or actively reverted by Chromium 122+ / Edge for Business profile separation as of Edge 148. There is no supported programmatic override; users with existing personal MSA profiles must set Google manually for those profiles. *Future* profiles created on this machine are covered by the new `initial_preferences` seeding.
 - README.md and README.zh-TW.md — add direct source links above every executable setup command and update the reordered script paths.
+- README.md and README.zh-TW.md — note WinGet alongside Chocolatey as an install mechanism, and replace the retired `gh-copilot` extension mention with the standalone GitHub Copilot CLI.
 
 ## [1.2.0] - 2026-05-13
 

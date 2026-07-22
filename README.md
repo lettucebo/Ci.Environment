@@ -2,7 +2,7 @@
 
 [繁體中文版 (Traditional Chinese)](README.zh-TW.md)
 
-Automated Windows development environment setup scripts using PowerShell and [Chocolatey](https://chocolatey.org/).
+Automated Windows development environment setup scripts using PowerShell, [WinGet](https://learn.microsoft.com/windows/package-manager/winget/) and [Chocolatey](https://chocolatey.org/).
 
 ## Features
 
@@ -21,7 +21,7 @@ Automated Windows development environment setup scripts using PowerShell and [Ch
 - SQL Server Management Studio
 - Docker Desktop
 - Git & TortoiseGit
-- GitHub CLI (`gh`) with the `gh-copilot` extension
+- GitHub CLI (`gh`) and the standalone GitHub Copilot CLI
 
 ### SDKs & Runtimes
 - .NET Framework 4.8
@@ -43,6 +43,7 @@ Automated Windows development environment setup scripts using PowerShell and [Ch
 - PowerToys
 - Microsoft Teams
 - Typeless (AI voice dictation)
+- SayIt
 
 ## Quick Start
 
