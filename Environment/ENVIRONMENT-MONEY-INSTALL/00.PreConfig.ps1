@@ -74,28 +74,48 @@ Show-Success -Message "Nuget Provider installed."
 Show-Section -Message "Install PowerShell 7" -Emoji "⬇" -Color "Green"
 # Reference: https://github.com/PowerShell/PowerShell/blob/master/tools/install-powershell.ps1-README.md
 Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet"
-Show-Success -Message "PowerShell 7 installation triggered."
+# Verify pwsh actually landed. -UseMSI is deliberate: winget defaults to MSIX from PS 7.6+,
+# and MSIX-installed PowerShell cannot Set-ExecutionPolicy -Scope LocalMachine, which the
+# numbered scripts rely on. Note: PowerShell 7.7+ ships no MSI, so revisit when upgrading past 7.6.
+$pwshPath = Join-Path $env:ProgramFiles 'PowerShell\7\pwsh.exe'
+if (Test-Path $pwshPath) {
+    Show-Success -Message "PowerShell 7 installed ($pwshPath)."
+} else {
+    Show-Warning -Message "PowerShell 7 installer ran but pwsh.exe was not found at $pwshPath; verify before continuing."
+}
 
 # Set PSGallery as a trusted repository
 Show-Section -Message "Set PSGallery as Trusted" -Emoji "🗂" -Color "Green"
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 Show-Success -Message "PSGallery set as trusted."
 
-# Install MediaFeaturePack before installing SnagIt
+# Install MediaFeaturePack before installing SnagIt (only present/needed on N/KN editions).
 Show-Section -Message "Add Windows Optional Features - MediaFeaturePack" -Emoji "🪟" -Color "Green"
-Add-WindowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0
-Show-Success -Message "MediaFeaturePack added."
+try {
+    Add-WindowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0 -ErrorAction Stop | Out-Null
+    Show-Success -Message "MediaFeaturePack added (or already present)."
+} catch {
+    Show-Warning -Message "MediaFeaturePack not added (usually already present on non-N editions): $($_.Exception.Message)"
+}
 
 # Enable .NET Framework 3.5 (required for some legacy applications)
 Show-Section -Message "Enable .NET Framework 3.5" -Emoji "⚙" -Color "Green"
-Enable-WindowsOptionalFeature -Online -FeatureName "NetFx3" -NoRestart
-Show-Success -Message ".NET Framework 3.5 enabled."
+try {
+    Enable-WindowsOptionalFeature -Online -FeatureName "NetFx3" -NoRestart -ErrorAction Stop | Out-Null
+    Show-Success -Message ".NET Framework 3.5 enabled."
+} catch {
+    Show-Warning -Message "Failed to enable .NET Framework 3.5 (may need a Windows Update source): $($_.Exception.Message)"
+}
 
 # Enable Windows Subsystem for Linux and Virtual Machine Platform
 Show-Section -Message "Enable WSL and VirtualMachinePlatform" -Emoji "🐧" -Color "Green"
-Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Windows-Subsystem-Linux
-Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlatform
-Show-Success -Message "WSL and VirtualMachinePlatform enabled."
+try {
+    Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Windows-Subsystem-Linux -ErrorAction Stop | Out-Null
+    Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName VirtualMachinePlatform -ErrorAction Stop | Out-Null
+    Show-Success -Message "WSL and VirtualMachinePlatform enabled."
+} catch {
+    Show-Warning -Message "Failed to enable WSL / VirtualMachinePlatform: $($_.Exception.Message)"
+}
 
 # Install English (US) Language Pack with Speech Recognition
 Show-Section -Message "Install English (US) Language Pack" -Emoji "🌐" -Color "Green"
@@ -155,12 +175,9 @@ Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Pe
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name AutoColorization -Value 1
 Show-Success -Message "Windows 11 accent color 已設為自動。"
 
-# 一鍵啟用遠端桌面 (RDP) — 自動提權
-if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
-    Start-Process powershell "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
-    exit
-}
-
+# 一鍵啟用遠端桌面 (RDP)
+# (Administrator rights were already verified above; under `iex` there is no $PSCommandPath
+#  to self-elevate with, so the previous self-elevation block was dead code and was removed.)
 Write-Host "啟用遠端桌面..." -ForegroundColor Cyan
 Set-ItemProperty 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 0
 
@@ -173,9 +190,12 @@ Start-Service TermService
 
 Write-Host "開啟防火牆並放行 RDP..." -ForegroundColor Cyan
 Set-NetFirewallProfile -All -Enabled True
-Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'
+# Use the invariant firewall group reference; the localized DisplayGroup 'Remote Desktop'
+# fails on non-English Windows (this machine is set to zh-TW above).
+Enable-NetFirewallRule -Group '@FirewallAPI.dll,-28752'
 
-# Restart the computer to apply changes
+# Restart the computer to apply changes.
+# Native shutdown /r /t schedules the reboot (no PSGallery PSTimers dependency);
+# cancel within the window with 'shutdown /a'.
 Show-Section -Message "Restart Computer" -Emoji "🔄" -Color "Yellow"
-Install-Module -Name PSTimers
-Start-PSTimer -Title "Waiting for reboot" -Seconds 30 -ProgressBar -scriptblock {Restart-Computer -Force}
+shutdown.exe /r /t 30 /c "Ci.Environment setup: rebooting in 30s (run 'shutdown /a' to cancel)"

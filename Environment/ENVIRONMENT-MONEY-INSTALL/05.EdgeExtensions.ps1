@@ -53,7 +53,7 @@ if ([string]::IsNullOrEmpty($PSScriptRoot)) {
     # URL matches the location of this script in the repository
     $extensionsUrl = "https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/EdgeExtensions.md"
     try {
-        $content = (Invoke-RestMethod -Uri $extensionsUrl -UseBasicParsing)
+        $content = (Invoke-RestMethod -Uri $extensionsUrl)
         Show-Success -Message "EdgeExtensions.md downloaded from GitHub."
     } catch {
         Show-Error -Message "Failed to download EdgeExtensions.md from GitHub: $($_.Exception.Message)"
@@ -73,7 +73,6 @@ if ([string]::IsNullOrEmpty($PSScriptRoot)) {
 Show-Section -Message "Parse Extension IDs" -Emoji "🔍" -Color "Cyan"
 
 # Match URLs from Microsoft Edge Addons store: https://microsoftedge.microsoft.com/addons/detail/{name}/{extensionId}
-# The regex captures the extension ID from the last path segment of the URL (the {extensionId} part after the extension name).
 # The regex captures the extension ID from the last path segment of the URL (the {extensionId} part after the extension name).
 $edgeUrlPattern = 'https://microsoftedge\.microsoft\.com/addons/detail/[^/]+/([a-zA-Z0-9-]+)'
 $edgeMatches = [regex]::Matches($content, $edgeUrlPattern)
@@ -272,29 +271,20 @@ if ($edgeApplicationDirs.Count -eq 0) {
 }
 
 # Enable Extension Developer Mode
-# Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#developertoolsavailability
+# Reference: https://learn.microsoft.com/deployedge/microsoft-edge-policies/developertoolsavailability
+#            https://learn.microsoft.com/deployedge/microsoft-edge-policies/extensiondevelopermodesettings
 Show-Section -Message "Configure Extension Developer Mode" -Emoji "🛠️" -Color "Green"
 
-# DeveloperToolsAvailability: 0 = Disabled, 1 = Enabled, 2 = Enabled for extensions installed by enterprise policy
+# DeveloperToolsAvailability: 0 = Disabled by default, 1 = Enabled, 2 = Disallowed
 Set-ItemProperty -Path $edgePoliciesRegPath -Name "DeveloperToolsAvailability" -Value 1 -Type DWord
 Show-Success -Message "Developer Tools enabled."
 
-# ExtensionDeveloperModeSettings: Enable developer mode for extensions
-# Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#extensionsenabled
-Set-ItemProperty -Path $edgePoliciesRegPath -Name "ExtensionsEnabled" -Value 1 -Type DWord
-Show-Success -Message "Extensions enabled."
-
-# Allow unpacked extensions (developer mode)
-# Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#extensionsettings
-$edgeExtensionSettingsPath = "HKLM:\SOFTWARE\Policies\Microsoft\Edge\ExtensionSettings"
-if (-not (Test-Path $edgeExtensionSettingsPath)) {
-    New-Item -Path $edgeExtensionSettingsPath -Force | Out-Null
-}
-
-# Enable developer mode for all extensions using wildcard policy
-$developerModeSettings = '{"*": {"installation_mode": "allowed"}}'
-Set-ItemProperty -Path $edgeExtensionSettingsPath -Name "*" -Value $developerModeSettings -Type String
-Show-Success -Message "Extension Developer Mode configured."
+# ExtensionDeveloperModeSettings controls the edge://extensions Developer Mode toggle (Edge 128+).
+# Allow (0) = users can turn developer mode on; Disallow (1) = cannot. This makes the toggle
+# AVAILABLE (it does not force it on). The previous "ExtensionsEnabled" write was removed - it is
+# not a valid Edge policy - and the redundant ExtensionSettings {"*":"allowed"} default was dropped.
+Set-ItemProperty -Path $edgePoliciesRegPath -Name "ExtensionDeveloperModeSettings" -Value 0 -Type DWord
+Show-Success -Message "Extension Developer Mode allowed on edge://extensions."
 
 # =========================
 # Configure Vertical Tabs and Hide Title Bar
@@ -341,5 +331,4 @@ if ($chromeExtensionNames.Count -gt 0) {
     }
 }
 
-Write-Host -NoNewLine "`n Press any key to continue...";
-$null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+Show-Success -Message "Edge configuration complete."

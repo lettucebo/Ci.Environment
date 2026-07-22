@@ -68,29 +68,41 @@ function Find-VSIXInstaller {
 $VSIXInstallerPath = Find-VSIXInstaller
 
 if (-not $VSIXInstallerPath) {
-    Write-Error "Could not find VSIXInstaller.exe. Please ensure Visual Studio is installed."
+    Write-Warning "Could not find VSIXInstaller.exe. Please ensure Visual Studio is installed."
     Exit 1
 }
 
-Write-Host "Grabbing VSIX extension at $($Uri)"
-$HTML = Invoke-WebRequest -Uri $Uri -UseBasicParsing -SessionVariable session
-
-Write-Host "Attempting to download $($PackageName)..."
-$anchor = $HTML.Links |
-    Where-Object { $_.class -eq 'install-button-container' } |
-    Select-Object -ExpandProperty href
-
-if (-not $anchor) {
-    Write-Error "Could not find download anchor tag on the Visual Studio Extensions page"
+# Split the itemName (Publisher.Extension) at the FIRST dot only; the extension id may itself
+# contain dots, so keep the remainder intact.
+$dotIndex = $PackageName.IndexOf('.')
+if ($dotIndex -lt 1 -or $dotIndex -ge ($PackageName.Length - 1)) {
+    Write-Warning "PackageName '$PackageName' is not in the expected 'Publisher.Extension' form."
     Exit 1
 }
-Write-Host "Anchor is $($anchor)"
-$href = "$($baseProtocol)//$($baseHostName)$($anchor)"
-Write-Host "Href is $($href)"
-Invoke-WebRequest $href -OutFile $VsixLocation -WebSession $session
+$publisher = $PackageName.Substring(0, $dotIndex)
+$extension = $PackageName.Substring($dotIndex + 1)
+
+# Marketplace REST redirect to the latest VSIX. This is far more robust than scraping the
+# item page HTML for an 'install-button-container' anchor (which has no stability contract).
+$vspackageUrl = "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/$([uri]::EscapeDataString($publisher))/vsextensions/$([uri]::EscapeDataString($extension))/latest/vspackage"
+Write-Host "Downloading VSIX for $($PackageName) from $($vspackageUrl)"
+try {
+    Invoke-WebRequest -Uri $vspackageUrl -OutFile $VsixLocation -ErrorAction Stop
+} catch {
+    Write-Warning "Failed to download VSIX for $($PackageName) from the Marketplace: $($_.Exception.Message)"
+    Exit 1
+}
 
 if (-not (Test-Path $VsixLocation)) {
-    Write-Error "Downloaded VSIX file could not be located"
+    Write-Warning "Downloaded VSIX file could not be located"
+    Exit 1
+}
+
+# Validate the payload is a real VSIX (ZIP magic bytes 'PK'), not an HTML/JSON error page.
+$fs = [System.IO.File]::OpenRead($VsixLocation)
+try { $b0 = $fs.ReadByte(); $b1 = $fs.ReadByte() } finally { $fs.Dispose() }
+if ($b0 -ne 0x50 -or $b1 -ne 0x4B) {
+    Write-Warning "Downloaded file for $($PackageName) is not a valid VSIX (expected a ZIP/VSIX payload)."
     Exit 1
 }
 
@@ -107,6 +119,11 @@ Write-Host "VSIXInstaller started with PID: $($process.Id)"
 # Wait for the process with timeout
 $completed = $process.WaitForExit($TimeoutSeconds * 1000)
 
+# Track a definitive result so the caller can rely on the exit code (0 = success / already
+# installed, 1 = timeout / incompatible / failed). Without an explicit exit, the caller's
+# $LASTEXITCODE check would read a stale value because the success path runs no native command.
+$installSucceeded = $true
+
 if (-not $completed) {
     Write-Warning "Installation of $($PackageName) timed out after $($TimeoutSeconds) seconds. Terminating process..."
     try {
@@ -120,6 +137,7 @@ if (-not $completed) {
         Write-Warning "Failed to terminate VSIXInstaller process: $_"
     }
     Write-Warning "Extension $($PackageName) installation was terminated due to timeout. It may need to be installed manually."
+    $installSucceeded = $false
 }
 else {
     $exitCode = $process.ExitCode
@@ -132,9 +150,11 @@ else {
     }
     elseif ($exitCode -eq 2001) {
         Write-Warning "Extension $($PackageName) requires a newer version of Visual Studio."
+        $installSucceeded = $false
     }
     else {
         Write-Warning "Installation of $($PackageName) completed with exit code: $exitCode"
+        $installSucceeded = $false
     }
 }
 
@@ -145,3 +165,4 @@ if (Test-Path $VsixLocation) {
 }
 
 Write-Host "Installation of $($PackageName) complete!"
+if ($installSucceeded) { exit 0 } else { exit 1 }

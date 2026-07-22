@@ -50,15 +50,16 @@ Show-Success -Message "PSGallery set as trusted."
 
 # Install PSWindowsUpdate module
 Show-Section -Message "Install PSWindowsUpdate" -Emoji "⬇️" -Color "Green"
-Install-Module -Name PSWindowsUpdate
+Install-Module -Name PSWindowsUpdate -Force
 Import-Module PSWindowsUpdate
 Show-Success -Message "PSWindowsUpdate module installed."
 
-# Start Windows Update
+# Start Windows Update (install without auto-reboot; a single controlled reboot follows)
 Show-Section -Message "Start Windows Update" -Emoji "🔄" -Color "Green"
-Install-WindowsUpdate -AcceptAll -AutoReboot
+Install-WindowsUpdate -AcceptAll -IgnoreReboot
 
-# Restart the computer to apply changes
+# Restart the computer to apply changes.
+# Native shutdown /r /t schedules the reboot (no PSGallery PSTimers dependency);
+# cancel within the window with 'shutdown /a'.
 Show-Section -Message "Restart Computer" -Emoji "🔄" -Color "Yellow"
-Install-Module -Name PSTimers
-Start-PSTimer -Title "Waiting for reboot" -Seconds 30 -ProgressBar -scriptblock {Restart-Computer -Force}
+shutdown.exe /r /t 30 /c "Ci.Environment setup: rebooting in 30s (run 'shutdown /a' to cancel)"

@@ -333,7 +333,7 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' +
 # Install Little Big Mouse
 Show-Section -Message "Install Little Big Mouse" -Emoji "🖱️" -Color "Green"
 $lbmUrl = "https://github.com/mgth/LittleBigMouse/releases/download/v5.2.3/LittleBigMouse-5.2.3.0.exe";
-$lbmFile = "$PSScriptRoot\LittleBigMouse-5.2.3.0.exe";
+$lbmFile = Join-Path $env:TEMP "LittleBigMouse-5.2.3.0.exe";  # $PSScriptRoot is empty under iex
 Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
 Start-Process -FilePath $lbmFile -ArgumentList "/S" -PassThru
 Show-Success -Message "Little Big Mouse installed."
@@ -676,8 +676,14 @@ Invoke-Expression (&starship init powershell)
 '@
 $profileDir = Split-Path $PROFILE -Parent
 if (!(Test-Path $profileDir)) { New-Item -Path $profileDir -ItemType Directory -Force | Out-Null }
-Add-Content -Path $PROFILE -Value $powerhellProfileContent
-Show-Success -Message "PowerShell profile configured."
+# Idempotent: only append the block if it isn't already present (avoids duplicate blocks on re-run).
+$existingProfile = if (Test-Path $PROFILE) { Get-Content -Path $PROFILE -Raw } else { '' }
+if ($existingProfile -notmatch 'starship init powershell') {
+    Add-Content -Path $PROFILE -Value $powerhellProfileContent
+    Show-Success -Message "PowerShell profile configured."
+} else {
+    Show-Info -Message "PowerShell profile already contains the Ci.Environment block; skipping." -Emoji "⏭️"
+}
 
 ## Install WSL2 Kernel udpate
 ## reference: https://dev.to/smashse/wsl-chocolatey-powershell-winget-1d6p
@@ -783,8 +789,12 @@ default-cache-ttl 604800
 max-cache-ttl 604800
 '@
 $gpgPath = "C:\Users\${env:username}\AppData\Roaming\gnupg\gpg-agent.conf"
-If (!(Test-Path $gpgPath)) {New-Item -Path $gpgPath -Force}
-Add-Content -Path $gpgPath -Value $gpgConfContnet
+if (!(Test-Path $gpgPath)) { New-Item -Path $gpgPath -Force | Out-Null }
+# Idempotent: only append if the cache-ttl settings aren't already present (avoids duplicates on re-run).
+$existingGpgConf = Get-Content -Path $gpgPath -Raw -ErrorAction SilentlyContinue
+if ($existingGpgConf -notmatch 'default-cache-ttl') {
+    Add-Content -Path $gpgPath -Value $gpgConfContnet
+}
 Show-Success -Message "Git and GPG configured."
 
 ## Install .NET Core Tools
@@ -993,30 +1003,24 @@ Show-Success -Message "Terminal Nerd Font configured."
 # https://gist.github.com/Chenx221/6f4ed72cd785d80edb0bc50c9921daf7?permalink_comment_id=5876163
 Show-Section -Message "Install Visual Studio 2025" -Emoji "💻" -Color "Green"
 $vs2025Url = "https://aka.ms/vs/18/Stable/vs_enterprise.exe";
-$vs2025Exe = "$PSScriptRoot\vs_enterprise.exe";
+# Under `iex`, $PSScriptRoot is empty, so "$PSScriptRoot\vs_enterprise.exe" would write to the
+# drive root. Use $env:TEMP so the download target is always writable.
+$vs2025Exe = Join-Path $env:TEMP "vs_enterprise.exe";
 $start_time = Get-Date
 
 Invoke-WebRequest -Uri $vs2025Url -OutFile $vs2025Exe
 Show-Info -Message "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, at $vs2025Exe" -Emoji "⏱️"
 
-Start-Process -FilePath $vs2025Exe -ArgumentList `
+$vsProc = Start-Process -FilePath $vs2025Exe -ArgumentList `
 "--addProductLang", "En-us", `
 "--add", "Microsoft.VisualStudio.Workload.Azure", `
 "--add", "Microsoft.VisualStudio.Workload.ManagedDesktop", `
 "--add", "Microsoft.VisualStudio.Workload.NetWeb", `
-"--add", "Microsoft.VisualStudio.Workload.NetCoreTools", `
 "--add", "Microsoft.VisualStudio.Workload.Universal", `
 "--add", "Microsoft.VisualStudio.Workload.VisualStudioExtension", `
 "--add", "Microsoft.VisualStudio.Component.LinqToSql", `
-"--add", "Microsoft.VisualStudio.Component.TestTools.CodedUITest", `
-"--add", "Microsoft.VisualStudio.Component.TestTools.FeedbackClient", `
-"--add", "Microsoft.VisualStudio.Component.TestTools.MicrosoftTestManager", `
-"--add", "Microsoft.VisualStudio.Component.TypeScript.3.0", `
-"--add", "Microsoft.VisualStudio.Component.Windows10SDK.17134", `
 "--add", "Microsoft.VisualStudio.Workload.NetCrossPlat", `
 "--add", "Microsoft.Net.Component.3.5.DeveloperTools", `
-"--add", "Microsoft.Net.Component.4.5.2.SDK", `
-"--add", "Microsoft.Net.Component.4.5.2.TargetingPack", `
 "--add", "Microsoft.Net.Component.4.6.1.SDK", `
 "--add", "Microsoft.Net.Component.4.6.1.TargetingPack", `
 "--add", "Microsoft.Net.Component.4.6.2.SDK", `
@@ -1041,25 +1045,33 @@ Start-Process -FilePath $vs2025Exe -ArgumentList `
 "--add", "Microsoft.NetCore.Component.Runtime.10.0", `
 "--add", "Microsoft.NetCore.ComponentGroup.DevelopmentTools.2.1", `
 "--add", "Microsoft.NetCore.ComponentGroup.Web.2.1", `
-"--add", "Component.Dotfuscator", `
 "--add", "Microsoft.VisualStudio.Web.Mvc4.ComponentGroup", `
-"--add", "Microsoft.VisualStudio.Component.Azure.Storage.AzCopy", `
 "--add", "Microsoft.VisualStudio.Component.Git", `
 "--add", "Microsoft.VisualStudio.Component.DiagnosticTools", `
 "--add", "Microsoft.VisualStudio.Component.AppInsights.Tools", `
 "--add", "Microsoft.VisualStudio.Component.DependencyValidation.Enterprise", `
-"--add", "Microsoft.VisualStudio.Component.TestTools.WebLoadTest", `
 "--add", "Microsoft.VisualStudio.Component.Windows10SDK.IpOverUsb", `
 "--add", "Microsoft.VisualStudio.Component.CodeMap", `
 "--add", "Microsoft.VisualStudio.Component.ClassDesigner", `
-"--add", "Microsoft.VisualStudio.Component.TestTools.Core", `
 "--add", "Microsoft.ComponentGroup.Blend", `
-"--add", "Component.GitHub.VisualStudio", `
 "--includeRecommended", `
 "--passive", `
 "--norestart", `
 "--wait" `
 -Wait -PassThru
+# The following components were removed because they are absent from the VS 2026 (v18) catalog
+# and would make the unattended install warn/fail: Workload.NetCoreTools, TestTools.CodedUITest,
+# TestTools.FeedbackClient, TestTools.MicrosoftTestManager, TypeScript.3.0, Windows10SDK.17134,
+# Net.Component.4.5.2.SDK, Net.Component.4.5.2.TargetingPack, Component.Dotfuscator,
+# TestTools.WebLoadTest, Component.GitHub.VisualStudio, Component.Azure.Storage.AzCopy,
+# TestTools.Core.
+if ($vsProc.ExitCode -eq 0) {
+    Show-Success -Message "Visual Studio install completed."
+} elseif ($vsProc.ExitCode -eq 3010 -or $vsProc.ExitCode -eq 1641) {
+    Show-Warning -Message "Visual Studio installed; a reboot is required (exit $($vsProc.ExitCode))."
+} else {
+    Show-Warning -Message "Visual Studio installer exited with code $($vsProc.ExitCode); review the VS installer logs."
+}
 
-# Restart
-Start-PSTimer -Title "Waiting for reboot" -Seconds 20 -ProgressBar -scriptblock {Restart-Computer -Force}
+# Restart (native shutdown; 03 previously relied on PSTimers installed by 00/01)
+shutdown.exe /r /t 20 /c "Ci.Environment setup: rebooting in 20s (run 'shutdown /a' to cancel)"
