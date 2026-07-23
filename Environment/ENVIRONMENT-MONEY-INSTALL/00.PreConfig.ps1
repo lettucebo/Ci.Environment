@@ -198,4 +198,8 @@ Enable-NetFirewallRule -Group '@FirewallAPI.dll,-28752'
 # Native shutdown /r /t schedules the reboot (no PSGallery PSTimers dependency);
 # cancel within the window with 'shutdown /a'.
 Show-Section -Message "Restart Computer" -Emoji "🔄" -Color "Yellow"
-shutdown.exe /r /t 30 /c "Ci.Environment setup: rebooting in 30s (run 'shutdown /a' to cancel)"
+if ($env:CI_ENV_ORCHESTRATED -ne '1') {
+    shutdown.exe /r /t 30 /c "Ci.Environment setup: rebooting in 30s (run 'shutdown /a' to cancel)"
+} else {
+    Show-Info -Message "Orchestrated run (Install-All): deferring reboot to the orchestrator." -Emoji "⏸"
+}

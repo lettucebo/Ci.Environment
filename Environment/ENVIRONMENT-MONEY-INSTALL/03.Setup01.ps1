@@ -251,7 +251,7 @@ Show-Section -Message "Install Applications via WinGet" -Emoji "🏪" -Color "Gr
 # The bulk of the toolchain now comes from WinGet, so make sure it is available first.
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
     Show-Error -Message "winget (App Installer) not found. Install 'App Installer' from the Microsoft Store, then re-run this script."
-    exit
+    exit 1
 }
 $global:WingetFailures = @()
 
@@ -1103,4 +1103,8 @@ if ($vsProc.ExitCode -eq 0) {
 }
 
 # Restart (native shutdown; 03 previously relied on PSTimers installed by 00/01)
-shutdown.exe /r /t 20 /c "Ci.Environment setup: rebooting in 20s (run 'shutdown /a' to cancel)"
+if ($env:CI_ENV_ORCHESTRATED -ne '1') {
+    shutdown.exe /r /t 20 /c "Ci.Environment setup: rebooting in 20s (run 'shutdown /a' to cancel)"
+} else {
+    Show-Info -Message "Orchestrated run (Install-All): deferring reboot to the orchestrator." -Emoji "⏸"
+}

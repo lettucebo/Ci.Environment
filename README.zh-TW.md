@@ -48,6 +48,30 @@
 
 ## 快速開始
 
+你可以**用單一指令安裝全部**（建議），或逐一執行編號步驟。
+
+### 選項 A：一鍵安裝（全部步驟，跨重開機自動接續）
+
+在具**系統管理員權限**的 PowerShell 中執行**一次**，即可從頭到尾安裝整條流程（步驟 0–5）：
+
+[開啟 `Install-All.ps1`](./Environment/ENVIRONMENT-MONEY-INSTALL/Install-All.ps1)
+
+```powershell
+iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/Install-All.ps1')
+```
+
+orchestrator 會先將腳本快照到 `C:\ProgramData\CiEnvironment`，再依序執行步驟 0 → 5。Windows 更新會跑**兩次**，以補上第一次重開機後才出現的更新。機器**只在 Windows 回報有待處理的重開機時才重新開機**（因此若第二次更新沒抓到東西就直接接續）——通常 2 到 4 次——並透過使用者登入排程工作（`CiEnvironmentResume`）在每次重開機後自動接續。
+
+> **在 passwordless / Windows Hello（PIN）帳號上為半自動。** 當帳號為 passwordless/Hello-only 時，Windows 會停用密碼式自動登入，因此每次重開機後你需**用 PIN 解鎖**，安裝便會自動繼續；全程不會儲存任何密碼。（若是有密碼的本機/網域帳號，登入照常進行即可。）
+
+**取消／復原：**
+
+- 重開機倒數期間：`shutdown /a`
+- 停止自動接續：`Unregister-ScheduledTask -TaskName CiEnvironmentResume -Confirm:$false`
+- 狀態與紀錄位於 `C:\ProgramData\CiEnvironment`；重新執行啟動指令可重跑已完成的安裝，或接續已中止的安裝。
+
+### 選項 B：逐一手動執行
+
 以**系統管理員身分**開啟 PowerShell，並依序執行以下命令：
 
 ### 步驟 0：前置設定（必要）

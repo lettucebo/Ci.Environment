@@ -48,6 +48,30 @@ Automated Windows development environment setup scripts using PowerShell, [WinGe
 
 ## Quick Start
 
+You can either **run everything with one command** (recommended) or run the numbered steps individually.
+
+### Option A: One-Command Install (all steps, auto-resume across reboots)
+
+Run this **once** in an elevated PowerShell session to install the whole pipeline (Steps 0–5) end to end:
+
+[Open `Install-All.ps1`](./Environment/ENVIRONMENT-MONEY-INSTALL/Install-All.ps1)
+
+```powershell
+iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/Install-All.ps1')
+```
+
+The orchestrator snapshots the scripts to `C:\ProgramData\CiEnvironment`, then runs Steps 0 → 5 in order. Windows Update runs **twice** to catch updates that only appear after the first reboot. The machine reboots **only when Windows reports a pending reboot** (so a second update pass that finds nothing simply continues) — typically two to four times — resuming automatically after each reboot via a per-user logon Scheduled Task (`CiEnvironmentResume`).
+
+> **Semi-automatic on passwordless / Windows Hello (PIN) accounts.** Windows disables password-based auto-logon when the account is passwordless/Hello-only, so after each reboot you must **unlock with your PIN**; the install then continues on its own. No password is ever stored. (On a local/AD account with a password, sign-in still just happens normally.)
+
+**Cancel / recover:**
+
+- During a reboot countdown: `shutdown /a`
+- Stop auto-resuming: `Unregister-ScheduledTask -TaskName CiEnvironmentResume -Confirm:$false`
+- State and logs live under `C:\ProgramData\CiEnvironment`. Re-running the kickoff command restarts a completed run or resumes an aborted one.
+
+### Option B: Run each step manually
+
 Open **PowerShell as Administrator** and run the following commands in order:
 
 ### Step 0: Pre-configuration (Required)
