@@ -148,11 +148,6 @@ $DeleteDefaultItems = @("Documents","Pictures","Videos","Music")
 ($Results| where {$_.name -in $DeleteDefaultItems}).InvokeVerb("unpinfromhome")
 Show-Success -Message "Quick Access cleaned."
 
-# Create custom folder
-Show-Info -Message "Creating custom folder for repositories..." -Emoji "📁"
-mkdir "C:/Users/$Env:UserName/Source/Repos" | Out-Null
-Show-Success -Message "Custom folder created."
-
 # Change Explorer home screen back to "This PC"
 Show-Info -Message "Setting Explorer home to 'This PC'..." -Emoji "🖥️"
 Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name LaunchTo -Type DWord -Value 1
@@ -463,45 +458,97 @@ Set-ItemProperty $explorerKey Hidden 1
 Set-ItemProperty $explorerKey HideFileExt 0
 Show-Success -Message "File Explorer configured."
 
-# Create C:\Source\Repos and pin folders to File Explorer Quick Access in a fixed order
-# (Repos -> Decks -> Microsoft Scout, after the default Desktop/Downloads). Uses the cross-locale
-# shell verbs pintohome / unpinfromhome and the System.Home.IsPinned property for idempotency. Pins
-# for the interactive (elevated) user; Explorer reflects the change after the reboot.
+# Create C:\Source\Repos and pin folders to File Explorer Quick Access in a fixed relative order
+# (Repos -> Decks -> Microsoft Scout). Uses the cross-locale shell verbs pintohome / unpinfromhome
+# and the System.Home.IsPinned property. Each pin/unpin is verified by polling IsPinned (InvokeVerb
+# returns no status), pintohome is only invoked on a folder confirmed NOT pinned (avoids the known
+# pintohome toggle-off behavior), and each pin/unpin is guarded so a single failure can't abort the
+# rest; the final pinned order is re-verified and a warning is emitted if any target is missing or out
+# of order. Best-effort: the new pins land after the default Desktop/Downloads pins, but that absolute
+# placement is not a documented Shell guarantee. Pins for the interactive (elevated same-account) user;
+# Explorer reflects it after the reboot.
 Show-Section -Message "Create C:\Source\Repos and pin Quick Access folders" -Emoji "📌" -Color "Green"
 $reposPath = 'C:\Source\Repos'
-if (-not (Test-Path -LiteralPath $reposPath)) {
-    New-Item -ItemType Directory -Path $reposPath -Force | Out-Null
-    Show-Info -Message "Created $reposPath" -Emoji "📁"
+try {
+    if (-not (Test-Path -LiteralPath $reposPath)) {
+        New-Item -ItemType Directory -Path $reposPath -Force -ErrorAction Stop | Out-Null
+        Show-Info -Message "Created $reposPath" -Emoji "📁"
+    }
+} catch { Show-Warning -Message "Could not create ${reposPath}: $($_.Exception.Message)" }
+
+# Resolve the OneDrive-for-Business root: env var, then the registry UserFolder, then the conventional name.
+$odRoot = $env:OneDriveCommercial
+if (-not $odRoot -or -not (Test-Path -LiteralPath $odRoot)) {
+    $odRoot = Get-ChildItem 'HKCU:\Software\Microsoft\OneDrive\Accounts\Business*' -ErrorAction SilentlyContinue |
+        ForEach-Object { (Get-ItemProperty $_.PSPath -Name UserFolder -ErrorAction SilentlyContinue).UserFolder } |
+        Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
 }
-# OneDrive for Business root ("OneDrive - Microsoft").
-$odRoot = if ($env:OneDriveCommercial) { $env:OneDriveCommercial } else { Join-Path $env:USERPROFILE 'OneDrive - Microsoft' }
-# Only pin folders that actually exist (the OneDrive folders must already be synced).
-$quickAccessTargets = @(
+if (-not $odRoot) { $odRoot = Join-Path $env:USERPROFILE 'OneDrive - Microsoft' }
+
+# Desired order; only pin folders that actually exist. Normalize trailing separators for reliable matching.
+# Wrap in @() so the result is always an array (reliable .Count / foreach for 0, 1, or many matches).
+$quickAccessTargets = @(@(
     $reposPath,
     (Join-Path $odRoot 'MTT\Decks'),
     (Join-Path $odRoot 'Documents\Microsoft Scout')
-) | Where-Object { Test-Path -LiteralPath $_ }
-try {
-    $qaNamespace = 'shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}'
-    $shellApp = New-Object -ComObject shell.application
-    $pinnedNow = @($shellApp.Namespace($qaNamespace).Items() | Where-Object { $_.ExtendedProperty('System.Home.IsPinned') -eq $true } | ForEach-Object { $_.Path })
-    $needsWork = @($quickAccessTargets | Where-Object { $pinnedNow -notcontains $_ }).Count -gt 0
-    if (-not $needsWork) {
-        Show-Info -Message "Quick Access already has the target folders pinned; leaving order as-is." -Emoji "📌"
-    } else {
-        # Unpin any target that is already pinned, so re-pinning yields the exact desired order.
-        foreach ($target in $quickAccessTargets) {
-            $pinnedItem = $shellApp.Namespace($qaNamespace).Items() | Where-Object { $_.Path -eq $target -and $_.ExtendedProperty('System.Home.IsPinned') -eq $true }
-            if ($pinnedItem) { $pinnedItem.InvokeVerb('unpinfromhome'); Start-Sleep -Milliseconds 500 }
+) | Where-Object { Test-Path -LiteralPath $_ } | ForEach-Object { $_.TrimEnd('\') })
+
+if ($quickAccessTargets.Count -eq 0) {
+    Show-Warning -Message "No target folders exist to pin to Quick Access; skipping."
+} else {
+    try {
+        $qaNamespace = 'shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}'
+        $shellApp = New-Object -ComObject shell.application
+        $getPinned = { @($shellApp.Namespace($qaNamespace).Items() | Where-Object { $_.ExtendedProperty('System.Home.IsPinned') -eq $true } | ForEach-Object { $_.Path.TrimEnd('\') }) }
+
+        # Idempotent AND order-aware: only skip when the pinned targets already appear in exactly the
+        # desired relative order (a plain membership test would preserve a wrong order).
+        $pinnedTargetsInOrder = @(& $getPinned | Where-Object { $quickAccessTargets -contains $_ })
+        if (($pinnedTargetsInOrder -join '|') -eq ($quickAccessTargets -join '|')) {
+            Show-Info -Message "Quick Access already has the target folders pinned in order; leaving as-is." -Emoji "📌"
+        } else {
+            # Unpin every target that is currently pinned (poll until confirmed) so re-pinning yields the order.
+            # Each unpin is isolated so a single failure can't abort the re-pin phase that follows.
+            foreach ($target in $quickAccessTargets) {
+                try {
+                    $item = $shellApp.Namespace($qaNamespace).Items() | Where-Object { $_.Path.TrimEnd('\') -eq $target -and $_.ExtendedProperty('System.Home.IsPinned') -eq $true } | Select-Object -First 1
+                    if ($item) {
+                        $item.InvokeVerb('unpinfromhome')
+                        for ($i = 0; $i -lt 20 -and ((& $getPinned) -contains $target); $i++) { Start-Sleep -Milliseconds 150 }
+                    }
+                } catch {
+                    Show-Warning -Message "  Could not unpin '$target' before reordering: $($_.Exception.Message)"
+                }
+            }
+            # Pin each target in order; never invoke pintohome while still pinned; verify afterwards.
+            foreach ($target in $quickAccessTargets) {
+                try {
+                    if ((& $getPinned) -contains $target) { Show-Info -Message "  Already pinned: $target" -Emoji "✔️"; continue }
+                    $folder = $shellApp.Namespace($target)
+                    if (-not $folder) { Show-Warning -Message "  Shell could not open '$target'; skipping."; continue }
+                    $folder.Self.InvokeVerb('pintohome')
+                    for ($i = 0; $i -lt 20 -and -not ((& $getPinned) -contains $target); $i++) { Start-Sleep -Milliseconds 150 }
+                    if ((& $getPinned) -contains $target) { Show-Info -Message "  Pinned to Quick Access: $target" -Emoji "📌" }
+                    else { Show-Warning -Message "  Pin did not confirm for '$target'." }
+                } catch {
+                    Show-Warning -Message "  Could not pin '$target': $($_.Exception.Message)"
+                }
+            }
         }
-        foreach ($target in $quickAccessTargets) {
-            $shellApp.Namespace($target).Self.InvokeVerb('pintohome'); Start-Sleep -Milliseconds 500
-            Show-Info -Message "Pinned to Quick Access: $target" -Emoji "📌"
+
+        # Verify the end state instead of assuming success: the pinned targets must appear in exactly
+        # the desired relative order. Report missing or misordered targets explicitly.
+        $finalTargetsInOrder = @(& $getPinned | Where-Object { $quickAccessTargets -contains $_ })
+        if (($finalTargetsInOrder -join '|') -eq ($quickAccessTargets -join '|')) {
+            Show-Success -Message "Quick Access folders configured."
+        } else {
+            $missing = @($quickAccessTargets | Where-Object { $finalTargetsInOrder -notcontains $_ })
+            if ($missing.Count -gt 0) { Show-Warning -Message "Quick Access not fully configured; not pinned: $($missing -join ', ')." }
+            else { Show-Warning -Message "Quick Access targets are pinned but not in the desired order (got: $($finalTargetsInOrder -join ', '))." }
         }
+    } catch {
+        Show-Warning -Message "Could not configure Quick Access pins: $($_.Exception.Message)"
     }
-    Show-Success -Message "Quick Access folders configured."
-} catch {
-    Show-Warning -Message "Could not configure Quick Access pins: $($_.Exception.Message)"
 }
 
 # Remove Folders from This PC
