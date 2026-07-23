@@ -463,6 +463,47 @@ Set-ItemProperty $explorerKey Hidden 1
 Set-ItemProperty $explorerKey HideFileExt 0
 Show-Success -Message "File Explorer configured."
 
+# Create C:\Source\Repos and pin folders to File Explorer Quick Access in a fixed order
+# (Repos -> Decks -> Microsoft Scout, after the default Desktop/Downloads). Uses the cross-locale
+# shell verbs pintohome / unpinfromhome and the System.Home.IsPinned property for idempotency. Pins
+# for the interactive (elevated) user; Explorer reflects the change after the reboot.
+Show-Section -Message "Create C:\Source\Repos and pin Quick Access folders" -Emoji "📌" -Color "Green"
+$reposPath = 'C:\Source\Repos'
+if (-not (Test-Path -LiteralPath $reposPath)) {
+    New-Item -ItemType Directory -Path $reposPath -Force | Out-Null
+    Show-Info -Message "Created $reposPath" -Emoji "📁"
+}
+# OneDrive for Business root ("OneDrive - Microsoft").
+$odRoot = if ($env:OneDriveCommercial) { $env:OneDriveCommercial } else { Join-Path $env:USERPROFILE 'OneDrive - Microsoft' }
+# Only pin folders that actually exist (the OneDrive folders must already be synced).
+$quickAccessTargets = @(
+    $reposPath,
+    (Join-Path $odRoot 'MTT\Decks'),
+    (Join-Path $odRoot 'Documents\Microsoft Scout')
+) | Where-Object { Test-Path -LiteralPath $_ }
+try {
+    $qaNamespace = 'shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}'
+    $shellApp = New-Object -ComObject shell.application
+    $pinnedNow = @($shellApp.Namespace($qaNamespace).Items() | Where-Object { $_.ExtendedProperty('System.Home.IsPinned') -eq $true } | ForEach-Object { $_.Path })
+    $needsWork = @($quickAccessTargets | Where-Object { $pinnedNow -notcontains $_ }).Count -gt 0
+    if (-not $needsWork) {
+        Show-Info -Message "Quick Access already has the target folders pinned; leaving order as-is." -Emoji "📌"
+    } else {
+        # Unpin any target that is already pinned, so re-pinning yields the exact desired order.
+        foreach ($target in $quickAccessTargets) {
+            $pinnedItem = $shellApp.Namespace($qaNamespace).Items() | Where-Object { $_.Path -eq $target -and $_.ExtendedProperty('System.Home.IsPinned') -eq $true }
+            if ($pinnedItem) { $pinnedItem.InvokeVerb('unpinfromhome'); Start-Sleep -Milliseconds 500 }
+        }
+        foreach ($target in $quickAccessTargets) {
+            $shellApp.Namespace($target).Self.InvokeVerb('pintohome'); Start-Sleep -Milliseconds 500
+            Show-Info -Message "Pinned to Quick Access: $target" -Emoji "📌"
+        }
+    }
+    Show-Success -Message "Quick Access folders configured."
+} catch {
+    Show-Warning -Message "Could not configure Quick Access pins: $($_.Exception.Message)"
+}
+
 # Remove Folders from This PC
 Show-Section -Message "Remove Folders from This PC" -Emoji "🗑️" -Color "Green"
 $regPath1 = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\'
