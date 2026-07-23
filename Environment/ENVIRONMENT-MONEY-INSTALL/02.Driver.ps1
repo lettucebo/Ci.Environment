@@ -466,6 +466,200 @@ try {
 }
 
 # -------------------------
+# Install Epson L3550 Genuine Printer Driver
+# -------------------------
+# A stock Windows setup of an L3550 binds the generic "Epson ESC/P-R V4 Class
+# Driver", whose minimal Printing Preferences UI lacks the "Reverse Order"
+# (reverse print order) option. This phase swaps any local L3550 queue that is
+# still on that class driver onto Epson's GENUINE "EPSON L3550 Series" driver,
+# whose "More Options" tab exposes Reverse Order.
+#
+# Why it is shaped this way:
+#  - Wrapped in a function so its early `return`s stay local; it is invoked
+#    BEFORE the NVIDIA section below, which uses top-level `return`s.
+#  - Device-gated + idempotent: only acts when a local L3550 queue on the known
+#    class driver is present, and no-ops once the genuine driver is bound.
+#  - Fully silent (this repo runs non-interactively via `iex`). The official
+#    package is a WinZip self-extractor, so we extract its signed INF with .NET
+#    (no 7-Zip) and install via pnputil + Add-PrinterDriver + Set-Printer rather
+#    than the bundled GUI SETUP64.EXE, which has no reliable silent switch.
+#  - URL + size + SHA-256 are pinned; the Akamai-fronted CDN returns HTTP 403
+#    without a full browser header set. Bump all three together on a version
+#    change (resolve via the download-center API, which now also requires region
+#    and language:
+#    https://download-center.epson.com/api/v1/modules/?device_id=L3550%20Series&os=WIN1164&region=US&language=en ),
+#    and re-verify the signer/catalog + the applicable INF section when bumping.
+function Install-EpsonL3550Driver {
+    $ErrorActionPreference = 'Stop'
+    # Guarantee non-interactivity even if the caller lowered $ConfirmPreference:
+    # this repo runs unattended via `iex`, which inherits caller preferences, and
+    # Add-PrinterDriver / Set-Printer are ConfirmImpact=Medium.
+    $ConfirmPreference = 'None'
+    Show-Section -Message "Install Epson L3550 Genuine Printer Driver" -Emoji "🖨" -Color "Cyan"
+
+    if ($env:PROCESSOR_ARCHITECTURE -ne 'AMD64') {
+        Show-Info -Message "Host architecture '$env:PROCESSOR_ARCHITECTURE' is not AMD64; skipping Epson L3550 driver." -Emoji "⏭"
+        return
+    }
+
+    $classDriver   = 'Epson ESC/P-R V4 Class Driver'
+    $genuineDriver = 'EPSON L3550 Series'
+
+    try {
+        $allPrinters = @(Get-Printer -ErrorAction Stop)
+    } catch {
+        Show-Warning -Message "Get-Printer failed (print spooler issue?): $($_.Exception.Message). Skipping Epson L3550 driver."
+        return
+    }
+
+    $candidates = @($allPrinters | Where-Object { $_.Type -eq 'Local' -and $_.Name -match 'L3550' })
+    if ($candidates.Count -eq 0) {
+        Show-Info -Message "No local Epson L3550 print queue found; nothing to upgrade." -Emoji "⏭"
+        return
+    }
+
+    $needsUpgrade = @($candidates | Where-Object { $_.DriverName -ne $genuineDriver })
+    if ($needsUpgrade.Count -eq 0) {
+        Show-Success -Message "Epson L3550 queue(s) already use the genuine '$genuineDriver' driver."
+        return
+    }
+
+    # Only touch queues on the known generic class driver; never override some
+    # other (possibly newer/custom) driver an admin chose on purpose.
+    $toUpgrade = @()
+    foreach ($q in $needsUpgrade) {
+        if ($q.DriverName -eq $classDriver) { $toUpgrade += $q }
+        else { Show-Warning -Message "Queue '$($q.Name)' uses unexpected driver '$($q.DriverName)'; leaving it unchanged." }
+    }
+    if ($toUpgrade.Count -eq 0) {
+        Show-Info -Message "No Epson L3550 queue on the known class driver to upgrade." -Emoji "⏭"
+        return
+    }
+
+    # Windows Protected Print Mode blocks third-party printer drivers outright.
+    # Check the GPO location (takes precedence) and the Settings location.
+    $wppmOn = $false
+    foreach ($w in @(
+        @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Printers\WPP'; Name = 'WindowsProtectedPrintGroupPolicyState' },
+        @{ Path = 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Settings';      Name = 'WppmDesired' }
+    )) {
+        try {
+            $regVal = Get-ItemProperty -Path $w.Path -Name $w.Name -ErrorAction SilentlyContinue
+            if ($regVal -and [int]$regVal.$($w.Name) -eq 1) { $wppmOn = $true }
+        } catch { }
+    }
+    if ($wppmOn) {
+        Show-Error -Message "Windows Protected Print Mode is enabled; third-party printer drivers are blocked. Skipping (policy left untouched)."
+        return
+    }
+
+    $downloadUrl  = 'https://download-center.epson.com/f/module/58d87728-d300-4a1b-b5ae-4034f90a6ca9/L3550_STD_WW_38002_W64.exe'
+    $expectedSize = 68358056
+    $expectedSha  = '05516D0491BFCCF67744B716B391A997E84143B5AEDA5EEA72FB9ADC172EAAD0'
+    $work      = Join-Path $env:TEMP ("epson-l3550-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+    $installer = Join-Path $work 'L3550_STD_WW_38002_W64.exe'
+    $extract   = Join-Path $work 'x'
+
+    try {
+        New-Item -ItemType Directory -Force -Path $work, $extract | Out-Null
+
+        # --- Download (Akamai CDN requires a full browser header set) ---
+        Show-Section -Message "Download Epson L3550 driver package" -Emoji "⬇" -Color "Green"
+        $headers = @{
+            'User-Agent'         = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
+            'Accept'             = '*/*'
+            'Accept-Language'    = 'en-US,en;q=0.9'
+            'Referer'            = 'https://download-center.epson.com/'
+            'sec-ch-ua'          = '"Chromium";v="126", "Google Chrome";v="126", "Not_A Brand";v="24"'
+            'sec-ch-ua-mobile'   = '?0'
+            'sec-ch-ua-platform' = '"Windows"'
+            'Sec-Fetch-Dest'     = 'document'
+            'Sec-Fetch-Mode'     = 'navigate'
+            'Sec-Fetch-Site'     = 'same-origin'
+            'Sec-Fetch-User'     = '?1'
+        }
+        Invoke-WebRequest -Uri $downloadUrl -Headers $headers -OutFile $installer -UseBasicParsing -ErrorAction Stop
+
+        $fileInfo = Get-Item $installer
+        if ($fileInfo.Length -ne $expectedSize) { throw "Downloaded size $($fileInfo.Length) != expected $expectedSize." }
+        $sha = (Get-FileHash -Path $installer -Algorithm SHA256).Hash
+        if ($sha -ne $expectedSha) { throw "SHA-256 mismatch (got $sha)." }
+        $stream = [IO.File]::OpenRead($installer)
+        try { $magic = New-Object byte[] 2; [void]$stream.Read($magic, 0, 2) } finally { $stream.Close() }
+        if (-not ($magic[0] -eq 0x4D -and $magic[1] -eq 0x5A)) { throw "Downloaded file is not a Windows executable (no MZ header)." }
+        Show-Success -Message "Downloaded and verified (size + SHA-256)."
+
+        # --- Extract the signed driver INF (WinZip self-extractor payload) ---
+        Show-Section -Message "Extract driver package" -Emoji "📦" -Color "Green"
+        # PS 5.1 needs this assembly loaded; PS 7 exposes the type by default
+        # (Add-Type -AssemblyName can throw there -> ignore).
+        try { Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction Stop } catch { }
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($installer, $extract)
+        $inf = Get-ChildItem -Path $extract -Recurse -Filter 'E1WF1BZE.INF' -ErrorAction SilentlyContinue | Select-Object -First 1
+        if (-not $inf) { throw "Expected driver INF 'E1WF1BZE.INF' not found in the package." }
+        Show-Success -Message "Extracted signed INF: $($inf.Name)"
+
+        # --- Stage into the DriverStore + register the logical driver ---
+        Show-Section -Message "Install genuine printer driver" -Emoji "⚙" -Color "Green"
+        $pnputil = Join-Path $env:SystemRoot 'System32\pnputil.exe'
+        & $pnputil /add-driver "$($inf.FullName)" 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "pnputil /add-driver exited with code $LASTEXITCODE." }
+        try {
+            Add-PrinterDriver -Name $genuineDriver -Confirm:$false -ErrorAction Stop
+        } catch {
+            Show-Warning -Message "Add-PrinterDriver failed ($($_.Exception.Message)); retrying via printui /ia."
+            & rundll32.exe printui.dll,PrintUIEntry /ia /m "$genuineDriver" /f "$($inf.FullName)" /q
+            Start-Sleep -Seconds 3
+            if (-not (Get-PrinterDriver -Name $genuineDriver -ErrorAction SilentlyContinue)) {
+                throw "Driver '$genuineDriver' is still not registered after fallback."
+            }
+        }
+        Show-Success -Message "Genuine driver '$genuineDriver' registered."
+
+        # --- Repoint each eligible queue (record old driver for rollback) ---
+        Show-Section -Message "Switch printer queue(s) to genuine driver" -Emoji "🔀" -Color "Green"
+        foreach ($q in $toUpgrade) {
+            # Re-fetch immediately before mutating to avoid acting on stale scan
+            # data (a WSD re-enumeration or admin change could have moved it
+            # between the initial scan and this large download/install).
+            try { $fresh = Get-Printer -Name $q.Name -ErrorAction Stop }
+            catch { Show-Warning -Message "Queue '$($q.Name)' is no longer available: $($_.Exception.Message); skipping."; continue }
+
+            if ($fresh.Type -ne 'Local' -or $fresh.DriverName -ne $classDriver) {
+                Show-Info -Message "Queue '$($q.Name)' changed since scan (now '$($fresh.DriverName)'); leaving it unchanged." -Emoji "⏭"
+                continue
+            }
+            $oldDriver = $fresh.DriverName
+
+            try {
+                Set-Printer -Name $fresh.Name -DriverName $genuineDriver -Confirm:$false -ErrorAction Stop
+                $after = Get-Printer -Name $fresh.Name -ErrorAction Stop
+                if ($after.DriverName -ne $genuineDriver) { throw "post-change check still shows '$($after.DriverName)'." }
+                Show-Success -Message "Queue '$($fresh.Name)': '$oldDriver' -> '$genuineDriver'."
+            } catch {
+                Show-Error -Message "Failed to switch '$($fresh.Name)': $($_.Exception.Message). Rolling back to '$oldDriver'."
+                try {
+                    Set-Printer -Name $fresh.Name -DriverName $oldDriver -Confirm:$false -ErrorAction Stop
+                    $rolledBack = Get-Printer -Name $fresh.Name -ErrorAction Stop
+                    if ($rolledBack.DriverName -eq $oldDriver) { Show-Info -Message "Rolled back '$($fresh.Name)' to '$oldDriver'." -Emoji "↩" }
+                    else { Show-Error -Message "Rollback verification failed for '$($fresh.Name)': now on '$($rolledBack.DriverName)'." }
+                } catch { Show-Error -Message "Rollback of '$($fresh.Name)' also failed: $($_.Exception.Message)" }
+            }
+        }
+    } catch {
+        Show-Error -Message "Epson L3550 driver install failed: $($_.Exception.Message)"
+    } finally {
+        try {
+            if (Test-Path $work) { Remove-Item -Path $work -Recurse -Force -ErrorAction Stop }
+        } catch {
+            Show-Warning -Message "Could not remove temp folder ${work}: $($_.Exception.Message)"
+        }
+    }
+}
+
+Install-EpsonL3550Driver
+
+# -------------------------
 # Step 1: Detect NVIDIA GPU
 # -------------------------
 Show-Section -Message "Detect NVIDIA GPU" -Emoji "🔍" -Color "Cyan"
