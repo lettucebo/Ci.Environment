@@ -45,6 +45,138 @@ function Show-Success {
     Write-Host "$Emoji $Message" -ForegroundColor Green
 }
 
+$script:StepWarnings = @()
+function Add-StepWarning {
+    param(
+        [Parameter(Mandatory)][string]$Item,
+        [Parameter(Mandatory)][string]$Message,
+        [string]$Status = 'failed'
+    )
+    $script:StepWarnings += [ordered]@{
+        item    = $Item
+        status  = $Status
+        message = $Message
+    }
+    Show-Warning -Message $Message
+}
+
+function Get-ValidatedOrchestratorArtifactPath {
+    param([Parameter(Mandatory)][string]$Path)
+    if ($env:CI_ENV_ORCHESTRATED -ne '1') { throw 'Orchestrator artifact variables are only accepted during an orchestrated run.' }
+    $root = [IO.Path]::GetFullPath((Join-Path $env:ProgramData 'CiEnvironment'))
+    $logRoot = [IO.Path]::GetFullPath((Join-Path $root 'logs')).TrimEnd('\')
+    $candidate = [IO.Path]::GetFullPath($Path)
+    if (-not $candidate.StartsWith($logRoot + '\', [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Orchestrator artifact path is outside the protected log directory: $candidate"
+    }
+    $paths = @($root, $logRoot)
+    $current = $logRoot
+    foreach ($segment in $candidate.Substring($logRoot.Length).TrimStart('\').Split('\')) {
+        if ([string]::IsNullOrWhiteSpace($segment)) { continue }
+        $current = Join-Path $current $segment
+        $paths += $current
+    }
+    foreach ($artifactPath in $paths | Select-Object -Unique) {
+        if (-not (Test-Path -LiteralPath $artifactPath)) { throw "Protected artifact path does not exist: $artifactPath" }
+        $item = Get-Item -LiteralPath $artifactPath -Force
+        if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Protected artifact path is a reparse point: $artifactPath" }
+        $acl = Get-Acl -LiteralPath $artifactPath
+        $owner = $acl.GetOwner([Security.Principal.SecurityIdentifier]).Value
+        if (@('S-1-5-32-544', 'S-1-5-18') -notcontains $owner -or -not $acl.AreAccessRulesProtected) {
+            throw "Protected artifact path has an untrusted owner or inherited ACL: $artifactPath"
+        }
+        foreach ($ace in $acl.Access) {
+            $sid = $ace.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
+            if (@('S-1-5-32-544', 'S-1-5-18') -notcontains $sid) { throw "Protected artifact path grants access to SID ${sid}: $artifactPath" }
+        }
+    }
+    return $candidate
+}
+
+function Write-StepResult {
+    if ([string]::IsNullOrWhiteSpace($env:CI_ENV_STEP_RESULT_PATH)) { return }
+    $status = if ($script:StepWarnings.Count -eq 0) { 'completed' } else { 'completed_with_warnings' }
+    $result = [ordered]@{
+        version      = 1
+        status       = $status
+        warnings     = @($script:StepWarnings)
+        completedUtc = (Get-Date).ToUniversalTime().ToString('o')
+    }
+    try {
+        $resultPath = Get-ValidatedOrchestratorArtifactPath -Path $env:CI_ENV_STEP_RESULT_PATH
+        $result | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $resultPath -Encoding UTF8 -ErrorAction Stop
+    } catch {
+        Show-Warning -Message "Could not write the step result to '$env:CI_ENV_STEP_RESULT_PATH': $($_.Exception.Message)"
+    }
+}
+
+function New-ProtectedInstallerSecurity {
+    param([bool]$Directory)
+    $adminsSid = [Security.Principal.SecurityIdentifier]::new('S-1-5-32-544')
+    $systemSid = [Security.Principal.SecurityIdentifier]::new('S-1-5-18')
+    $acl = if ($Directory) {
+        [Security.AccessControl.DirectorySecurity]::new()
+    } else {
+        [Security.AccessControl.FileSecurity]::new()
+    }
+    $acl.SetOwner($adminsSid)
+    $acl.SetAccessRuleProtection($true, $false)
+    $inheritance = if ($Directory) {
+        [Security.AccessControl.InheritanceFlags]'ContainerInherit,ObjectInherit'
+    } else {
+        [Security.AccessControl.InheritanceFlags]::None
+    }
+    $rights = [Security.AccessControl.FileSystemRights]::FullControl
+    $propagation = [Security.AccessControl.PropagationFlags]::None
+    $allow = [Security.AccessControl.AccessControlType]::Allow
+    $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($adminsSid, $rights, $inheritance, $propagation, $allow))
+    $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($systemSid, $rights, $inheritance, $propagation, $allow))
+    return $acl
+}
+
+function Set-ProtectedInstallerAcl {
+    param([Parameter(Mandatory)][string]$Path)
+    $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+    if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Installer path is a reparse point: $Path" }
+    $acl = New-ProtectedInstallerSecurity -Directory ([bool]$item.PSIsContainer)
+    Set-Acl -LiteralPath $Path -AclObject $acl -ErrorAction Stop
+    $level = if ($item.PSIsContainer) { '(OI)(CI)H' } else { 'H' }
+    & icacls.exe $Path /setintegritylevel $level /q | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Could not set High integrity on installer path: $Path" }
+}
+
+function New-ProtectedInstallerDirectory {
+    param([string]$Prefix = 'CiEnvironmentInstaller')
+    $path = Join-Path $env:ProgramData ("{0}-{1}" -f $Prefix, ([guid]::NewGuid().ToString('N')))
+    $security = New-ProtectedInstallerSecurity -Directory $true
+    [IO.FileSystemAclExtensions]::Create([IO.DirectoryInfo]::new($path), $security)
+    Set-ProtectedInstallerAcl -Path $path
+    return $path
+}
+
+function New-ProtectedInstallerFile {
+    param(
+        [Parameter(Mandatory)][string]$Directory,
+        [Parameter(Mandatory)][string]$Name
+    )
+    $safeName = [IO.Path]::GetFileName($Name)
+    if ([string]::IsNullOrWhiteSpace($safeName) -or $safeName -ne $Name) { throw "Unsafe installer file name: '$Name'" }
+    $path = Join-Path $Directory $safeName
+    $security = New-ProtectedInstallerSecurity -Directory $false
+    $stream = [IO.FileSystemAclExtensions]::Create(
+        [IO.FileInfo]::new($path),
+        [IO.FileMode]::CreateNew,
+        [Security.AccessControl.FileSystemRights]::FullControl,
+        [IO.FileShare]::None,
+        4096,
+        [IO.FileOptions]::SequentialScan,
+        $security
+    )
+    $stream.Dispose()
+    Set-ProtectedInstallerAcl -Path $path
+    return $path
+}
+
 Show-Section -Message "Step 4: Extended Setup" -Emoji "🚀" -Color "Magenta"
 $scriptStart = Get-Date
 Show-Info -Message ("Current Time: " + $scriptStart) -Emoji "⏰"
@@ -53,19 +185,27 @@ Show-Info -Message ("Current Time: " + $scriptStart) -Emoji "⏰"
 Show-Section -Message "Check PowerShell Version" -Emoji "🛡️" -Color "Yellow"
 if ($PSversionTable.PsVersion.Major -lt 7) {
   Show-Error -Message "Please use Powershell 7 to execute this script!"
-  exit
+  exit 1
 } else { Show-Success -Message "PowerShell version is $($PSversionTable.PsVersion.Major)." }
 
 # Set ExecutionPolicy to RemoteSigned for script execution
 Show-Section -Message "Set Execution Policy" -Emoji "🔐" -Color "Yellow"
-Set-ExecutionPolicy RemoteSigned -Force
-Show-Success -Message "Execution policy set to RemoteSigned."
+Set-ExecutionPolicy RemoteSigned -Scope LocalMachine -Force -ErrorAction SilentlyContinue
+$localMachinePolicy = Get-ExecutionPolicy -Scope LocalMachine
+$effectivePolicy = Get-ExecutionPolicy
+if ($localMachinePolicy -ne 'RemoteSigned') {
+    Show-Warning -Message "LocalMachine execution policy is '$localMachinePolicy', not RemoteSigned (a higher-level policy may control it)."
+} elseif ($effectivePolicy -eq 'RemoteSigned') {
+    Show-Success -Message "Execution policy set to RemoteSigned."
+} else {
+    Show-Info -Message "LocalMachine execution policy is RemoteSigned; this process uses '$effectivePolicy' from a higher-priority scope." -Emoji "🛡️"
+}
 
 # Check if the script is running with administrator rights
 Show-Section -Message "Check Administrator Rights" -Emoji "🔒" -Color "Red"
 If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
   Show-Error -Message "You do not have Administrator rights to run this script!`nPlease re-run this script as an Administrator!"
-  exit
+  exit 1
 } else { Show-Success -Message "Administrator rights confirmed." }
 
 # Performance tier: powerful hosts install everything; thin-and-light laptops (the default)
@@ -87,12 +227,14 @@ Show-Section -Message "Enable Windows Developer Mode" -Emoji "🔧" -Color "Gree
 try {
   $regPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock"
   if (-not (Test-Path $regPath)) {
-    New-Item -Path $regPath -Force | Out-Null
+    New-Item -Path $regPath -Force -ErrorAction Stop | Out-Null
   }
-  Set-ItemProperty -Path $regPath -Name "AllowDevelopmentWithoutDevLicense" -Value 1 -Type DWord
+  Set-ItemProperty -Path $regPath -Name "AllowDevelopmentWithoutDevLicense" -Value 1 -Type DWord -ErrorAction Stop
+  $developerMode = Get-ItemPropertyValue -Path $regPath -Name "AllowDevelopmentWithoutDevLicense" -ErrorAction Stop
+  if ([int]$developerMode -ne 1) { throw "Registry verification returned '$developerMode'." }
   Show-Success -Message "Windows Developer Mode 已啟用。"
 } catch {
-  Show-Warning -Message "啟用 Developer Mode 失敗: $_"
+  Add-StepWarning -Item 'DeveloperMode' -Message "啟用 Developer Mode 失敗: $($_.Exception.Message)"
 }
 
 # Download and Install Ubuntu Linux
@@ -111,7 +253,7 @@ if ($wslDistros -match 'Ubuntu') {
   if ($LASTEXITCODE -eq 0) {
     Show-Success -Message "Ubuntu Linux installation triggered."
   } else {
-    Show-Error -Message "Failed to trigger Ubuntu Linux installation. Exit code: $LASTEXITCODE"
+    Add-StepWarning -Item 'WSL.Ubuntu' -Message "Failed to trigger Ubuntu Linux installation. Exit code: $LASTEXITCODE"
   }
 }
 
@@ -120,7 +262,7 @@ Show-Section -Message "[1/8] Install Node.js using nvm" -Emoji "📦" -Color "Gr
 # nvm-windows accepts the 'lts' and 'latest' aliases directly (for both install and use),
 # which is far more robust than scraping the 'nvm list available' table layout.
 if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
-  Show-Warning -Message "nvm not found on PATH (verify winget CoreyButler.NVMforWindows succeeded / open a new shell); skipping Node.js install."
+  Add-StepWarning -Item 'Node.js' -Message "nvm not found on PATH (verify winget CoreyButler.NVMforWindows succeeded / open a new shell); skipping Node.js install."
 } else {
   # Wrap direct calls so a nonzero/failed nvm never aborts the script.
   try { nvm install lts;    $ltsOk    = ($LASTEXITCODE -eq 0) } catch { $ltsOk = $false }
@@ -130,7 +272,7 @@ if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
   if ($ltsOk -or $latestOk) {
     Show-Success -Message "Node.js installation completed."
   } else {
-    Show-Warning -Message "nvm install did not complete cleanly."
+    Add-StepWarning -Item 'Node.js' -Message "nvm install did not complete cleanly."
   }
 }
 
@@ -140,15 +282,32 @@ Show-Section -Message "[2/8] Auto-start GPG agent at logon" -Emoji "🔑" -Color
 # cannot serve the interactive user's socket - which is why the old NSSM 'GpgAgentService'
 # (running `gpg-agent.exe --launch gpg-agent`; --launch is a gpgconf verb, not a gpg-agent one)
 # did not work. Fix = remove that broken service and register a per-user logon task instead.
-try {
-    # Remove the broken NSSM-created LocalSystem service if a previous run left it behind (idempotent).
-    $oldGpgService = Get-Service -Name 'GpgAgentService' -ErrorAction SilentlyContinue
-    if ($oldGpgService) {
+#
+# Remove the old service independently: failure here must not prevent registration of the correct
+# per-user task.
+$oldGpgService = Get-Service -Name 'GpgAgentService' -ErrorAction SilentlyContinue
+if ($oldGpgService) {
+    try {
         Show-Info -Message "Removing broken 'GpgAgentService' (old NSSM LocalSystem service)..." -Emoji "🧹"
         if ($oldGpgService.Status -ne 'Stopped') { Stop-Service -Name 'GpgAgentService' -Force -ErrorAction SilentlyContinue }
-        & sc.exe delete 'GpgAgentService' | Out-Null
+        & sc.exe delete 'GpgAgentService' 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0 -and (Get-Service -Name 'GpgAgentService' -ErrorAction SilentlyContinue)) {
+            throw "sc.exe delete exited $LASTEXITCODE."
+        }
+        Show-Success -Message "Removed the obsolete GpgAgentService."
+    } catch {
+        Add-StepWarning -Item 'GpgAgentService' -Message "Could not remove the obsolete GpgAgentService: $($_.Exception.Message)"
     }
+}
 
+function Resolve-IdentitySid {
+    param([Parameter(Mandatory)][string]$Identity)
+    if ($Identity -match '^S-\d(?:-\d+)+$') { return $Identity }
+    $account = New-Object Security.Principal.NTAccount($Identity)
+    return $account.Translate([Security.Principal.SecurityIdentifier]).Value
+}
+
+try {
     # Resolve gpgconf.exe. 64-bit Gpg4win installs under 'C:\Program Files\GnuPG\bin' (matching the
     # gpg.program path configured in 03.Setup01.ps1); keep the legacy x86 path as a fallback, then PATH.
     $gpgconf = @(
@@ -159,18 +318,50 @@ try {
     if (-not $gpgconf) { throw "gpgconf.exe not found (is Gpg4win installed?)." }
 
     $gpgTaskName  = 'StartGpgAgentAtLogon'
+    $currentSid   = ([Security.Principal.WindowsIdentity]::GetCurrent()).User.Value
     $gpgAction    = New-ScheduledTaskAction -Execute $gpgconf -Argument '--launch gpg-agent'
-    $gpgTrigger   = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME"
-    $gpgPrincipal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive -RunLevel Limited
+    $gpgTrigger   = New-ScheduledTaskTrigger -AtLogOn -User $currentSid
+    $gpgPrincipal = New-ScheduledTaskPrincipal -UserId $currentSid -LogonType Interactive -RunLevel Limited
     $gpgSettings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
     Register-ScheduledTask -TaskName $gpgTaskName -Action $gpgAction -Trigger $gpgTrigger -Principal $gpgPrincipal `
         -Settings $gpgSettings -Description 'Launch gpg-agent for the current user at logon.' -Force -ErrorAction Stop | Out-Null
+
+    $registeredTask = Get-ScheduledTask -TaskName $gpgTaskName -ErrorAction SilentlyContinue
+    if (-not $registeredTask) { throw "Scheduled task '$gpgTaskName' was not found after registration." }
+    $registeredActions = @($registeredTask.Actions)
+    if ($registeredActions.Count -ne 1 -or
+        [IO.Path]::GetFullPath($registeredActions[0].Execute) -ine [IO.Path]::GetFullPath($gpgconf) -or
+        $registeredActions[0].Arguments -ne '--launch gpg-agent') {
+        throw "Scheduled task '$gpgTaskName' action did not match the requested gpgconf command."
+    }
+    if ((Resolve-IdentitySid -Identity $registeredTask.Principal.UserId) -ne $currentSid -or
+        [string]$registeredTask.Principal.LogonType -ne 'Interactive' -or
+        [string]$registeredTask.Principal.RunLevel -ne 'Limited') {
+        throw "Scheduled task '$gpgTaskName' principal did not verify as the current interactive limited user."
+    }
+    $triggerSids = @($registeredTask.Triggers | ForEach-Object { Resolve-IdentitySid -Identity $_.UserId })
+    if ($triggerSids -notcontains $currentSid) {
+        throw "Scheduled task '$gpgTaskName' has no logon trigger for the current SID."
+    }
+
     # Run it now under the task's own (non-elevated, Limited) principal so the agent starts in the
     # same context it will use at logon, without waiting for the next sign-in.
-    Start-ScheduledTask -TaskName $gpgTaskName -ErrorAction SilentlyContinue
-    Show-Success -Message "gpg-agent will auto-start at logon (task '$gpgTaskName') and was launched now."
+    $previousRunTime = (Get-ScheduledTaskInfo -TaskName $gpgTaskName -ErrorAction Stop).LastRunTime
+    Start-ScheduledTask -TaskName $gpgTaskName -ErrorAction Stop
+    $deadline = (Get-Date).AddSeconds(15)
+    do {
+        Start-Sleep -Milliseconds 250
+        $registeredTask = Get-ScheduledTask -TaskName $gpgTaskName -ErrorAction Stop
+        $taskInfo = Get-ScheduledTaskInfo -TaskName $gpgTaskName -ErrorAction Stop
+        $runFinished = $taskInfo.LastRunTime -gt $previousRunTime -and [string]$registeredTask.State -ne 'Running'
+    } while (-not $runFinished -and (Get-Date) -lt $deadline)
+    if (-not $runFinished) { throw "Scheduled task '$gpgTaskName' did not finish within 15 seconds." }
+    if ([int]$taskInfo.LastTaskResult -ne 0) {
+        throw "Scheduled task '$gpgTaskName' finished with result $($taskInfo.LastTaskResult)."
+    }
+    Show-Success -Message "gpg-agent task '$gpgTaskName' is registered, verified for SID $currentSid, and completed successfully now."
 } catch {
-    Show-Warning -Message "Failed to set up gpg-agent auto-start: $($_.Exception.Message)"
+    Add-StepWarning -Item 'StartGpgAgentAtLogon' -Message "Failed to set up gpg-agent auto-start: $($_.Exception.Message)"
 }
 
 # [3/8] Install Visual Studio extensions — powerful hosts only (they require VS Enterprise,
@@ -179,15 +370,19 @@ if ($isPowerfulPc) {
 # [3/8] Install Visual Studio extensions via helper script
 Show-Section -Message "[3/8] Install Visual Studio Extensions" -Emoji "🧩" -Color "Green"
 # Under `iex`, $PSScriptRoot is empty, so "$PSScriptRoot\install-vsix.ps1" would resolve to the
-# drive root (and could pick up a stale copy). Use $env:TEMP for the remote-execution path.
-$vsixInstallScript = if ([string]::IsNullOrEmpty($PSScriptRoot)) {
-    Join-Path $env:TEMP "install-vsix.ps1"
+# drive root (and could pick up a stale copy). Download to an Administrators-only directory.
+$vsixTempDir = $null
+$localVsixInstallScript = if ([string]::IsNullOrEmpty($PSScriptRoot)) { $null } else { Join-Path $PSScriptRoot "install-vsix.ps1" }
+$downloadVsixInstallScript = -not $localVsixInstallScript -or -not (Test-Path -LiteralPath $localVsixInstallScript)
+if ($downloadVsixInstallScript) {
+    $vsixTempDir = New-ProtectedInstallerDirectory -Prefix 'CiEnvironmentVsix'
+    $vsixInstallScript = New-ProtectedInstallerFile -Directory $vsixTempDir -Name 'install-vsix.ps1'
 } else {
-    Join-Path $PSScriptRoot "install-vsix.ps1"
+    $vsixInstallScript = $localVsixInstallScript
 }
 
 # Check if local install-vsix.ps1 exists, otherwise download from GitHub (fallback for remote execution)
-if (-not (Test-Path $vsixInstallScript)) {
+if ($downloadVsixInstallScript) {
     Show-Info -Message "Downloading install-vsix.ps1 from GitHub..." -Emoji "⬇️"
     # Note: Using 'master' branch as it is the default branch for this repository
     $vsixScriptUrl = "https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/install-vsix.ps1"
@@ -221,8 +416,9 @@ foreach ($ext in $vsixExtensions) {
 if ($vsixFailed.Count -eq 0) {
     Show-Success -Message "Visual Studio extensions installed."
 } else {
-    Show-Warning -Message "$($vsixFailed.Count) VS extension(s) did not install cleanly: $($vsixFailed -join ', ')"
+    Add-StepWarning -Item 'VisualStudio.Extensions' -Message "$($vsixFailed.Count) VS extension(s) did not install cleanly: $($vsixFailed -join ', ')"
 }
+if ($vsixTempDir) { Remove-Item -LiteralPath $vsixTempDir -Recurse -Force -ErrorAction SilentlyContinue }
 } else {
     Show-Info -Message "Thin-and-light host; skipping Visual Studio extensions (no VS Enterprise here)." -Emoji "🪶"
 }
@@ -250,7 +446,7 @@ $startExitCode = $LASTEXITCODE
 if ($stopExitCode -eq 0 -and $startExitCode -eq 0) {
     Show-Success -Message "Windows TCP NAT service reset."
 } else {
-    Show-Error -Message "Failed to reset Windows TCP NAT service. (stop exit code: $stopExitCode, start exit code: $startExitCode)"
+    Add-StepWarning -Item 'WinNAT' -Message "Failed to reset Windows TCP NAT service. (stop exit code: $stopExitCode, start exit code: $startExitCode)"
 }
 
 # [6/8] Exclude commonly used ports from Windows NAT to avoid conflicts
@@ -273,7 +469,7 @@ Show-Section -Message "[7/8] Run Basic Docker Containers" -Emoji "🐳" -Color "
 if (-not $isPowerfulPc) {
     Show-Info -Message "Thin-and-light host; skipping Docker dev containers." -Emoji "🪶"
 } elseif (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-    Show-Warning -Message "docker CLI not found (Docker Desktop may not be installed); skipping dev containers."
+    Add-StepWarning -Item 'Docker.Containers' -Message "docker CLI not found (Docker Desktop may not be installed); skipping dev containers."
 } else {
 
 # Local-dev credentials ONLY (never reuse outside a dev workstation). Override via env var.
@@ -290,7 +486,7 @@ foreach ($i in 1..60) {
     Start-Sleep -Seconds 5
 }
 if (-not $dockerReady) {
-    Show-Warning -Message "Docker daemon not ready after ~2 min; skipping container startup. Start Docker Desktop and re-run this step."
+    Add-StepWarning -Item 'Docker.Containers' -Message "Docker daemon not ready after ~5 min; skipping container startup. Start Docker Desktop and re-run this step."
 } else {
     # Idempotent: reuse an existing container (start if stopped) instead of failing on a
     # duplicate name. Ports are published on all interfaces; named volumes persist DB state
@@ -301,11 +497,11 @@ if (-not $dockerReady) {
         if ($exists) {
             docker start $Name | Out-Null
             if ($LASTEXITCODE -eq 0) { Show-Success -Message "Container '$Name' already existed; started." }
-            else { Show-Warning -Message "Container '$Name' exists but failed to start (exit $LASTEXITCODE)." }
+            else { Add-StepWarning -Item "Docker.$Name" -Message "Container '$Name' exists but failed to start (exit $LASTEXITCODE)." }
         } else {
             docker run @RunArgs | Out-Null
             if ($LASTEXITCODE -eq 0) { Show-Success -Message "Container '$Name' created." }
-            else { Show-Warning -Message "Failed to create container '$Name' (exit $LASTEXITCODE)." }
+            else { Add-StepWarning -Item "Docker.$Name" -Message "Failed to create container '$Name' (exit $LASTEXITCODE)." }
         }
     }
 
@@ -326,16 +522,44 @@ if (-not $dockerReady) {
 }
 }
 
+function Test-OfficeTraditionalChineseLanguagePack {
+    $configurationPaths = @(
+        'HKLM:\SOFTWARE\Microsoft\Office\ClickToRun\Configuration',
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Office\ClickToRun\Configuration'
+    )
+    $configuration = $configurationPaths |
+        Where-Object { Test-Path -LiteralPath $_ } |
+        ForEach-Object { Get-ItemProperty -LiteralPath $_ -ErrorAction SilentlyContinue } |
+        Select-Object -First 1
+    if (-not $configuration -or [string]::IsNullOrWhiteSpace([string]$configuration.ProductReleaseIds)) {
+        return [pscustomobject]@{ Present = $false; Missing = @('Click-to-Run installation'); Evidence = 'Office Click-to-Run product IDs were not found.' }
+    }
+
+    $releaseIds = @($configuration.ProductReleaseIds -split '[,;]' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    $uninstallEntries = Get-ItemProperty -Path @(
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*'
+    ) -ErrorAction SilentlyContinue
+    $missing = @($releaseIds | Where-Object {
+        $expectedKey = "$_ - zh-tw"
+        -not ($uninstallEntries | Where-Object { $_.PSChildName -ieq $expectedKey } | Select-Object -First 1)
+    })
+    $present = $missing.Count -eq 0 -and $releaseIds.Count -gt 0
+    $evidence = if ($present) {
+        "Verified zh-tw registration for Office product(s): $($releaseIds -join ', ')."
+    } else {
+        "Missing zh-tw registration for Office product(s): $($missing -join ', ')."
+    }
+    return [pscustomobject]@{ Present = $present; Missing = $missing; Evidence = $evidence }
+}
+
 # [8/8] Install Office 64-bit Chinese (Traditional) Language Pack
 # Reference: https://learn.microsoft.com/en-us/deployoffice/overview-deploying-languages-microsoft-365-apps
 # Reference: https://learn.microsoft.com/en-us/deployoffice/office-deployment-tool-configuration-options
 Show-Section -Message "[8/8] Install Office Chinese (Traditional) Language Pack" -Emoji "🌐" -Color "Green"
 
-# Create temporary directory for Office Deployment Tool
-$odtTempDir = "$env:TEMP\OfficeLangPack"
-if (-not (Test-Path $odtTempDir)) {
-    New-Item -ItemType Directory -Path $odtTempDir -Force | Out-Null
-}
+# Create an Administrators-only temporary directory for the elevated executable.
+$odtTempDir = New-ProtectedInstallerDirectory -Prefix 'CiEnvironmentOfficeLangPack'
 Show-Info -Message "Created temporary directory: $odtTempDir" -Emoji "📁"
 
 # Download Office Deployment Tool
@@ -343,7 +567,7 @@ Show-Info -Message "Created temporary directory: $odtTempDir" -Emoji "📁"
 # resolves to the Download Center *page* (HTML), not the .exe, so we use the direct URL and
 # validate the payload (MZ magic) below. Update the version if Microsoft retires this build.
 $odtUrl = "https://download.microsoft.com/download/2/7/A/27AF1BE6-DD20-4CB4-B154-EBAB8A7D4A7E/officedeploymenttool_18129-20158.exe"
-$odtExe = "$odtTempDir\officedeploymenttool.exe"
+$odtExe = New-ProtectedInstallerFile -Directory $odtTempDir -Name 'officedeploymenttool.exe'
 $odtInstallSuccess = $true
 Show-Info -Message "Downloading Office Deployment Tool..." -Emoji "⬇️"
 try {
@@ -354,9 +578,13 @@ try {
     if ($m0 -ne 0x4D -or $m1 -ne 0x5A) {
         throw "Downloaded ODT is not a valid executable (non-MZ payload; the download URL may have changed)."
     }
+    $odtSignature = Get-AuthenticodeSignature -LiteralPath $odtExe
+    if ($odtSignature.Status -ne 'Valid' -or $odtSignature.SignerCertificate.Subject -notmatch 'Microsoft Corporation') {
+        throw "Downloaded ODT has an invalid or unexpected Authenticode signature: $($odtSignature.Status), $($odtSignature.SignerCertificate.Subject)"
+    }
     Show-Success -Message "Office Deployment Tool downloaded."
 } catch {
-    Show-Error -Message "Failed to download Office Deployment Tool: $_"
+    Add-StepWarning -Item 'Office.zh-TW' -Message "Failed to download Office Deployment Tool: $_"
     $odtInstallSuccess = $false
 }
 
@@ -365,9 +593,12 @@ if ($odtInstallSuccess -and (Test-Path $odtExe)) {
     Show-Info -Message "Extracting Office Deployment Tool..." -Emoji "📦"
     $extractProcess = Start-Process -FilePath $odtExe -ArgumentList "/quiet /extract:$odtTempDir" -Wait -PassThru
     if ($extractProcess.ExitCode -ne 0) {
-        Show-Error -Message "Failed to extract Office Deployment Tool. Exit code: $($extractProcess.ExitCode)"
+        Add-StepWarning -Item 'Office.zh-TW' -Message "Failed to extract Office Deployment Tool. Exit code: $($extractProcess.ExitCode)"
         $odtInstallSuccess = $false
     } else {
+        Get-ChildItem -LiteralPath $odtTempDir -Force -Recurse | ForEach-Object {
+            Set-ProtectedInstallerAcl -Path $_.FullName
+        }
         Show-Success -Message "Office Deployment Tool extracted."
     }
 }
@@ -384,8 +615,8 @@ if ($odtInstallSuccess) {
   <Display Level="None" AcceptEULA="TRUE" />
 </Configuration>
 "@
-    $configPath = "$odtTempDir\langpack-zh-TW.xml"
-    $configXml | Out-File -FilePath $configPath -Encoding UTF8
+    $configPath = New-ProtectedInstallerFile -Directory $odtTempDir -Name 'langpack-zh-TW.xml'
+    $configXml | Set-Content -LiteralPath $configPath -Encoding UTF8
     Show-Info -Message "Created language pack configuration: $configPath" -Emoji "📝"
 
     # Install Chinese Traditional Language Pack
@@ -393,13 +624,25 @@ if ($odtInstallSuccess) {
     if (Test-Path $setupExe) {
         Show-Info -Message "Installing Office Chinese (Traditional) Language Pack (zh-TW)..." -Emoji "🔧"
         $process = Start-Process -FilePath $setupExe -ArgumentList "/configure `"$configPath`"" -Wait -PassThru
-        if ($process.ExitCode -eq 0) {
-            Show-Success -Message "Office Chinese (Traditional) Language Pack installed successfully."
+        $officeLanguage = $null
+        for ($attempt = 1; $attempt -le 15; $attempt++) {
+            $officeLanguage = Test-OfficeTraditionalChineseLanguagePack
+            if ($officeLanguage.Present) { break }
+            if ($attempt -lt 15) { Start-Sleep -Seconds 2 }
+        }
+        if (@(0, 1641, 3010) -contains $process.ExitCode -and $officeLanguage.Present) {
+            if ($process.ExitCode -eq 0) {
+                Show-Success -Message "Office Chinese (Traditional) Language Pack installed and verified. $($officeLanguage.Evidence)"
+            } else {
+                Add-StepWarning -Item 'Office.zh-TW' -Status 'reboot_required' -Message "Office zh-TW verified, but the installer returned reboot-required exit code $($process.ExitCode). $($officeLanguage.Evidence)"
+            }
+        } elseif (@(0, 1641, 3010) -contains $process.ExitCode) {
+            Add-StepWarning -Item 'Office.zh-TW' -Message "Office Language Pack installer exited $($process.ExitCode), but verification failed. $($officeLanguage.Evidence)"
         } else {
-            Show-Warning -Message "Office Language Pack installation completed with exit code: $($process.ExitCode)"
+            Add-StepWarning -Item 'Office.zh-TW' -Message "Office Language Pack installation completed with exit code: $($process.ExitCode)"
         }
     } else {
-        Show-Error -Message "setup.exe not found. Office Deployment Tool extraction may have failed."
+        Add-StepWarning -Item 'Office.zh-TW' -Message "setup.exe not found. Office Deployment Tool extraction may have failed."
     }
 } else {
     Show-Warning -Message "Skipping Office Language Pack installation due to previous errors."
@@ -413,4 +656,9 @@ Show-Success -Message "Temporary files cleaned up."
 # Script complete
 $elapsed = (Get-Date) - $scriptStart
 Show-Section -Message ("Step 4 complete (elapsed {0:hh\:mm\:ss})" -f $elapsed) -Emoji "🎉" -Color "Magenta"
-Show-Success -Message "Environment configuration complete!"
+Write-StepResult
+if ($script:StepWarnings.Count -gt 0) {
+    Show-Warning -Message "Environment configuration completed with $($script:StepWarnings.Count) verified warning(s)."
+} else {
+    Show-Success -Message "Environment configuration complete!"
+}

@@ -57,11 +57,63 @@ $TaskName     = 'CiEnvironmentResume'
 $MutexName    = 'Global\CiEnvironmentInstallAll'
 $Pwsh7        = Join-Path $env:ProgramFiles 'PowerShell\7\pwsh.exe'
 $Ps51         = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-$StateVersion = 3
+$StateVersion = 5
 $MaxAttempts  = 2   # per pipeline entry; abort when exceeded (crash-loop guard)
 $MaxReboots   = 3   # re-issue guard when an expected reboot does not happen
 $AdminsSidStr = 'S-1-5-32-544'
 $SystemSidStr = 'S-1-5-18'
+$ResultAwareSteps = @('00.PreConfig.ps1', '02.Driver.ps1', '03.Setup01.ps1', '04.Setup02.ps1', '05.EdgeExtensions.ps1')
+
+if (-not ('CiEnvironmentNativeDirectory' -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+
+public static class CiEnvironmentNativeDirectory
+{
+    [StructLayout(LayoutKind.Sequential)]
+    private struct SECURITY_ATTRIBUTES
+    {
+        public int nLength;
+        public IntPtr lpSecurityDescriptor;
+        [MarshalAs(UnmanagedType.Bool)]
+        public bool bInheritHandle;
+    }
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool CreateDirectoryW(
+        string lpPathName,
+        ref SECURITY_ATTRIBUTES lpSecurityAttributes);
+
+    public static void CreateExclusive(string path, byte[] securityDescriptor)
+    {
+        if (securityDescriptor == null || securityDescriptor.Length == 0)
+            throw new ArgumentException("A security descriptor is required.", "securityDescriptor");
+
+        GCHandle pinned = GCHandle.Alloc(securityDescriptor, GCHandleType.Pinned);
+        try
+        {
+            SECURITY_ATTRIBUTES attributes = new SECURITY_ATTRIBUTES();
+            attributes.nLength = Marshal.SizeOf(typeof(SECURITY_ATTRIBUTES));
+            attributes.lpSecurityDescriptor = pinned.AddrOfPinnedObject();
+            attributes.bInheritHandle = false;
+
+            if (!CreateDirectoryW(path, ref attributes))
+            {
+                int error = Marshal.GetLastWin32Error();
+                throw new Win32Exception(error, "Exclusive directory creation failed for '" + path + "'.");
+            }
+        }
+        finally
+        {
+            pinned.Free();
+        }
+    }
+}
+'@
+}
 
 # Ordered pipeline. 01 appears twice (two Windows Update passes). RequiresPwsh7=$false only for the
 # PS7 bootstrap (00). ForceReboot=$true means "always reboot after this step": 00 enables optional
@@ -154,7 +206,10 @@ function Get-ConsoleUserSid {
 function Write-OrchLog {
     param([string]$Message, [string]$Level = 'Info')
     $line = "{0} [{1}] {2}" -f (Get-Date).ToString('yyyy-MM-dd HH:mm:ss'), $Level, $Message
-    try { Add-Content -Path $LogPath -Value $line -Encoding UTF8 -ErrorAction SilentlyContinue } catch { }
+    try {
+        Add-Content -Path $LogPath -Value $line -Encoding UTF8 -ErrorAction SilentlyContinue
+        if ((Test-IsAdmin) -and (Test-Path -LiteralPath $LogPath)) { Set-LockedAcl $LogPath }
+    } catch { }
     switch ($Level) {
         'Error'   { Show-Error   -Message $Message }
         'Warning' { Show-Warning -Message $Message }
@@ -172,29 +227,139 @@ function Assert-NotReparse {
     }
 }
 
-# Apply a protected (inheritance-disabled) DACL granting FullControl to Administrators + SYSTEM only,
-# then verify it. Terminating on any failure (fail-closed).
-function Set-LockedAcl {
-    param([string]$Path)
+function New-LockedSecurityDescriptor {
+    param([bool]$Directory)
     $adminsSid = New-Object System.Security.Principal.SecurityIdentifier($AdminsSidStr)
     $systemSid = New-Object System.Security.Principal.SecurityIdentifier($SystemSidStr)
-    $sec = Get-Acl -LiteralPath $Path
+    $sec = if ($Directory) {
+        New-Object System.Security.AccessControl.DirectorySecurity
+    } else {
+        New-Object System.Security.AccessControl.FileSecurity
+    }
+    $sec.SetOwner($adminsSid)
     $sec.SetAccessRuleProtection($true, $false)
-    foreach ($rule in @($sec.Access)) { [void]$sec.RemoveAccessRule($rule) }
     $rights = [System.Security.AccessControl.FileSystemRights]::FullControl
-    $inh    = [System.Security.AccessControl.InheritanceFlags]'ContainerInherit,ObjectInherit'
+    $inh = if ($Directory) {
+        [System.Security.AccessControl.InheritanceFlags]'ContainerInherit,ObjectInherit'
+    } else {
+        [System.Security.AccessControl.InheritanceFlags]::None
+    }
     $prop   = [System.Security.AccessControl.PropagationFlags]::None
     $allow  = [System.Security.AccessControl.AccessControlType]::Allow
     $sec.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule($adminsSid, $rights, $inh, $prop, $allow)))
     $sec.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule($systemSid, $rights, $inh, $prop, $allow)))
+    return $sec
+}
+
+function Set-HighIntegrity {
+    param([string]$Path, [bool]$Directory)
+    $level = if ($Directory) { '(OI)(CI)H' } else { 'H' }
+    & icacls.exe $Path /setintegritylevel $level /q | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "icacls could not set High integrity on $Path (exit $LASTEXITCODE)." }
+}
+
+# Apply a protected owner/DACL granting FullControl to Administrators + SYSTEM only, then verify it.
+function Set-LockedAcl {
+    param([string]$Path)
+    $adminsSid = New-Object System.Security.Principal.SecurityIdentifier($AdminsSidStr)
+    $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+    $sec = New-LockedSecurityDescriptor -Directory ([bool]$item.PSIsContainer)
     Set-Acl -LiteralPath $Path -AclObject $sec -ErrorAction Stop
-    # Verify: protected, and no ACE outside Administrators/SYSTEM.
+    Set-HighIntegrity -Path $Path -Directory ([bool]$item.PSIsContainer)
+
+    # Verify: Administrators owns the path, inheritance is disabled, and no ACE grants another SID.
     $after = Get-Acl -LiteralPath $Path
+    $ownerSid = $after.GetOwner([System.Security.Principal.SecurityIdentifier]).Value
+    if ($ownerSid -ne $AdminsSidStr) { throw "Unexpected owner ($ownerSid) on $Path." }
     if (-not $after.AreAccessRulesProtected) { throw "ACL not protected on $Path." }
     foreach ($ace in $after.Access) {
         $sid = $ace.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value
         if (@($AdminsSidStr, $SystemSidStr) -notcontains $sid) { throw "Unexpected ACE ($sid) on $Path." }
     }
+}
+
+function Test-LockedPath {
+    param(
+        [string]$Path,
+        [ValidateSet('Directory', 'File')][string]$ExpectedType
+    )
+    try {
+        $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+        if ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) { return $false }
+        if ($ExpectedType -eq 'Directory' -and -not $item.PSIsContainer) { return $false }
+        if ($ExpectedType -eq 'File' -and $item.PSIsContainer) { return $false }
+
+        $acl = Get-Acl -LiteralPath $Path -ErrorAction Stop
+        $ownerSid = $acl.GetOwner([System.Security.Principal.SecurityIdentifier]).Value
+        if (@($AdminsSidStr, $SystemSidStr) -notcontains $ownerSid -or -not $acl.AreAccessRulesProtected) {
+            return $false
+        }
+
+        $fullControlSids = @()
+        foreach ($ace in $acl.Access) {
+            $sid = $ace.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value
+            if (@($AdminsSidStr, $SystemSidStr) -notcontains $sid -or
+                $ace.AccessControlType -ne [System.Security.AccessControl.AccessControlType]::Allow -or
+                ($ace.FileSystemRights -band [System.Security.AccessControl.FileSystemRights]::FullControl) -ne
+                    [System.Security.AccessControl.FileSystemRights]::FullControl) {
+                return $false
+            }
+            $fullControlSids += $sid
+        }
+        return (@(@($AdminsSidStr, $SystemSidStr) | Where-Object { $fullControlSids -contains $_ }).Count -eq 2)
+    } catch {
+        return $false
+    }
+}
+
+function New-LockedDirectory {
+    param([string]$Path)
+    $security = New-LockedSecurityDescriptor -Directory $true
+    [CiEnvironmentNativeDirectory]::CreateExclusive($Path, $security.GetSecurityDescriptorBinaryForm())
+    Set-HighIntegrity -Path $Path -Directory $true
+    Set-LockedAcl $Path
+}
+
+function Write-LockedFile {
+    param(
+        [string]$Path,
+        [string]$Content,
+        [System.Text.Encoding]$Encoding
+    )
+    if (Test-Path -LiteralPath $Path) {
+        Assert-NotReparse $Path
+        Remove-Item -LiteralPath $Path -Force -ErrorAction Stop
+    }
+    $security = New-LockedSecurityDescriptor -Directory $false
+    if ($PSVersionTable.PSEdition -eq 'Core') {
+        $stream = [System.IO.FileSystemAclExtensions]::Create(
+            (New-Object System.IO.FileInfo($Path)),
+            [System.IO.FileMode]::CreateNew,
+            [System.Security.AccessControl.FileSystemRights]::FullControl,
+            [System.IO.FileShare]::None,
+            4096,
+            [System.IO.FileOptions]::SequentialScan,
+            $security
+        )
+    } else {
+        $stream = New-Object System.IO.FileStream(
+            $Path,
+            [System.IO.FileMode]::CreateNew,
+            [System.Security.AccessControl.FileSystemRights]::FullControl,
+            [System.IO.FileShare]::None,
+            4096,
+            [System.IO.FileOptions]::SequentialScan,
+            $security
+        )
+    }
+    try {
+        $writer = New-Object System.IO.StreamWriter($stream, $Encoding)
+        try { $writer.Write($Content); $writer.Flush() } finally { $writer.Dispose() }
+    } finally {
+        if ($stream) { $stream.Dispose() }
+    }
+    Set-HighIntegrity -Path $Path -Directory $false
+    Set-LockedAcl $Path
 }
 
 # Create + harden C:\ProgramData\CiEnvironment (and snapshot/logs). The resume task runs the snapshot
@@ -203,19 +368,56 @@ function Set-LockedAcl {
 function Initialize-RootDir {
     Assert-NotReparse $RootDir
     if (Test-Path $RootDir) {
+        $protectedPaths = @(
+            @{ Path = $RootDir; Type = 'Directory' },
+            @{ Path = $SnapshotDir; Type = 'Directory' },
+            @{ Path = $LogDir; Type = 'Directory' },
+            @{ Path = $StatePath; Type = 'File' },
+            @{ Path = $LogPath; Type = 'File' }
+        )
+        $protectedPaths += @($SnapshotFiles | ForEach-Object {
+            @{ Path = (Join-Path $SnapshotDir $_); Type = 'File' }
+        })
+        $needsLegacyReset = $false
+        foreach ($protectedPath in $protectedPaths) {
+            if ((Test-Path -LiteralPath $protectedPath.Path) -and
+                -not (Test-LockedPath -Path $protectedPath.Path -ExpectedType $protectedPath.Type)) {
+                $needsLegacyReset = $true
+                break
+            }
+        }
+        if ($needsLegacyReset) {
+            $quarantine = "$RootDir.legacy-$((Get-Date).ToString('yyyyMMddHHmmss'))-$([guid]::NewGuid().ToString('N').Substring(0,8))"
+            Show-Warning -Message "Migrating the pre-v5 user-owned state directory to '$quarantine'; its contents will not be read or executed."
+            Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue
+            Move-Item -LiteralPath $RootDir -Destination $quarantine -ErrorAction Stop
+        }
+    }
+    if (Test-Path $RootDir) {
         $ownerSid = (Get-Acl -LiteralPath $RootDir).GetOwner([System.Security.Principal.SecurityIdentifier]).Value
-        $trusted = @($AdminsSidStr, $SystemSidStr, (Get-CurrentSid))
+        # Do not trust the current user's SID here: UAC medium/high tokens share that SID, and a
+        # user-owned directory can always have its DACL changed by the medium-integrity owner.
+        $trusted = @($AdminsSidStr, $SystemSidStr)
         if ($trusted -notcontains $ownerSid) {
             throw "$RootDir already exists with an untrusted owner ($ownerSid); delete it and retry."
         }
     } else {
-        New-Item -ItemType Directory -Path $RootDir -Force -ErrorAction Stop | Out-Null
+        New-LockedDirectory $RootDir
     }
     Set-LockedAcl $RootDir
     foreach ($d in @($SnapshotDir, $LogDir)) {
         Assert-NotReparse $d
-        if (-not (Test-Path $d)) { New-Item -ItemType Directory -Path $d -Force -ErrorAction Stop | Out-Null }
+        if (-not (Test-Path $d)) { New-LockedDirectory $d }
         Set-LockedAcl $d
+    }
+    if (-not (Test-Path -LiteralPath $LogPath)) {
+        Write-LockedFile -Path $LogPath -Content '' -Encoding (New-Object System.Text.UTF8Encoding($true))
+    }
+    foreach ($file in @($StatePath, $LogPath) + @($SnapshotFiles | ForEach-Object { Join-Path $SnapshotDir $_ })) {
+        if (Test-Path -LiteralPath $file) {
+            Assert-NotReparse $file
+            Set-LockedAcl $file
+        }
     }
 }
 
@@ -227,9 +429,64 @@ function Read-OrchState {
 
 function Save-OrchState {
     param($State)
-    $tmp = "$StatePath.tmp"
-    ($State | ConvertTo-Json -Depth 8) | Set-Content -Path $tmp -Encoding UTF8 -ErrorAction Stop
-    Move-Item -Path $tmp -Destination $StatePath -Force -ErrorAction Stop
+    $tmp = "$StatePath.tmp-$([guid]::NewGuid().ToString('N'))"
+    $backup = "$StatePath.bak-$([guid]::NewGuid().ToString('N'))"
+    $commitComplete = $false
+    try {
+        Write-LockedFile -Path $tmp -Content ($State | ConvertTo-Json -Depth 8) -Encoding (New-Object System.Text.UTF8Encoding($true))
+        $flushStream = New-Object System.IO.FileStream(
+            $tmp,
+            [System.IO.FileMode]::Open,
+            [System.IO.FileAccess]::ReadWrite,
+            [System.IO.FileShare]::None
+        )
+        try { $flushStream.Flush($true) } finally { $flushStream.Dispose() }
+
+        if (Test-Path -LiteralPath $StatePath) {
+            Assert-NotReparse $StatePath
+            [System.IO.File]::Replace($tmp, $StatePath, $backup, $true)
+        } else {
+            [System.IO.File]::Move($tmp, $StatePath)
+        }
+        Set-LockedAcl $StatePath
+        $commitComplete = $true
+    } finally {
+        if (Test-Path -LiteralPath $tmp) { Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue }
+        if ($commitComplete -and (Test-Path -LiteralPath $backup)) {
+            Remove-Item -LiteralPath $backup -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+function Read-StepResult {
+    param([string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) { return $null }
+    try {
+        $result = Get-Content -LiteralPath $Path -Raw -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json
+        if ([int]$result.version -ne 1) { throw "unsupported result version '$($result.version)'" }
+        if (@('completed', 'completed_with_warnings') -notcontains $result.status) {
+            throw "invalid result status '$($result.status)'"
+        }
+        if ($result.PSObject.Properties.Name -notcontains 'warnings') { throw "missing warnings array" }
+        $warnings = @($result.warnings)
+        if ($result.status -eq 'completed' -and $warnings.Count -ne 0) {
+            throw "status is completed but warnings contains $($warnings.Count) item(s)"
+        }
+        if ($result.status -eq 'completed_with_warnings' -and $warnings.Count -eq 0) {
+            throw "status is completed_with_warnings but warnings is empty"
+        }
+        foreach ($warning in $warnings) {
+            foreach ($property in @('item', 'status', 'message')) {
+                if ([string]::IsNullOrWhiteSpace([string]$warning.$property)) {
+                    throw "warning entry has an empty '$property' field"
+                }
+            }
+        }
+        return $result
+    } catch {
+        Write-OrchLog "Step result '$Path' is unreadable or invalid: $($_.Exception.Message)" 'Warning'
+        return $null
+    }
 }
 
 # Download each repo file and store it as UTF-8 WITH BOM (so Windows PowerShell 5.1 parses the
@@ -243,7 +500,7 @@ function Invoke-Snapshot {
         $dst = Join-Path $SnapshotDir $name
         try {
             $resp = Invoke-WebRequest -Uri $url -UseBasicParsing -ErrorAction Stop
-            [System.IO.File]::WriteAllText($dst, [string]$resp.Content, $utf8Bom)
+            Write-LockedFile -Path $dst -Content ([string]$resp.Content) -Encoding $utf8Bom
             $hashes[$name] = (Get-FileHash -Path $dst -Algorithm SHA256).Hash
             Write-OrchLog "Snapshotted $name"
         } catch {
@@ -260,10 +517,14 @@ function Ensure-Snapshot {
     $utf8Bom = New-Object System.Text.UTF8Encoding($true)
     foreach ($name in $SnapshotFiles) {
         $dst = Join-Path $SnapshotDir $name
-        if (Test-Path $dst) { continue }
+        if (Test-Path $dst) {
+            Assert-NotReparse $dst
+            Set-LockedAcl $dst
+            continue
+        }
         Write-OrchLog "Snapshot file missing ($name); re-downloading." 'Warning'
         $resp = Invoke-WebRequest -Uri "$RepoRawBase/$name" -UseBasicParsing -ErrorAction Stop
-        [System.IO.File]::WriteAllText($dst, [string]$resp.Content, $utf8Bom)
+        Write-LockedFile -Path $dst -Content ([string]$resp.Content) -Encoding $utf8Bom
         if ($State -and $State.hashes -and ($State.hashes.PSObject.Properties.Name -contains $name)) {
             $State.hashes.$name = (Get-FileHash -Path $dst -Algorithm SHA256).Hash
         }
@@ -313,30 +574,76 @@ function Unregister-ResumeTask {
 }
 
 function Invoke-Step {
-    param($Entry, $State)
+    param($Entry, $State, [int]$Index)
     $scriptPath = Join-Path $SnapshotDir $Entry.name
-    if (-not (Test-Path $scriptPath)) { Write-OrchLog "Snapshot missing: $scriptPath" 'Error'; return 1001 }
+    if (-not (Test-Path $scriptPath)) {
+        Write-OrchLog "Snapshot missing: $scriptPath" 'Error'
+        return [pscustomobject]@{ ExitCode = 1001; Warnings = @() }
+    }
 
     # Tamper check: the snapshot is ACL-protected, but verify the recorded hash as defense in depth.
     if ($State.hashes -and ($State.hashes.PSObject.Properties.Name -contains $Entry.name)) {
         $current = (Get-FileHash -Path $scriptPath -Algorithm SHA256).Hash
         if ($current -ne $State.hashes.($Entry.name)) {
-            Write-OrchLog "Snapshot hash mismatch for $($Entry.name); refusing to run." 'Error'; return 1003
+            Write-OrchLog "Snapshot hash mismatch for $($Entry.name); refusing to run." 'Error'
+            return [pscustomobject]@{ ExitCode = 1003; Warnings = @() }
         }
     }
 
     if ($Entry.requiresPwsh7 -and -not (Test-Path $Pwsh7)) {
         Write-OrchLog "PowerShell 7 not found at $Pwsh7 but $($Entry.name) requires it (did 00 fail?)." 'Error'
-        return 1002
+        return [pscustomobject]@{ ExitCode = 1002; Warnings = @() }
     }
     $hostExe = if ($Entry.requiresPwsh7) { $Pwsh7 } elseif (Test-Path $Pwsh7) { $Pwsh7 } else { $Ps51 }
 
-    Write-OrchLog "Running $($Entry.name) via $hostExe"
+    $runId = if ($State.runId) { [string]$State.runId } else { 'legacy-v5' }
+    $logStem = 'run-{0}-{1:D2}-{2}-attempt-{3}-{4}' -f `
+        $runId, ($Index + 1), ([IO.Path]::GetFileNameWithoutExtension($Entry.name)), `
+        ([int]$Entry.attempts), ([guid]::NewGuid().ToString('N'))
+    $stepLogDir = Join-Path $LogDir $logStem
+    New-LockedDirectory $stepLogDir
+    $stdoutPath = Join-Path $stepLogDir 'stdout.log'
+    $stderrPath = Join-Path $stepLogDir 'stderr.log'
+    $resultPath = Join-Path $stepLogDir 'result.json'
+    foreach ($path in @($stdoutPath, $stderrPath, $resultPath)) {
+        Write-LockedFile -Path $path -Content '' -Encoding (New-Object System.Text.UTF8Encoding($false))
+    }
+
+    Write-OrchLog "Running $($Entry.name) via $hostExe (child output: $stepLogDir)"
     $env:CI_ENV_ORCHESTRATED = '1'   # child inherits this; suppresses the step's own shutdown
-    $proc = Start-Process -FilePath $hostExe `
-        -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $scriptPath) `
-        -NoNewWindow -Wait -PassThru
-    return $proc.ExitCode
+    $env:CI_ENV_STEP_LOG_DIR = $stepLogDir
+    $env:CI_ENV_STEP_RESULT_PATH = $resultPath
+    try {
+        $proc = Start-Process -FilePath $hostExe `
+            -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $scriptPath) `
+            -NoNewWindow -Wait -PassThru `
+            -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
+    } catch {
+        Write-OrchLog "Could not launch $($Entry.name): $($_.Exception.Message)" 'Error'
+        return [pscustomobject]@{ ExitCode = 1004; Warnings = @() }
+    } finally {
+        Remove-Item Env:CI_ENV_STEP_LOG_DIR -ErrorAction SilentlyContinue
+        Remove-Item Env:CI_ENV_STEP_RESULT_PATH -ErrorAction SilentlyContinue
+    }
+
+    $warnings = @()
+    if ($ResultAwareSteps -contains $Entry.name) {
+        $stepResult = Read-StepResult -Path $resultPath
+        if ($stepResult) {
+            $warnings = @($stepResult.warnings)
+        } elseif ($proc.ExitCode -eq 0) {
+            $warnings = @([pscustomobject]@{
+                item    = $Entry.name
+                status  = 'missing_result'
+                message = "The step exited successfully but did not produce its required result file. Review $stdoutPath and $stderrPath."
+            })
+        }
+    }
+
+    return [pscustomobject]@{
+        ExitCode = $proc.ExitCode
+        Warnings = $warnings
+    }
 }
 
 # Schedule a reboot; falls back to Restart-Computer if shutdown.exe fails.
@@ -372,6 +679,14 @@ function Invoke-Orchestrator {
 
         if (-not (Test-IsAdmin)) {
             Show-Error -Message "Administrator rights are required. Re-run this in an ELEVATED PowerShell session."
+            return
+        }
+
+        # Validate and lock the security boundary before reading any persisted state from it.
+        try {
+            Initialize-RootDir
+        } catch {
+            Show-Error -Message "Could not secure $RootDir before reading state: $($_.Exception.Message)"
             return
         }
 
@@ -429,10 +744,18 @@ function Invoke-Orchestrator {
                 $hashes = Invoke-Snapshot
                 $steps = @()
                 foreach ($p in $Pipeline) {
-                    $steps += [ordered]@{ name = $p.Name; requiresPwsh7 = $p.RequiresPwsh7; forceReboot = $p.ForceReboot; status = 'pending'; attempts = 0 }
+                    $steps += [ordered]@{
+                        name = $p.Name
+                        requiresPwsh7 = $p.RequiresPwsh7
+                        forceReboot = $p.ForceReboot
+                        status = 'pending'
+                        attempts = 0
+                        warnings = @()
+                    }
                 }
                 $fresh = [ordered]@{
                     version          = $StateVersion
+                    runId            = [guid]::NewGuid().ToString('N')
                     status           = 'running'
                     ownerSid         = $currentSid
                     startedUtc       = (Get-Date).ToUniversalTime().ToString('o')
@@ -482,7 +805,11 @@ function Invoke-Orchestrator {
             $i = [int]$state.currentIndex
             $entry = $state.steps[$i]
 
-            if ($entry.status -eq 'completed') { $state.currentIndex = $i + 1; Save-OrchState -State $state; continue }
+            if (@('completed', 'completed_with_warnings') -contains $entry.status) {
+                $state.currentIndex = $i + 1
+                Save-OrchState -State $state
+                continue
+            }
 
             $entry.attempts = [int]$entry.attempts + 1
             if ([int]$entry.attempts -gt $MaxAttempts) {
@@ -494,7 +821,8 @@ function Invoke-Orchestrator {
             Write-OrchLog "Starting step [$($i + 1)/$($Pipeline.Count)]: $($entry.name) (attempt $($entry.attempts))."
 
             Update-OrchestratorEnvironment   # pick up PATH/env from prior steps so continuing without a reboot works
-            $code = Invoke-Step -Entry $entry -State $state
+            $stepRun = Invoke-Step -Entry $entry -State $state -Index $i
+            $code = [int]$stepRun.ExitCode
 
             if ($code -ne 0) {
                 Abort-Pipeline -State $state -Message "Step $($entry.name) exited $code; aborting. Fix the cause and re-run the kickoff to retry from this step. See $LogPath."
@@ -503,17 +831,26 @@ function Invoke-Orchestrator {
 
             # Success. Decide the reboot need and commit completion + advanced index + barrier in ONE
             # atomic state write, so a crash between writes can never skip the required reboot.
-            $entry.status = 'completed'
+            $entry.warnings = @($stepRun.Warnings)
+            $entry.status = if ($entry.warnings.Count -gt 0) { 'completed_with_warnings' } else { 'completed' }
             $state.currentIndex = $i + 1
             $isLast = (($i + 1) -ge $Pipeline.Count)
-            $needReboot = (-not $isLast) -and ($entry.forceReboot -or (Test-RebootPending))
+            $stepRequestedReboot = @($entry.warnings | Where-Object { $_.status -eq 'reboot_required' }).Count -gt 0
+            $needReboot = (-not $isLast) -and ($entry.forceReboot -or $stepRequestedReboot -or (Test-RebootPending))
             if ($needReboot) {
                 $state.rebootPending    = $true
                 $state.rebootBootMarker = (Get-BootTime)
                 $state.rebootReissues   = 0
             }
             Save-OrchState -State $state
-            Write-OrchLog "Completed step [$($i + 1)/$($Pipeline.Count)]: $($entry.name)." 'Success'
+            if ($entry.status -eq 'completed_with_warnings') {
+                Write-OrchLog "Completed step [$($i + 1)/$($Pipeline.Count)]: $($entry.name), with $($entry.warnings.Count) warning(s)." 'Warning'
+                foreach ($warning in $entry.warnings) {
+                    Write-OrchLog "  [$($warning.status)] $($warning.item): $($warning.message)" 'Warning'
+                }
+            } else {
+                Write-OrchLog "Completed step [$($i + 1)/$($Pipeline.Count)]: $($entry.name)." 'Success'
+            }
 
             if ($needReboot) {
                 Ensure-ResumeTask
@@ -523,12 +860,18 @@ function Invoke-Orchestrator {
         }
 
         # All steps done.
-        $state.status = 'completed'
+        $warningSteps = @($state.steps | Where-Object { $_.status -eq 'completed_with_warnings' })
+        $state.status = if ($warningSteps.Count -gt 0) { 'completed_with_warnings' } else { 'completed' }
         Save-OrchState -State $state
         Unregister-ResumeTask
         $totalElapsed = (Get-Date).ToUniversalTime() - ([datetime]$state.startedUtc).ToUniversalTime()
-        Show-Success -Message ("All steps completed. Ci.Environment setup finished in {0:d\.hh\:mm\:ss}. Logs: $LogPath" -f $totalElapsed)
-        Write-OrchLog "Pipeline completed successfully." 'Success'
+        if ($warningSteps.Count -gt 0) {
+            Show-Warning -Message ("All steps ran, but $($warningSteps.Count) step(s) completed with warnings. Ci.Environment setup finished in {0:d\.hh\:mm\:ss}. Review $LogPath and the child logs under $LogDir." -f $totalElapsed)
+            Write-OrchLog "Pipeline completed with warnings in: $($warningSteps.name -join ', ')." 'Warning'
+        } else {
+            Show-Success -Message ("All steps completed. Ci.Environment setup finished in {0:d\.hh\:mm\:ss}. Logs: $LogPath" -f $totalElapsed)
+            Write-OrchLog "Pipeline completed successfully." 'Success'
+        }
         if (Test-RebootPending) { Show-Warning -Message "A reboot is still pending; please restart the machine when convenient to finish applying changes." }
     }
     finally {

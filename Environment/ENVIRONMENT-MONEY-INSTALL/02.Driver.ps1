@@ -51,6 +51,153 @@ function Show-Success {
     Write-Host "$Emoji $Message" -ForegroundColor Green
 }
 
+$script:StepWarnings = @()
+function Add-StepWarning {
+    param(
+        [Parameter(Mandatory)][string]$Item,
+        [Parameter(Mandatory)][string]$Message,
+        [string]$Status = 'failed'
+    )
+    $script:StepWarnings += [ordered]@{ item = $Item; status = $Status; message = $Message }
+    Show-Warning -Message $Message
+}
+
+function Get-ValidatedOrchestratorArtifactPath {
+    param([Parameter(Mandatory)][string]$Path)
+    if ($env:CI_ENV_ORCHESTRATED -ne '1') { throw 'Orchestrator artifact variables are only accepted during an orchestrated run.' }
+    $root = [IO.Path]::GetFullPath((Join-Path $env:ProgramData 'CiEnvironment'))
+    $logRoot = [IO.Path]::GetFullPath((Join-Path $root 'logs')).TrimEnd('\')
+    $candidate = [IO.Path]::GetFullPath($Path)
+    if (-not $candidate.StartsWith($logRoot + '\', [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Orchestrator artifact path is outside the protected log directory: $candidate"
+    }
+    $paths = @($root, $logRoot)
+    $current = $logRoot
+    foreach ($segment in $candidate.Substring($logRoot.Length).TrimStart('\').Split('\')) {
+        if ([string]::IsNullOrWhiteSpace($segment)) { continue }
+        $current = Join-Path $current $segment
+        $paths += $current
+    }
+    foreach ($artifactPath in $paths | Select-Object -Unique) {
+        if (-not (Test-Path -LiteralPath $artifactPath)) { throw "Protected artifact path does not exist: $artifactPath" }
+        $item = Get-Item -LiteralPath $artifactPath -Force
+        if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Protected artifact path is a reparse point: $artifactPath" }
+        $acl = Get-Acl -LiteralPath $artifactPath
+        $owner = $acl.GetOwner([Security.Principal.SecurityIdentifier]).Value
+        if (@('S-1-5-32-544', 'S-1-5-18') -notcontains $owner -or -not $acl.AreAccessRulesProtected) {
+            throw "Protected artifact path has an untrusted owner or inherited ACL: $artifactPath"
+        }
+        foreach ($ace in $acl.Access) {
+            $sid = $ace.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
+            if (@('S-1-5-32-544', 'S-1-5-18') -notcontains $sid) { throw "Protected artifact path grants access to SID ${sid}: $artifactPath" }
+        }
+    }
+    return $candidate
+}
+
+function Write-StepResult {
+    if ([string]::IsNullOrWhiteSpace($env:CI_ENV_STEP_RESULT_PATH)) { return }
+    $status = if ($script:StepWarnings.Count -eq 0) { 'completed' } else { 'completed_with_warnings' }
+    $result = [ordered]@{
+        version = 1
+        status = $status
+        warnings = @($script:StepWarnings)
+        completedUtc = (Get-Date).ToUniversalTime().ToString('o')
+    }
+    try {
+        $resultPath = Get-ValidatedOrchestratorArtifactPath -Path $env:CI_ENV_STEP_RESULT_PATH
+        $result | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $resultPath -Encoding UTF8 -ErrorAction Stop
+    } catch {
+        Show-Warning -Message "Could not write the step result to '$env:CI_ENV_STEP_RESULT_PATH': $($_.Exception.Message)"
+    }
+}
+
+function New-ProtectedInstallerSecurity {
+    param([bool]$Directory)
+    $adminsSid = New-Object Security.Principal.SecurityIdentifier('S-1-5-32-544')
+    $systemSid = New-Object Security.Principal.SecurityIdentifier('S-1-5-18')
+    $acl = if ($Directory) {
+        New-Object Security.AccessControl.DirectorySecurity
+    } else {
+        New-Object Security.AccessControl.FileSecurity
+    }
+    $acl.SetOwner($adminsSid)
+    $acl.SetAccessRuleProtection($true, $false)
+    $inheritance = if ($Directory) {
+        [Security.AccessControl.InheritanceFlags]'ContainerInherit,ObjectInherit'
+    } else {
+        [Security.AccessControl.InheritanceFlags]::None
+    }
+    $rights = [Security.AccessControl.FileSystemRights]::FullControl
+    $propagation = [Security.AccessControl.PropagationFlags]::None
+    $allow = [Security.AccessControl.AccessControlType]::Allow
+    $acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($adminsSid, $rights, $inheritance, $propagation, $allow)))
+    $acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($systemSid, $rights, $inheritance, $propagation, $allow)))
+    return $acl
+}
+
+function Set-ProtectedInstallerAcl {
+    param([Parameter(Mandatory)][string]$Path)
+    $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+    if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Installer path is a reparse point: $Path" }
+    $acl = New-ProtectedInstallerSecurity -Directory ([bool]$item.PSIsContainer)
+    Set-Acl -LiteralPath $Path -AclObject $acl -ErrorAction Stop
+    $level = if ($item.PSIsContainer) { '(OI)(CI)H' } else { 'H' }
+    & icacls.exe $Path /setintegritylevel $level /q | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Could not set High integrity on installer path: $Path" }
+}
+
+function New-ProtectedInstallerDirectory {
+    param(
+        [string]$Parent = $env:ProgramData,
+        [string]$Prefix = 'CiEnvironmentInstaller'
+    )
+    $path = Join-Path $Parent ("{0}-{1}" -f $Prefix, ([guid]::NewGuid().ToString('N')))
+    $security = New-ProtectedInstallerSecurity -Directory $true
+    if ($PSVersionTable.PSEdition -eq 'Core') {
+        [IO.FileSystemAclExtensions]::Create((New-Object IO.DirectoryInfo($Path)), $security)
+    } else {
+        [IO.Directory]::CreateDirectory($path, $security) | Out-Null
+    }
+    Set-ProtectedInstallerAcl -Path $path
+    return $path
+}
+
+function New-ProtectedInstallerFile {
+    param(
+        [Parameter(Mandatory)][string]$Directory,
+        [Parameter(Mandatory)][string]$Name
+    )
+    $safeName = [IO.Path]::GetFileName($Name)
+    if ([string]::IsNullOrWhiteSpace($safeName) -or $safeName -ne $Name) { throw "Unsafe installer file name: '$Name'" }
+    $path = Join-Path $Directory $safeName
+    $security = New-ProtectedInstallerSecurity -Directory $false
+    if ($PSVersionTable.PSEdition -eq 'Core') {
+        $stream = [IO.FileSystemAclExtensions]::Create(
+            (New-Object IO.FileInfo($path)),
+            [IO.FileMode]::CreateNew,
+            [Security.AccessControl.FileSystemRights]::FullControl,
+            [IO.FileShare]::None,
+            4096,
+            [IO.FileOptions]::SequentialScan,
+            $security
+        )
+    } else {
+        $stream = New-Object IO.FileStream(
+            $path,
+            [IO.FileMode]::CreateNew,
+            [Security.AccessControl.FileSystemRights]::FullControl,
+            [IO.FileShare]::None,
+            4096,
+            [IO.FileOptions]::SequentialScan,
+            $security
+        )
+    }
+    $stream.Dispose()
+    Set-ProtectedInstallerAcl -Path $path
+    return $path
+}
+
 Show-Section -Message "Step 2: NVIDIA Driver and Hardware Setup" -Emoji "🎮" -Color "Magenta"
 $scriptStart = Get-Date
 Show-Info -Message ("Current Time: " + $scriptStart) -Emoji "⏰"
@@ -60,14 +207,23 @@ Show-Info -Message ("Current Time: " + $scriptStart) -Emoji "⏰"
 function Show-Step2Complete {
     $e = (Get-Date) - $scriptStart
     Show-Section -Message ("Step 2 complete (elapsed {0:hh\:mm\:ss})" -f $e) -Emoji "🏁" -Color "Magenta"
+    Write-StepResult
 }
 
 # -------------------------
 # Pre-flight: execution policy + admin rights
 # -------------------------
 Show-Section -Message "Set Execution Policy" -Emoji "🔐" -Color "Yellow"
-Set-ExecutionPolicy RemoteSigned -Force
-Show-Success -Message "Execution policy set to RemoteSigned."
+Set-ExecutionPolicy RemoteSigned -Scope LocalMachine -Force -ErrorAction SilentlyContinue
+$localMachinePolicy = Get-ExecutionPolicy -Scope LocalMachine
+$effectivePolicy = Get-ExecutionPolicy
+if ($localMachinePolicy -ne 'RemoteSigned') {
+    Show-Warning -Message "LocalMachine execution policy is '$localMachinePolicy', not RemoteSigned (a higher-level policy may control it)."
+} elseif ($effectivePolicy -eq 'RemoteSigned') {
+    Show-Success -Message "Execution policy set to RemoteSigned."
+} else {
+    Show-Info -Message "LocalMachine execution policy is RemoteSigned; this process uses '$effectivePolicy' from a higher-priority scope." -Emoji "🛡️"
+}
 
 Show-Section -Message "Check Administrator Rights" -Emoji "🔒" -Color "Red"
 If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
@@ -107,7 +263,7 @@ if ($isMoneyPc) {
         }
         Show-Success -Message "Windows Fast Startup is disabled; Hibernate remains available."
     } catch {
-        Show-Error -Message "Failed to disable Windows Fast Startup on MONEY-PC: $($_.Exception.Message)"
+        Add-StepWarning -Item 'Windows.FastStartup' -Message "Failed to disable Windows Fast Startup on MONEY-PC: $($_.Exception.Message)"
     }
 } else {
     Show-Info -Message "Host '$env:COMPUTERNAME' is not MONEY-PC; leaving Windows Fast Startup unchanged." -Emoji "⏭"
@@ -136,10 +292,10 @@ if (Get-Command choco -ErrorAction SilentlyContinue) {
             Show-Success -Message "Chocolatey installed successfully."
             $chocoAvailable = $true
         } else {
-            Show-Error -Message "Chocolatey installer ran but 'choco' is still not on PATH."
+            Add-StepWarning -Item 'Chocolatey' -Message "Chocolatey installer ran but 'choco' is still not on PATH."
         }
     } catch {
-        Show-Error -Message "Failed to install Chocolatey: $($_.Exception.Message)"
+        Add-StepWarning -Item 'Chocolatey' -Message "Failed to install Chocolatey: $($_.Exception.Message)"
     }
 }
 
@@ -158,13 +314,13 @@ if ($isMoneyPc) {
             if ($LASTEXITCODE -eq 0) {
                 Show-Success -Message "NZXT CAM install completed (or already present)."
             } else {
-                Show-Warning -Message "choco install nzxt-cam exited with code $LASTEXITCODE."
+                Add-StepWarning -Item 'NZXT.CAM' -Message "choco install nzxt-cam exited with code $LASTEXITCODE."
             }
         } catch {
-            Show-Warning -Message "Failed to install NZXT CAM: $($_.Exception.Message)"
+            Add-StepWarning -Item 'NZXT.CAM' -Message "Failed to install NZXT CAM: $($_.Exception.Message)"
         }
     } else {
-        Show-Warning -Message "Chocolatey is not available; skipping NZXT CAM install."
+        Add-StepWarning -Item 'NZXT.CAM' -Message "Chocolatey is not available; skipping NZXT CAM install."
     }
     $winget = Get-Command winget -ErrorAction SilentlyContinue
     if ($winget) {
@@ -193,14 +349,14 @@ if ($isMoneyPc) {
                     Show-Warning -Message "DisplayLink Graphics Driver returned exit code $displayLinkExitCode; manual restart required."
                 }
                 default {
-                    Show-Warning -Message "DisplayLink Graphics Driver returned exit code $displayLinkExitCode."
+                    Add-StepWarning -Item 'DisplayLink.GraphicsDriver' -Message "DisplayLink Graphics Driver returned exit code $displayLinkExitCode."
                 }
             }
         } catch {
-            Show-Warning -Message "Failed to install or upgrade DisplayLink Graphics Driver: $($_.Exception.Message)"
+            Add-StepWarning -Item 'DisplayLink.GraphicsDriver' -Message "Failed to install or upgrade DisplayLink Graphics Driver: $($_.Exception.Message)"
         }
     } else {
-        Show-Warning -Message "WinGet is not available; skipping DisplayLink Graphics Driver install/upgrade."
+        Add-StepWarning -Item 'DisplayLink.GraphicsDriver' -Message "WinGet is not available; skipping DisplayLink Graphics Driver install/upgrade."
     }
 } else {
     Show-Info -Message "Host '$env:COMPUTERNAME' is not MONEY-PC; skipping NZXT CAM and DisplayLink." -Emoji "⏭"
@@ -362,10 +518,10 @@ if (-not $recovered) {
         if ($verify) {
             Show-Success -Message "Registered and verified scheduled task '\$taskName' (SYSTEM, at startup)."
         } else {
-            Show-Warning -Message "Task '\$taskName' did not verify after Register-ScheduledTask."
+            Add-StepWarning -Item 'FixRTX3080AtBoot' -Message "Task '\$taskName' did not verify after Register-ScheduledTask."
         }
     } catch {
-        Show-Warning -Message "Failed to set up GPU boot-recovery task: $($_.Exception.Message)"
+        Add-StepWarning -Item 'FixRTX3080AtBoot' -Message "Failed to set up GPU boot-recovery task: $($_.Exception.Message)"
     }
 } else {
     Show-Info -Message "Host '$env:COMPUTERNAME' is not MONEY-PC; skipping GPU boot-recovery task." -Emoji "⏭"
@@ -384,13 +540,13 @@ if ($chocoAvailable) {
         if ($LASTEXITCODE -eq 0) {
             Show-Success -Message "Wacom Tablet driver install completed (or already present)."
         } else {
-            Show-Warning -Message "choco install wacom-drivers exited with code $LASTEXITCODE."
+            Add-StepWarning -Item 'Wacom.TabletDriver' -Message "choco install wacom-drivers exited with code $LASTEXITCODE."
         }
     } catch {
-        Show-Warning -Message "Failed to install Wacom Tablet driver: $($_.Exception.Message)"
+        Add-StepWarning -Item 'Wacom.TabletDriver' -Message "Failed to install Wacom Tablet driver: $($_.Exception.Message)"
     }
 } else {
-    Show-Warning -Message "Chocolatey is not available; skipping Wacom Tablet driver install."
+    Add-StepWarning -Item 'Wacom.TabletDriver' -Message "Chocolatey is not available; skipping Wacom Tablet driver install."
 }
 
 # -------------------------
@@ -401,8 +557,8 @@ if ($chocoAvailable) {
 # Pinned to commit c286c18 ("feat: Support quiet installation, region detection")
 # so the in-memory regex patches below cannot silently no-op if upstream
 # changes shape — bump deliberately after re-verifying the patches still
-# match. To update: replace the SHA below and re-run the four patch tests
-# against the new revision.
+# match. To update: replace the commit + SHA-256 below and re-run every
+# exact-count patch check against the new revision.
 #
 # The upstream script is interactive (Read-Host for feature picking + confirm
 # + a final ReadKey). We patch it in-memory before execution so 02.Driver.ps1
@@ -419,81 +575,97 @@ if ($chocoAvailable) {
 # The patched copy runs in a CHILD PowerShell process so upstream's
 # `exit 0` / `exit 1` cannot terminate this parent script.
 Show-Section -Message "Install Logi Options+ (mini)" -Emoji "🖱" -Color "Cyan"
+$logiDirectory = $null
 $logiPatchPath = $null
 try {
-    $logiSrcUrl    = 'https://raw.githubusercontent.com/Qetesh/logi-options-plus-mini/c286c18b0e23930bf1fccf26d4f1ba0b03948d30/logi-options-plus-mini.ps1'
-    $logiPatchPath = Join-Path $env:TEMP ("logi-options-plus-mini-ci.{0}.ps1" -f ([guid]::NewGuid().ToString('N').Substring(0,8)))
+    $logiSrcUrl = 'https://raw.githubusercontent.com/Qetesh/logi-options-plus-mini/c286c18b0e23930bf1fccf26d4f1ba0b03948d30/logi-options-plus-mini.ps1'
+    $logiExpectedHash = 'B97275C14536F2365BB96295376F1B247B62D85F990CFCECB524BE09A48034F3'
+    $logiDirectory = New-ProtectedInstallerDirectory -Prefix 'CiEnvironmentLogi'
+    $logiSourcePath = New-ProtectedInstallerFile -Directory $logiDirectory -Name 'logi-options-plus-mini.source.ps1'
+    $logiPatchPath = New-ProtectedInstallerFile -Directory $logiDirectory -Name 'logi-options-plus-mini.patched.ps1'
+    $logiInstallerPath = New-ProtectedInstallerFile -Directory $logiDirectory -Name 'logioptionsplus_installer.exe'
     Show-Info -Message "Fetching upstream wrapper from $logiSrcUrl" -Emoji "⬇"
-    $logiRaw = Invoke-RestMethod -Uri $logiSrcUrl -UseBasicParsing -ErrorAction Stop
-    $logiPatched = [string]$logiRaw
+    Invoke-WebRequest -Uri $logiSrcUrl -OutFile $logiSourcePath -UseBasicParsing -ErrorAction Stop
+    $logiActualHash = (Get-FileHash -LiteralPath $logiSourcePath -Algorithm SHA256).Hash
+    if ($logiActualHash -ne $logiExpectedHash) {
+        throw "Pinned Logi wrapper SHA-256 mismatch (expected $logiExpectedHash, got $logiActualHash)."
+    }
+    $logiPatched = Get-Content -LiteralPath $logiSourcePath -Raw -Encoding UTF8 -ErrorAction Stop
 
-    $logiPatched = $logiPatched -replace `
-        '(?m)^\s*\$selectedFeatures\s*=\s*Read-Host[^\r\n]*', `
-        '$$selectedFeatures = "0 3 4 5 6"  # Ci.Environment: Quiet/SSO/Update/DFU/Backlight'
+    $pattern = '(?m)^\s*\$selectedFeatures\s*=\s*Read-Host[^\r\n]*'
+    if ([regex]::Matches($logiPatched, $pattern).Count -ne 1) { throw 'Pinned Logi wrapper selectedFeatures patch point did not match exactly once.' }
+    $logiPatched = $logiPatched -replace $pattern, '$$selectedFeatures = "0 3 4 5 6"  # Ci.Environment: Quiet/SSO/Update/DFU/Backlight'
 
-    $logiPatched = $logiPatched -replace `
-        '(?m)^\s*\$confirm\s*=\s*Read-Host[^\r\n]*', `
-        '$$confirm = "y"  # Ci.Environment: auto-confirm'
+    $pattern = '(?m)^\s*\$confirm\s*=\s*Read-Host[^\r\n]*'
+    if ([regex]::Matches($logiPatched, $pattern).Count -ne 1) { throw 'Pinned Logi wrapper confirmation patch point did not match exactly once.' }
+    $logiPatched = $logiPatched -replace $pattern, '$$confirm = "y"  # Ci.Environment: auto-confirm'
 
-    $logiPatched = $logiPatched -replace `
-        '\[void\]\[System\.Console\]::ReadKey\(\$true\)', `
-        '<# Ci.Environment: skip readkey #>'
+    $pattern = '\[void\]\[System\.Console\]::ReadKey\(\$true\)'
+    if ([regex]::Matches($logiPatched, $pattern).Count -ne 2) { throw 'Pinned Logi wrapper ReadKey patch points did not match exactly twice.' }
+    $logiPatched = $logiPatched -replace $pattern, '<# Ci.Environment: skip readkey #>'
 
-    $logiPatched = $logiPatched -replace `
-        '(?ms)Write-Host\s+"\$\(Get-Date\)\s*\|\s*Detecting region.*?\}\s*catch\s*\{[^}]*\}', `
-        '$$selectedDownloadUrl = $$downloadUrl  # Ci.Environment: force English / international URL'
+    $pattern = '(?ms)Write-Host\s+"\$\(Get-Date\)\s*\|\s*Detecting region.*?\}\s*catch\s*\{[^}]*\}'
+    if ([regex]::Matches($logiPatched, $pattern).Count -ne 1) { throw 'Pinned Logi wrapper region patch point did not match exactly once.' }
+    $logiPatched = $logiPatched -replace $pattern, '$$selectedDownloadUrl = $$downloadUrl  # Ci.Environment: force English / international URL'
 
+    $pattern = '(?m)^\$downloadPath\s*=.*$'
+    if ([regex]::Matches($logiPatched, $pattern).Count -ne 1) { throw 'Pinned Logi wrapper downloadPath patch point did not match exactly once.' }
+    $downloadPathLine = "`$downloadPath = '$($logiInstallerPath.Replace("'", "''"))'"
+    $logiPatched = [regex]::Replace(
+        $logiPatched,
+        $pattern,
+        [Text.RegularExpressions.MatchEvaluator]{ param($match) $downloadPathLine }
+    )
+
+    $pattern = '(?m)^Invoke-WebRequest\s+-Uri\s+\$selectedDownloadUrl\s+-OutFile\s+\$downloadPath\s*$'
+    if ([regex]::Matches($logiPatched, $pattern).Count -ne 1) { throw 'Pinned Logi wrapper download patch point did not match exactly once.' }
+    $verifiedDownloadBlock = @'
+$selectedUri = [uri]$selectedDownloadUrl
+if ($selectedUri.Scheme -ne 'https' -or $selectedUri.Host -notin @('download01.logi.com', 'download.logitech.com.cn')) {
+    throw "Unexpected Logi installer URL: $selectedDownloadUrl"
+}
+Invoke-WebRequest -Uri $selectedDownloadUrl -OutFile $downloadPath -ErrorAction Stop
+$downloadSignature = Get-AuthenticodeSignature -LiteralPath $downloadPath
+if ($downloadSignature.Status -ne 'Valid' -or $downloadSignature.SignerCertificate.Subject -notmatch 'Logitech') {
+    throw "Logi installer signature verification failed: $($downloadSignature.Status), $($downloadSignature.SignerCertificate.Subject)"
+}
+'@
+    $logiPatched = [regex]::Replace(
+        $logiPatched,
+        $pattern,
+        [Text.RegularExpressions.MatchEvaluator]{ param($match) $verifiedDownloadBlock }
+    )
+    if ($logiPatched -match '\$env:TEMP\\\$installerName') { throw 'Patched Logi wrapper still references the user-writable TEMP installer path.' }
     Set-Content -LiteralPath $logiPatchPath -Value $logiPatched -Encoding UTF8 -ErrorAction Stop
     Show-Info -Message "Running patched upstream script in a child PowerShell process..." -Emoji "🚀"
-    $logiProc = Start-Process -FilePath "powershell" `
+    $windowsPowerShell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+    $logiProc = Start-Process -FilePath $windowsPowerShell `
         -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $logiPatchPath) `
-        -Wait -PassThru -NoNewWindow
+        -Wait -PassThru -NoNewWindow -ErrorAction Stop
     if ($logiProc.ExitCode -eq 0) {
         Show-Success -Message "Logi Options+ install completed via upstream wrapper."
     } else {
-        Show-Warning -Message "Upstream Logi Options+ script exited with code $($logiProc.ExitCode)."
+        Add-StepWarning -Item 'Logi.OptionsPlus' -Message "Upstream Logi Options+ script exited with code $($logiProc.ExitCode)."
     }
 } catch {
-    Show-Warning -Message "Failed to install Logi Options+: $($_.Exception.Message)"
+    Add-StepWarning -Item 'Logi.OptionsPlus' -Message "Failed to install Logi Options+: $($_.Exception.Message)"
 } finally {
     try {
-        if ($logiPatchPath -and (Test-Path -LiteralPath $logiPatchPath)) {
-            Remove-Item -LiteralPath $logiPatchPath -Force -ErrorAction Stop
+        if ($logiDirectory -and (Test-Path -LiteralPath $logiDirectory)) {
+            Remove-Item -LiteralPath $logiDirectory -Recurse -Force -ErrorAction Stop
         }
     } catch {
-        Show-Warning -Message "Could not remove temp script at ${logiPatchPath}: $($_.Exception.Message)"
+        Show-Warning -Message "Could not remove protected Logi installer directory at ${logiDirectory}: $($_.Exception.Message)"
     }
 }
 
 # -------------------------
 # Install Epson L3550 Genuine Printer Driver
 # -------------------------
-# A stock Windows setup of an L3550 binds the generic "Epson ESC/P-R V4 Class
-# Driver", whose minimal Printing Preferences UI lacks the "Reverse Order"
-# (reverse print order) option. This phase swaps any local L3550 queue that is
-# still on that class driver onto Epson's GENUINE "EPSON L3550 Series" driver,
-# whose "More Options" tab exposes Reverse Order.
-#
-# Why it is shaped this way:
-#  - Wrapped in a function so its early `return`s stay local; it is invoked
-#    BEFORE the NVIDIA section below, which uses top-level `return`s.
-#  - Device-gated + idempotent: only acts when a local L3550 queue on the known
-#    class driver is present, and no-ops once the genuine driver is bound.
-#  - Fully silent (this repo runs non-interactively via `iex`). The official
-#    package is a WinZip self-extractor, so we extract its signed INF with .NET
-#    (no 7-Zip) and install via pnputil + Add-PrinterDriver + Set-Printer rather
-#    than the bundled GUI SETUP64.EXE, which has no reliable silent switch.
-#  - URL + size + SHA-256 are pinned; the Akamai-fronted CDN returns HTTP 403
-#    without a full browser header set. Bump all three together on a version
-#    change (resolve via the download-center API, which now also requires region
-#    and language:
-#    https://download-center.epson.com/api/v1/modules/?device_id=L3550%20Series&os=WIN1164&region=US&language=en ),
-#    and re-verify the signer/catalog + the applicable INF section when bumping.
+# Replace the generic class driver only when a local L3550 queue still uses it. The official Epson
+# package is pinned by size and SHA-256, then its INF is installed without launching the GUI setup.
 function Install-EpsonL3550Driver {
     $ErrorActionPreference = 'Stop'
-    # Guarantee non-interactivity even if the caller lowered $ConfirmPreference:
-    # this repo runs unattended via `iex`, which inherits caller preferences, and
-    # Add-PrinterDriver / Set-Printer are ConfirmImpact=Medium.
     $ConfirmPreference = 'None'
     Show-Section -Message "Install Epson L3550 Genuine Printer Driver" -Emoji "🖨" -Color "Cyan"
 
@@ -502,13 +674,12 @@ function Install-EpsonL3550Driver {
         return
     }
 
-    $classDriver   = 'Epson ESC/P-R V4 Class Driver'
+    $classDriver = 'Epson ESC/P-R V4 Class Driver'
     $genuineDriver = 'EPSON L3550 Series'
-
     try {
         $allPrinters = @(Get-Printer -ErrorAction Stop)
     } catch {
-        Show-Warning -Message "Get-Printer failed (print spooler issue?): $($_.Exception.Message). Skipping Epson L3550 driver."
+        Add-StepWarning -Item 'Epson.L3550.Driver' -Message "Get-Printer failed (print spooler issue?): $($_.Exception.Message). Skipping Epson L3550 driver."
         return
     }
 
@@ -524,82 +695,81 @@ function Install-EpsonL3550Driver {
         return
     }
 
-    # Only touch queues on the known generic class driver; never override some
-    # other (possibly newer/custom) driver an admin chose on purpose.
     $toUpgrade = @()
-    foreach ($q in $needsUpgrade) {
-        if ($q.DriverName -eq $classDriver) { $toUpgrade += $q }
-        else { Show-Warning -Message "Queue '$($q.Name)' uses unexpected driver '$($q.DriverName)'; leaving it unchanged." }
+    foreach ($queue in $needsUpgrade) {
+        if ($queue.DriverName -eq $classDriver) {
+            $toUpgrade += $queue
+        } else {
+            Add-StepWarning -Item 'Epson.L3550.Driver' -Status 'manual_action_required' -Message "Queue '$($queue.Name)' uses unexpected driver '$($queue.DriverName)'; leaving it unchanged."
+        }
     }
     if ($toUpgrade.Count -eq 0) {
         Show-Info -Message "No Epson L3550 queue on the known class driver to upgrade." -Emoji "⏭"
         return
     }
 
-    # Windows Protected Print Mode blocks third-party printer drivers outright.
-    # Check the GPO location (takes precedence) and the Settings location.
+    # Windows Protected Print Mode blocks third-party printer drivers. Report it without changing policy.
     $wppmOn = $false
-    foreach ($w in @(
+    foreach ($setting in @(
         @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Printers\WPP'; Name = 'WindowsProtectedPrintGroupPolicyState' },
-        @{ Path = 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Settings';      Name = 'WppmDesired' }
+        @{ Path = 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Settings'; Name = 'WppmDesired' }
     )) {
         try {
-            $regVal = Get-ItemProperty -Path $w.Path -Name $w.Name -ErrorAction SilentlyContinue
-            if ($regVal -and [int]$regVal.$($w.Name) -eq 1) { $wppmOn = $true }
+            $value = Get-ItemProperty -Path $setting.Path -Name $setting.Name -ErrorAction SilentlyContinue
+            if ($value -and [int]$value.$($setting.Name) -eq 1) { $wppmOn = $true }
         } catch { }
     }
     if ($wppmOn) {
-        Show-Error -Message "Windows Protected Print Mode is enabled; third-party printer drivers are blocked. Skipping (policy left untouched)."
+        Add-StepWarning -Item 'Epson.L3550.Driver' -Status 'blocked_by_policy' -Message "Windows Protected Print Mode is enabled; third-party printer drivers are blocked. Policy was not changed."
         return
     }
 
-    $downloadUrl  = 'https://download-center.epson.com/f/module/58d87728-d300-4a1b-b5ae-4034f90a6ca9/L3550_STD_WW_38002_W64.exe'
+    $downloadUrl = 'https://download-center.epson.com/f/module/58d87728-d300-4a1b-b5ae-4034f90a6ca9/L3550_STD_WW_38002_W64.exe'
     $expectedSize = 68358056
-    $expectedSha  = '05516D0491BFCCF67744B716B391A997E84143B5AEDA5EEA72FB9ADC172EAAD0'
-    $work      = Join-Path $env:TEMP ("epson-l3550-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
-    $installer = Join-Path $work 'L3550_STD_WW_38002_W64.exe'
-    $extract   = Join-Path $work 'x'
-
+    $expectedSha = '05516D0491BFCCF67744B716B391A997E84143B5AEDA5EEA72FB9ADC172EAAD0'
+    $work = $null
     try {
-        New-Item -ItemType Directory -Force -Path $work, $extract | Out-Null
+        $work = New-ProtectedInstallerDirectory -Prefix 'CiEnvironmentEpsonL3550'
+        $installer = New-ProtectedInstallerFile -Directory $work -Name 'L3550_STD_WW_38002_W64.exe'
+        $extract = New-ProtectedInstallerDirectory -Parent $work -Prefix 'extract'
 
-        # --- Download (Akamai CDN requires a full browser header set) ---
         Show-Section -Message "Download Epson L3550 driver package" -Emoji "⬇" -Color "Green"
         $headers = @{
-            'User-Agent'         = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
-            'Accept'             = '*/*'
-            'Accept-Language'    = 'en-US,en;q=0.9'
-            'Referer'            = 'https://download-center.epson.com/'
-            'sec-ch-ua'          = '"Chromium";v="126", "Google Chrome";v="126", "Not_A Brand";v="24"'
-            'sec-ch-ua-mobile'   = '?0'
+            'User-Agent' = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
+            'Accept' = '*/*'
+            'Accept-Language' = 'en-US,en;q=0.9'
+            'Referer' = 'https://download-center.epson.com/'
+            'sec-ch-ua' = '"Chromium";v="126", "Google Chrome";v="126", "Not_A Brand";v="24"'
+            'sec-ch-ua-mobile' = '?0'
             'sec-ch-ua-platform' = '"Windows"'
-            'Sec-Fetch-Dest'     = 'document'
-            'Sec-Fetch-Mode'     = 'navigate'
-            'Sec-Fetch-Site'     = 'same-origin'
-            'Sec-Fetch-User'     = '?1'
+            'Sec-Fetch-Dest' = 'document'
+            'Sec-Fetch-Mode' = 'navigate'
+            'Sec-Fetch-Site' = 'same-origin'
+            'Sec-Fetch-User' = '?1'
         }
         Invoke-WebRequest -Uri $downloadUrl -Headers $headers -OutFile $installer -UseBasicParsing -ErrorAction Stop
-
-        $fileInfo = Get-Item $installer
+        $fileInfo = Get-Item -LiteralPath $installer
         if ($fileInfo.Length -ne $expectedSize) { throw "Downloaded size $($fileInfo.Length) != expected $expectedSize." }
-        $sha = (Get-FileHash -Path $installer -Algorithm SHA256).Hash
+        $sha = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash
         if ($sha -ne $expectedSha) { throw "SHA-256 mismatch (got $sha)." }
         $stream = [IO.File]::OpenRead($installer)
-        try { $magic = New-Object byte[] 2; [void]$stream.Read($magic, 0, 2) } finally { $stream.Close() }
-        if (-not ($magic[0] -eq 0x4D -and $magic[1] -eq 0x5A)) { throw "Downloaded file is not a Windows executable (no MZ header)." }
+        try {
+            $magic = New-Object byte[] 2
+            [void]$stream.Read($magic, 0, 2)
+        } finally {
+            $stream.Dispose()
+        }
+        if (-not ($magic[0] -eq 0x4D -and $magic[1] -eq 0x5A)) { throw 'Downloaded file is not a Windows executable (no MZ header).' }
         Show-Success -Message "Downloaded and verified (size + SHA-256)."
 
-        # --- Extract the signed driver INF (WinZip self-extractor payload) ---
         Show-Section -Message "Extract driver package" -Emoji "📦" -Color "Green"
-        # PS 5.1 needs this assembly loaded; PS 7 exposes the type by default
-        # (Add-Type -AssemblyName can throw there -> ignore).
         try { Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction Stop } catch { }
-        [System.IO.Compression.ZipFile]::ExtractToDirectory($installer, $extract)
-        $inf = Get-ChildItem -Path $extract -Recurse -Filter 'E1WF1BZE.INF' -ErrorAction SilentlyContinue | Select-Object -First 1
+        [IO.Compression.ZipFile]::ExtractToDirectory($installer, $extract)
+        Get-ChildItem -LiteralPath $extract -Recurse -Force | ForEach-Object { Set-ProtectedInstallerAcl -Path $_.FullName }
+        $inf = Get-ChildItem -LiteralPath $extract -Recurse -Filter 'E1WF1BZE.INF' -ErrorAction SilentlyContinue | Select-Object -First 1
         if (-not $inf) { throw "Expected driver INF 'E1WF1BZE.INF' not found in the package." }
         Show-Success -Message "Extracted signed INF: $($inf.Name)"
 
-        # --- Stage into the DriverStore + register the logical driver ---
         Show-Section -Message "Install genuine printer driver" -Emoji "⚙" -Color "Green"
         $pnputil = Join-Path $env:SystemRoot 'System32\pnputil.exe'
         & $pnputil /add-driver "$($inf.FullName)" 2>&1 | Out-Null
@@ -616,43 +786,45 @@ function Install-EpsonL3550Driver {
         }
         Show-Success -Message "Genuine driver '$genuineDriver' registered."
 
-        # --- Repoint each eligible queue (record old driver for rollback) ---
         Show-Section -Message "Switch printer queue(s) to genuine driver" -Emoji "🔀" -Color "Green"
-        foreach ($q in $toUpgrade) {
-            # Re-fetch immediately before mutating to avoid acting on stale scan
-            # data (a WSD re-enumeration or admin change could have moved it
-            # between the initial scan and this large download/install).
-            try { $fresh = Get-Printer -Name $q.Name -ErrorAction Stop }
-            catch { Show-Warning -Message "Queue '$($q.Name)' is no longer available: $($_.Exception.Message); skipping."; continue }
-
+        foreach ($queue in $toUpgrade) {
+            try {
+                $fresh = Get-Printer -Name $queue.Name -ErrorAction Stop
+            } catch {
+                Add-StepWarning -Item 'Epson.L3550.Driver' -Message "Queue '$($queue.Name)' is no longer available: $($_.Exception.Message)"
+                continue
+            }
             if ($fresh.Type -ne 'Local' -or $fresh.DriverName -ne $classDriver) {
-                Show-Info -Message "Queue '$($q.Name)' changed since scan (now '$($fresh.DriverName)'); leaving it unchanged." -Emoji "⏭"
+                if ($fresh.Type -eq 'Local' -and $fresh.DriverName -eq $genuineDriver) {
+                    Show-Success -Message "Queue '$($queue.Name)' changed during setup and now uses the genuine driver."
+                } else {
+                    Add-StepWarning -Item 'Epson.L3550.Driver' -Status 'manual_action_required' -Message "Queue '$($queue.Name)' changed since scan (type '$($fresh.Type)', driver '$($fresh.DriverName)'); leaving it unchanged."
+                }
                 continue
             }
             $oldDriver = $fresh.DriverName
-
             try {
                 Set-Printer -Name $fresh.Name -DriverName $genuineDriver -Confirm:$false -ErrorAction Stop
                 $after = Get-Printer -Name $fresh.Name -ErrorAction Stop
                 if ($after.DriverName -ne $genuineDriver) { throw "post-change check still shows '$($after.DriverName)'." }
                 Show-Success -Message "Queue '$($fresh.Name)': '$oldDriver' -> '$genuineDriver'."
             } catch {
-                Show-Error -Message "Failed to switch '$($fresh.Name)': $($_.Exception.Message). Rolling back to '$oldDriver'."
+                Add-StepWarning -Item 'Epson.L3550.Driver' -Message "Failed to switch '$($fresh.Name)': $($_.Exception.Message). Rolling back to '$oldDriver'."
                 try {
                     Set-Printer -Name $fresh.Name -DriverName $oldDriver -Confirm:$false -ErrorAction Stop
                     $rolledBack = Get-Printer -Name $fresh.Name -ErrorAction Stop
-                    if ($rolledBack.DriverName -eq $oldDriver) { Show-Info -Message "Rolled back '$($fresh.Name)' to '$oldDriver'." -Emoji "↩" }
-                    else { Show-Error -Message "Rollback verification failed for '$($fresh.Name)': now on '$($rolledBack.DriverName)'." }
-                } catch { Show-Error -Message "Rollback of '$($fresh.Name)' also failed: $($_.Exception.Message)" }
+                    if ($rolledBack.DriverName -ne $oldDriver) { throw "rollback verification shows '$($rolledBack.DriverName)'." }
+                } catch {
+                    Add-StepWarning -Item 'Epson.L3550.Driver' -Message "Rollback of '$($fresh.Name)' failed: $($_.Exception.Message)"
+                }
             }
         }
     } catch {
-        Show-Error -Message "Epson L3550 driver install failed: $($_.Exception.Message)"
+        Add-StepWarning -Item 'Epson.L3550.Driver' -Message "Epson L3550 driver install failed: $($_.Exception.Message)"
     } finally {
-        try {
-            if (Test-Path $work) { Remove-Item -Path $work -Recurse -Force -ErrorAction Stop }
-        } catch {
-            Show-Warning -Message "Could not remove temp folder ${work}: $($_.Exception.Message)"
+        if ($work) {
+            try { Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction Stop }
+            catch { Show-Warning -Message "Could not remove temp folder ${work}: $($_.Exception.Message)" }
         }
     }
 }
@@ -663,7 +835,13 @@ Install-EpsonL3550Driver
 # Step 1: Detect NVIDIA GPU
 # -------------------------
 Show-Section -Message "Detect NVIDIA GPU" -Emoji "🔍" -Color "Cyan"
-$videoControllers = @(Get-CimInstance -ClassName Win32_VideoController -ErrorAction SilentlyContinue)
+try {
+    $videoControllers = @(Get-CimInstance -ClassName Win32_VideoController -ErrorAction Stop)
+} catch {
+    Add-StepWarning -Item 'NVIDIA.Detection' -Message "Failed to query Win32_VideoController: $($_.Exception.Message)"
+    Show-Step2Complete
+    return
+}
 $nvidiaAdapter = $videoControllers | Where-Object {
     ($_.Name -match 'NVIDIA') -or ($_.AdapterCompatibility -match 'NVIDIA')
 } | Select-Object -First 1
@@ -736,8 +914,9 @@ foreach ($key in $seriesMap.Keys) {
 }
 
 if (-not $matchedSeriesKey) {
-    Show-Warning -Message "Unable to map GPU '$gpuName' to a known GeForce series. Skipping automated driver install."
+    Add-StepWarning -Item 'NVIDIA.Driver' -Status 'manual_action_required' -Message "Unable to map GPU '$gpuName' to a known GeForce series. Skipping automated driver install."
     Show-Info -Message "Please install drivers manually from https://www.nvidia.com/Download/index.aspx" -Emoji "🔗"
+    Show-Step2Complete
     return
 }
 
@@ -794,8 +973,9 @@ try {
 }
 
 if (-not $pfid) {
-    Show-Warning -Message "Skipping automated driver install (no pfid resolved)."
+    Add-StepWarning -Item 'NVIDIA.Driver' -Status 'manual_action_required' -Message "Skipping automated driver install (no pfid resolved)."
     Show-Info -Message "Please install drivers manually from https://www.nvidia.com/Download/index.aspx" -Emoji "🔗"
+    Show-Step2Complete
     return
 }
 
@@ -811,12 +991,14 @@ $driverLookupUri = "https://gfwsl.geforce.com/services_toolkit/services/com/nvid
 try {
     $driverResp = Invoke-RestMethod -Uri $driverLookupUri -UseBasicParsing -ErrorAction Stop
 } catch {
-    Show-Error -Message "Failed to query NVIDIA DriverManualLookup: $($_.Exception.Message)"
+    Add-StepWarning -Item 'NVIDIA.Driver' -Message "Failed to query NVIDIA DriverManualLookup: $($_.Exception.Message)"
+    Show-Step2Complete
     return
 }
 
 if (-not $driverResp.IDS -or $driverResp.IDS.Count -eq 0) {
-    Show-Warning -Message "NVIDIA returned no driver records for the detected GPU/OS."
+    Add-StepWarning -Item 'NVIDIA.Driver' -Message "NVIDIA returned no driver records for the detected GPU/OS."
+    Show-Step2Complete
     return
 }
 
@@ -860,12 +1042,25 @@ Show-Info -Message "Driver installation required (installed: $installedDisplayVe
 # Step 7: Download installer
 # -------------------------
 Show-Section -Message "Download NVIDIA Driver" -Emoji "⬇" -Color "Green"
-$installerPath = Join-Path $env:TEMP ("nvidia-driver-{0}.exe" -f $latestVersion)
+$nvidiaDirectory = $null
+$installerPath = $null
 try {
+    $driverUri = [uri]$downloadUrl
+    if (-not $driverUri.IsAbsoluteUri -or $driverUri.Scheme -ne 'https' -or $driverUri.Host -notmatch '(^|\.)nvidia\.com$') {
+        throw "NVIDIA API returned an unexpected download URL: $downloadUrl"
+    }
+    $nvidiaDirectory = New-ProtectedInstallerDirectory -Prefix 'CiEnvironmentNvidia'
+    $installerPath = New-ProtectedInstallerFile -Directory $nvidiaDirectory -Name 'nvidia-driver.exe'
     Invoke-WebRequest -Uri $downloadUrl -OutFile $installerPath -UseBasicParsing -ErrorAction Stop
-    Show-Success -Message "Downloaded installer to: $installerPath"
+    $signature = Get-AuthenticodeSignature -LiteralPath $installerPath
+    if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'NVIDIA Corporation') {
+        throw "NVIDIA installer signature verification failed: $($signature.Status), $($signature.SignerCertificate.Subject)"
+    }
+    Show-Success -Message "Downloaded and signature-verified installer to: $installerPath"
 } catch {
-    Show-Error -Message "Failed to download NVIDIA driver: $($_.Exception.Message)"
+    Add-StepWarning -Item 'NVIDIA.Driver' -Message "Failed to download NVIDIA driver: $($_.Exception.Message)"
+    if ($nvidiaDirectory) { Remove-Item -LiteralPath $nvidiaDirectory -Recurse -Force -ErrorAction SilentlyContinue }
+    Show-Step2Complete
     return
 }
 
@@ -884,10 +1079,10 @@ try {
     if ($proc.ExitCode -eq 0) {
         Show-Success -Message "NVIDIA $driverTypeName $latestVersion installed successfully."
     } else {
-        Show-Warning -Message "NVIDIA installer exited with code $($proc.ExitCode). Driver may have installed but flagged a warning (e.g. reboot required)."
+        Add-StepWarning -Item 'NVIDIA.Driver' -Message "NVIDIA installer exited with code $($proc.ExitCode). Driver may have installed but flagged a warning (e.g. reboot required)."
     }
 } catch {
-    Show-Error -Message "Failed to run NVIDIA installer: $($_.Exception.Message)"
+    Add-StepWarning -Item 'NVIDIA.Driver' -Message "Failed to run NVIDIA installer: $($_.Exception.Message)"
 }
 
 # -------------------------
@@ -895,12 +1090,12 @@ try {
 # -------------------------
 Show-Section -Message "Cleanup" -Emoji "🧹" -Color "DarkGray"
 try {
-    if (Test-Path $installerPath) {
-        Remove-Item -Path $installerPath -Force -ErrorAction Stop
-        Show-Success -Message "Removed temporary installer."
+    if ($nvidiaDirectory -and (Test-Path -LiteralPath $nvidiaDirectory)) {
+        Remove-Item -LiteralPath $nvidiaDirectory -Recurse -Force -ErrorAction Stop
+        Show-Success -Message "Removed protected temporary installer directory."
     }
 } catch {
-    Show-Warning -Message "Could not remove installer at ${installerPath}: $($_.Exception.Message)"
+    Show-Warning -Message "Could not remove installer directory at ${nvidiaDirectory}: $($_.Exception.Message)"
 }
 
 Show-Info -Message "A reboot may be required to finish loading the new driver. No automatic reboot has been performed." -Emoji "🔁"

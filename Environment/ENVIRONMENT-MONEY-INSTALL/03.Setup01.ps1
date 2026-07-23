@@ -47,18 +47,303 @@ function Show-Success {
     )
     Write-Host "$Emoji $Message" -ForegroundColor Green
 }
-# Install a package via WinGet, log the outcome, and CONTINUE on failure so a single
-# bad package can never abort the whole (often unattended `iex`) run. Any package that
-# does not exit cleanly is recorded in $global:WingetFailures and reported at the end.
+
+$script:StepWarnings = @()
+function Add-StepWarning {
+    param(
+        [Parameter(Mandatory)][string]$Item,
+        [Parameter(Mandatory)][string]$Message,
+        [string]$Status = 'failed'
+    )
+    $script:StepWarnings += [ordered]@{
+        item    = $Item
+        status  = $Status
+        message = $Message
+    }
+    Show-Warning -Message $Message
+}
+
+function Get-ValidatedOrchestratorArtifactPath {
+    param([Parameter(Mandatory)][string]$Path)
+    if ($env:CI_ENV_ORCHESTRATED -ne '1') { throw 'Orchestrator artifact variables are only accepted during an orchestrated run.' }
+    $root = [IO.Path]::GetFullPath((Join-Path $env:ProgramData 'CiEnvironment'))
+    $logRoot = [IO.Path]::GetFullPath((Join-Path $root 'logs')).TrimEnd('\')
+    $candidate = [IO.Path]::GetFullPath($Path)
+    if (-not $candidate.StartsWith($logRoot + '\', [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Orchestrator artifact path is outside the protected log directory: $candidate"
+    }
+    $paths = @($root, $logRoot)
+    $current = $logRoot
+    foreach ($segment in $candidate.Substring($logRoot.Length).TrimStart('\').Split('\')) {
+        if ([string]::IsNullOrWhiteSpace($segment)) { continue }
+        $current = Join-Path $current $segment
+        $paths += $current
+    }
+    foreach ($artifactPath in $paths | Select-Object -Unique) {
+        if (-not (Test-Path -LiteralPath $artifactPath)) { throw "Protected artifact path does not exist: $artifactPath" }
+        $item = Get-Item -LiteralPath $artifactPath -Force
+        if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Protected artifact path is a reparse point: $artifactPath" }
+        $acl = Get-Acl -LiteralPath $artifactPath
+        $owner = $acl.GetOwner([Security.Principal.SecurityIdentifier]).Value
+        if (@('S-1-5-32-544', 'S-1-5-18') -notcontains $owner -or -not $acl.AreAccessRulesProtected) {
+            throw "Protected artifact path has an untrusted owner or inherited ACL: $artifactPath"
+        }
+        foreach ($ace in $acl.Access) {
+            $sid = $ace.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
+            if (@('S-1-5-32-544', 'S-1-5-18') -notcontains $sid) { throw "Protected artifact path grants access to SID ${sid}: $artifactPath" }
+        }
+    }
+    return $candidate
+}
+
+function Write-StepResult {
+    if ([string]::IsNullOrWhiteSpace($env:CI_ENV_STEP_RESULT_PATH)) { return }
+    $status = if ($script:StepWarnings.Count -eq 0) { 'completed' } else { 'completed_with_warnings' }
+    $result = [ordered]@{
+        version      = 1
+        status       = $status
+        warnings     = @($script:StepWarnings)
+        completedUtc = (Get-Date).ToUniversalTime().ToString('o')
+    }
+    try {
+        $resultPath = Get-ValidatedOrchestratorArtifactPath -Path $env:CI_ENV_STEP_RESULT_PATH
+        $result | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $resultPath -Encoding UTF8 -ErrorAction Stop
+    } catch {
+        Show-Warning -Message "Could not write the step result to '$env:CI_ENV_STEP_RESULT_PATH': $($_.Exception.Message)"
+    }
+}
+
+function New-ProtectedInstallerSecurity {
+    param([bool]$Directory)
+    $adminsSid = [Security.Principal.SecurityIdentifier]::new('S-1-5-32-544')
+    $systemSid = [Security.Principal.SecurityIdentifier]::new('S-1-5-18')
+    $acl = if ($Directory) {
+        [Security.AccessControl.DirectorySecurity]::new()
+    } else {
+        [Security.AccessControl.FileSecurity]::new()
+    }
+    $acl.SetOwner($adminsSid)
+    $acl.SetAccessRuleProtection($true, $false)
+    $inheritance = if ($Directory) {
+        [Security.AccessControl.InheritanceFlags]'ContainerInherit,ObjectInherit'
+    } else {
+        [Security.AccessControl.InheritanceFlags]::None
+    }
+    $rights = [Security.AccessControl.FileSystemRights]::FullControl
+    $propagation = [Security.AccessControl.PropagationFlags]::None
+    $allow = [Security.AccessControl.AccessControlType]::Allow
+    $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($adminsSid, $rights, $inheritance, $propagation, $allow))
+    $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($systemSid, $rights, $inheritance, $propagation, $allow))
+    return $acl
+}
+
+function Set-ProtectedInstallerAcl {
+    param([Parameter(Mandatory)][string]$Path)
+    $adminsSid = [Security.Principal.SecurityIdentifier]::new('S-1-5-32-544')
+    $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+    if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Installer path is a reparse point: $Path" }
+    $acl = New-ProtectedInstallerSecurity -Directory ([bool]$item.PSIsContainer)
+    Set-Acl -LiteralPath $Path -AclObject $acl -ErrorAction Stop
+    $level = if ($item.PSIsContainer) { '(OI)(CI)H' } else { 'H' }
+    & icacls.exe $Path /setintegritylevel $level /q | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Could not set High integrity on installer path: $Path" }
+
+    $verified = Get-Acl -LiteralPath $Path
+    if ($verified.GetOwner([Security.Principal.SecurityIdentifier]).Value -ne $adminsSid.Value -or
+        -not $verified.AreAccessRulesProtected) {
+        throw "Could not protect installer path: $Path"
+    }
+}
+
+function New-ProtectedInstallerDirectory {
+    param([string]$Prefix = 'CiEnvironmentInstaller')
+    $path = Join-Path $env:ProgramData ("{0}-{1}" -f $Prefix, ([guid]::NewGuid().ToString('N')))
+    $security = New-ProtectedInstallerSecurity -Directory $true
+    [IO.FileSystemAclExtensions]::Create([IO.DirectoryInfo]::new($path), $security)
+    Set-ProtectedInstallerAcl -Path $path
+    return $path
+}
+
+function New-ProtectedInstallerFile {
+    param(
+        [Parameter(Mandatory)][string]$Directory,
+        [Parameter(Mandatory)][string]$Name
+    )
+    $safeName = [IO.Path]::GetFileName($Name)
+    if ([string]::IsNullOrWhiteSpace($safeName) -or $safeName -ne $Name) {
+        throw "Unsafe installer file name: '$Name'"
+    }
+    $path = Join-Path $Directory $safeName
+    $security = New-ProtectedInstallerSecurity -Directory $false
+    $stream = [IO.FileSystemAclExtensions]::Create(
+        [IO.FileInfo]::new($path),
+        [IO.FileMode]::CreateNew,
+        [Security.AccessControl.FileSystemRights]::FullControl,
+        [IO.FileShare]::None,
+        4096,
+        [IO.FileOptions]::SequentialScan,
+        $security
+    )
+    $stream.Dispose()
+    Set-ProtectedInstallerAcl -Path $path
+    return $path
+}
+
+function Get-InstallerLogPath {
+    param([Parameter(Mandatory)][string]$Name)
+    if (-not $script:InstallerLogDir) {
+        $script:InstallerLogDir = if ([string]::IsNullOrWhiteSpace($env:CI_ENV_STEP_LOG_DIR)) {
+            New-ProtectedInstallerDirectory -Prefix 'CiEnvironmentLogs'
+        } else {
+            Get-ValidatedOrchestratorArtifactPath -Path $env:CI_ENV_STEP_LOG_DIR
+        }
+        if (-not (Test-Path -LiteralPath $script:InstallerLogDir)) {
+            throw "Installer log directory does not exist: $script:InstallerLogDir"
+        }
+        Set-ProtectedInstallerAcl -Path $script:InstallerLogDir
+    }
+    $safeName = $Name -replace '[^A-Za-z0-9._-]', '_'
+    return New-ProtectedInstallerFile -Directory $script:InstallerLogDir -Name ("{0}-{1:yyyyMMddHHmmssfff}.log" -f $safeName, (Get-Date))
+}
+
+function Test-InstalledApplication {
+    param([Parameter(Mandatory)][string]$DisplayNamePattern)
+    $uninstallPaths = @(
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*'
+    )
+    return $null -ne (Get-ItemProperty -Path $uninstallPaths -ErrorAction SilentlyContinue |
+        Where-Object { $_.DisplayName -like $DisplayNamePattern } |
+        Select-Object -First 1)
+}
+
+function Get-WingetExecutable {
+    $appInstallers = @(Get-AppxPackage -Name Microsoft.DesktopAppInstaller -ErrorAction SilentlyContinue |
+        Sort-Object @{ Expression = {
+            try { [version]$_.Version } catch { [version]'0.0' }
+        }; Descending = $true })
+    foreach ($appInstaller in $appInstallers) {
+        if ([string]::IsNullOrWhiteSpace([string]$appInstaller.InstallLocation)) { continue }
+        $candidate = Join-Path $appInstaller.InstallLocation 'winget.exe'
+        if (Test-Path -LiteralPath $candidate) { return $candidate }
+    }
+
+    throw 'The physical winget.exe from Microsoft.DesktopAppInstaller was not found.'
+}
+
+function Wait-WingetReady {
+    $lastError = 'winget did not return a stable version.'
+    for ($attempt = 1; $attempt -le 6; $attempt++) {
+        try {
+            $firstPath = Get-WingetExecutable
+            $firstVersion = (& $firstPath --version 2>$null | Select-Object -First 1)
+            $firstCode = $LASTEXITCODE
+            Start-Sleep -Seconds 2
+            $secondPath = Get-WingetExecutable
+            $secondVersion = (& $secondPath --version 2>$null | Select-Object -First 1)
+            $secondCode = $LASTEXITCODE
+            # App Installer may finish an update between checks. Use the newly resolved physical
+            # executable when it runs successfully instead of requiring the old path/version to match.
+            if ($secondCode -eq 0 -and (Test-Path -LiteralPath $secondPath) -and
+                -not [string]::IsNullOrWhiteSpace([string]$secondVersion)) {
+                return $secondPath
+            }
+            $lastError = "WinGet readiness check failed (first: exit $firstCode, version '$firstVersion', path '$firstPath'; second: exit $secondCode, version '$secondVersion', path '$secondPath')."
+        } catch {
+            $lastError = $_.Exception.Message
+        }
+        if ($attempt -lt 6) { Start-Sleep -Seconds 5 }
+    }
+    throw $lastError
+}
+
+function Wait-MsiIdle {
+    param([int]$TimeoutSeconds = 300)
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    do {
+        $mutex = $null
+        $acquired = $false
+        try {
+            $mutex = [Threading.Mutex]::OpenExisting('Global\_MSIExecute')
+            try {
+                $acquired = $mutex.WaitOne(1000)
+            } catch [Threading.AbandonedMutexException] {
+                $acquired = $true
+            }
+            if ($acquired) {
+                $mutex.ReleaseMutex()
+                return $true
+            }
+        } catch [Threading.WaitHandleCannotBeOpenedException] {
+            return $true
+        } catch {
+            # Access can be transient while Windows Installer changes owners; retry until timeout.
+        } finally {
+            if ($mutex) { $mutex.Dispose() }
+        }
+        Start-Sleep -Seconds 2
+    } while ((Get-Date) -lt $deadline)
+    return $false
+}
+
+function Test-WingetPackagePresent {
+    param(
+        [Parameter(Mandatory)][string]$WingetPath,
+        [Parameter(Mandatory)][string]$Id,
+        [string]$AppxName,
+        [scriptblock]$Verify
+    )
+    if ($Verify) {
+        try { return [bool](& $Verify) } catch { return $false }
+    }
+    if ($AppxName) {
+        return $null -ne (Get-AppxPackage -Name $AppxName -ErrorAction SilentlyContinue | Select-Object -First 1)
+    }
+
+    for ($attempt = 1; $attempt -le 2; $attempt++) {
+        try {
+            if ([string]::IsNullOrWhiteSpace($WingetPath) -or -not (Test-Path -LiteralPath $WingetPath)) {
+                $WingetPath = Get-WingetExecutable
+            }
+            $listOutput = & $WingetPath list --id $Id --exact --accept-source-agreements --disable-interactivity 2>&1
+            $listCode = $LASTEXITCODE
+            return $listCode -eq 0 -and (($listOutput -join "`n") -match [regex]::Escape($Id))
+        } catch {
+            $WingetPath = $null
+            if ($attempt -lt 2) { Start-Sleep -Seconds 2 }
+        }
+    }
+    return $false
+}
+
+# Install a package via the physical App Installer executable, suppress native progress noise,
+# retry once, and count success only after an independent presence check.
 function Install-WingetPackage {
     param(
         [Parameter(Mandatory)][string]$Id,
         [string]$Source = "winget",
         [string]$Version,
-        [string]$Custom
+        [string]$Custom,
+        [string]$AppxName,
+        [scriptblock]$Verify
     )
     $script:WingetIndex = [int]$script:WingetIndex + 1
-    Show-Info -Message "[$script:WingetIndex] Installing $Id ..." -Emoji "⏳"
+    Show-Info -Message "[$script:WingetIndex] Ensuring $Id is installed..." -Emoji "⏳"
+
+    try {
+        $wingetPath = Wait-WingetReady
+        if (Test-WingetPackagePresent -WingetPath $wingetPath -Id $Id -AppxName $AppxName -Verify $Verify) {
+            Show-Info -Message "$Id is already installed; skipping." -Emoji "⏭️"
+            return
+        }
+    } catch {
+        $message = "Could not prepare WinGet for ${Id}: $($_.Exception.Message)"
+        Add-StepWarning -Item $Id -Message $message
+        $global:WingetFailures += $Id
+        return
+    }
+
     $wingetArgs = @(
         "install", "--id", $Id, "--exact", "--source", $Source,
         "--silent", "--accept-package-agreements", "--accept-source-agreements",
@@ -66,18 +351,61 @@ function Install-WingetPackage {
     )
     if ($Version) { $wingetArgs += @("--version", $Version) }
     if ($Custom)  { $wingetArgs += @("--custom", $Custom) }
-    try {
-        & winget @wingetArgs
-        if ($LASTEXITCODE -eq 0) {
-            Show-Success -Message "$Id installed."
-        } else {
-            Show-Warning -Message "winget install $Id exited with code $LASTEXITCODE; continuing."
-            $global:WingetFailures += $Id
+
+    $successEquivalentCodes = @(0, -1978335189, -1978335153, -1978335135, 1641, 3010)
+    $lastExitCode = $null
+    $lastLogPath = $null
+    $lastErrorMessage = $null
+    for ($attempt = 1; $attempt -le 2; $attempt++) {
+        if (-not (Wait-MsiIdle)) {
+            $lastErrorMessage = 'Windows Installer remained busy for five minutes.'
+            break
         }
-    } catch {
-        Show-Warning -Message "Failed to install ${Id}: $($_.Exception.Message)"
-        $global:WingetFailures += $Id
+
+        try {
+            $wingetPath = Wait-WingetReady
+            $lastLogPath = Get-InstallerLogPath -Name "winget-$Id-attempt-$attempt"
+            & $wingetPath @wingetArgs *> $lastLogPath
+            $lastExitCode = $LASTEXITCODE
+        } catch {
+            $lastExitCode = $null
+            $lastErrorMessage = $_.Exception.Message
+        }
+
+        if (Test-WingetPackagePresent -WingetPath $wingetPath -Id $Id -AppxName $AppxName -Verify $Verify) {
+            Show-Success -Message "$Id is installed and verified."
+            return
+        }
+
+        if ($attempt -lt 2) {
+            $codeText = if ($null -eq $lastExitCode) { $lastErrorMessage } else { "exit $lastExitCode" }
+            Show-Warning -Message "$Id was not verified after WinGet $codeText; retrying once after a short delay. Log: $lastLogPath"
+            Start-Sleep -Seconds 10
+        }
     }
+
+    $classification = if ($null -ne $lastExitCode -and $successEquivalentCodes -contains $lastExitCode) {
+        "WinGet returned success-equivalent code $lastExitCode, but presence verification failed"
+    } elseif ($null -ne $lastExitCode) {
+        "WinGet exited $lastExitCode and presence verification failed"
+    } else {
+        "WinGet failed ($lastErrorMessage) and presence verification failed"
+    }
+    Add-StepWarning -Item $Id -Message "${classification}. Log: $lastLogPath"
+    $global:WingetFailures += $Id
+}
+
+function Test-ChocoPackagePresent {
+    param([Parameter(Mandatory)][string]$Id)
+    $versionText = (& choco --version 2>$null | Select-Object -First 1)
+    $majorVersion = 0
+    if (-not [int]::TryParse(([string]$versionText -split '\.')[0], [ref]$majorVersion)) {
+        throw "Could not determine the installed Chocolatey version from '$versionText'."
+    }
+    $arguments = @('list', $Id, '--exact', '--limit-output')
+    if ($majorVersion -lt 2) { $arguments += '--local-only' }
+    $output = & choco @arguments 2>&1
+    return $LASTEXITCODE -eq 0 -and (($output -join "`n") -match "(?im)^$([regex]::Escape($Id))\|")
 }
 
 # Install a package via Chocolatey with the same continue-on-failure + progress + aggregation
@@ -88,18 +416,32 @@ function Install-ChocoPackage {
         [string[]]$ExtraArgs
     )
     $script:ChocoIndex = [int]$script:ChocoIndex + 1
-    Show-Info -Message "[$script:ChocoIndex] Installing (choco) $Id ..." -Emoji "⏳"
-    $chocoArgs = @("install", $Id, "-y") + $ExtraArgs
+    Show-Info -Message "[$script:ChocoIndex] Ensuring (choco) $Id is installed..." -Emoji "⏳"
     try {
-        & choco @chocoArgs
-        if (@(0, 1641, 3010) -contains $LASTEXITCODE) {
-            Show-Success -Message "$Id installed."
+        $alreadyInstalled = Test-ChocoPackagePresent -Id $Id
+    } catch {
+        Add-StepWarning -Item $Id -Message "Could not query Chocolatey package state for ${Id}: $($_.Exception.Message)"
+        $global:ChocoFailures += $Id
+        return
+    }
+    if ($alreadyInstalled) {
+        Show-Info -Message "$Id is already installed; skipping." -Emoji "⏭️"
+        return
+    }
+
+    $chocoArgs = @("install", $Id, "-y", "--no-progress", "--limit-output") + $ExtraArgs
+    $logPath = Get-InstallerLogPath -Name "choco-$Id"
+    try {
+        & choco @chocoArgs *> $logPath
+        $exitCode = $LASTEXITCODE
+        if (@(0, 1641, 3010) -contains $exitCode -and (Test-ChocoPackagePresent -Id $Id)) {
+            Show-Success -Message "$Id is installed and verified."
         } else {
-            Show-Warning -Message "choco install $Id exited with code $LASTEXITCODE; continuing."
+            Add-StepWarning -Item $Id -Message "Chocolatey exited $exitCode and $Id did not verify as installed. Log: $logPath"
             $global:ChocoFailures += $Id
         }
     } catch {
-        Show-Warning -Message "Failed to install (choco) ${Id}: $($_.Exception.Message)"
+        Add-StepWarning -Item $Id -Message "Failed to install (choco) ${Id}: $($_.Exception.Message). Log: $logPath"
         $global:ChocoFailures += $Id
     }
 }
@@ -110,8 +452,16 @@ Show-Info -Message ("Current Time: " + $scriptStart) -Emoji "⏰"
 
 # Set ExecutionPolicy to RemoteSigned for script execution
 Show-Section -Message "Set Execution Policy" -Emoji "🔐" -Color "Yellow"
-Set-ExecutionPolicy RemoteSigned -Force
-Show-Success -Message "Execution policy set to RemoteSigned."
+Set-ExecutionPolicy RemoteSigned -Scope LocalMachine -Force -ErrorAction SilentlyContinue
+$localMachinePolicy = Get-ExecutionPolicy -Scope LocalMachine
+$effectivePolicy = Get-ExecutionPolicy
+if ($localMachinePolicy -ne 'RemoteSigned') {
+    Show-Warning -Message "LocalMachine execution policy is '$localMachinePolicy', not RemoteSigned (a higher-level policy may control it)."
+} elseif ($effectivePolicy -eq 'RemoteSigned') {
+    Show-Success -Message "Execution policy set to RemoteSigned."
+} else {
+    Show-Info -Message "LocalMachine execution policy is RemoteSigned; this process uses '$effectivePolicy' from a higher-priority scope." -Emoji "🛡️"
+}
 
 # Create the directory required for $PROFILE if it does not exist
 Show-Section -Message "Create PowerShell Profile Directory" -Emoji "📁" -Color "Cyan"
@@ -122,14 +472,14 @@ Show-Success -Message "Profile directory ensured."
 Show-Section -Message "Check Administrator Rights" -Emoji "🔒" -Color "Red"
 If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Show-Error -Message "You do not have Administrator rights to run this script!`nPlease re-run this script as an Administrator!"
-    exit
+    exit 1
 } else { Show-Success -Message "Administrator rights confirmed." }
 
 # Check PowerShell version
 Show-Section -Message "Check PowerShell Version" -Emoji "🛡️" -Color "Yellow"
 if($PSversionTable.PsVersion.Major -lt 7){
     Show-Error -Message "Please use Powershell 7 to execute this script!"
-    exit
+    exit 1
 } else { Show-Success -Message "PowerShell version is $($PSversionTable.PsVersion.Major)." }
 
 # Set traditional context menu
@@ -257,13 +607,11 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.We
 # Only packages that WinGet cannot cleanly provide stay on Chocolatey:
 #   - nerd-fonts-hack: WinGet has no Nerd-patched Hack font (only the unpatched SourceFoundry.HackFonts)
 #   - git.install: preserves /NoShellIntegration (WinGet has no reliable equivalent switch)
-#   - line: not in the WinGet default source (Microsoft Store only)
 #   - dotnetcore-2.1/2.2-sdk: not available in WinGet (both are EOL)
 $global:ChocoFailures = @()
 $script:ChocoIndex = 0
 Install-ChocoPackage -Id "nerd-fonts-hack"
 Install-ChocoPackage -Id "git.install" -ExtraArgs @("--params", "/NoShellIntegration")
-Install-ChocoPackage -Id "line"
 # Heavy / powerful-host-only: the EOL .NET Core 2.1/2.2 SDKs.
 if ($isPowerfulPc) {
     Install-ChocoPackage -Id "dotnetcore-2.1-sdk"
@@ -278,9 +626,13 @@ if ($global:ChocoFailures.Count -eq 0) {
 # Install applications via WinGet (placed directly below Chocolatey so all installs live together)
 Show-Section -Message "Install Applications via WinGet" -Emoji "🏪" -Color "Green"
 
-# The bulk of the toolchain now comes from WinGet, so make sure it is available first.
-if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-    Show-Error -Message "winget (App Installer) not found. Install 'App Installer' from the Microsoft Store, then re-run this script."
+# The bulk of the toolchain now comes from WinGet. Resolve App Installer's physical executable and
+# require two stable version checks so an in-flight Store update cannot corrupt the command line.
+try {
+    $script:WingetPath = Wait-WingetReady
+    Show-Info -Message "Using stable WinGet executable: $script:WingetPath" -Emoji "🧭"
+} catch {
+    Show-Error -Message "winget (App Installer) is not ready: $($_.Exception.Message)"
     exit 1
 }
 $global:WingetFailures = @()
@@ -305,8 +657,14 @@ Install-WingetPackage -Id "Microsoft.Azure.FunctionsCoreTools"
 Install-WingetPackage -Id "Hashicorp.Terraform"
 Install-WingetPackage -Id "Python.Python.3.14"
 Install-WingetPackage -Id "GnuPG.Gpg4win"
-Install-WingetPackage -Id "Google.Chrome"
-Install-WingetPackage -Id "Microsoft.PowerToys"
+Install-WingetPackage -Id "Google.Chrome" -Verify {
+    (Test-Path (Join-Path $env:ProgramFiles 'Google\Chrome\Application\chrome.exe')) -or
+    (Test-InstalledApplication -DisplayNamePattern 'Google Chrome*')
+}
+Install-WingetPackage -Id "Microsoft.PowerToys" -Verify {
+    (Test-Path (Join-Path $env:ProgramFiles 'PowerToys\PowerToys.exe')) -or
+    (Test-InstalledApplication -DisplayNamePattern 'PowerToys*')
+}
 Install-WingetPackage -Id "Mobatek.MobaXterm"
 Install-WingetPackage -Id "ShiningLight.OpenSSL.Light"
 Install-WingetPackage -Id "AutoHotkey.AutoHotkey"
@@ -324,7 +682,10 @@ Install-WingetPackage -Id "Devolutions.RemoteDesktopManager"
 # --- .NET SDKs (winget source) ---
 # Thin-and-light hosts get the supported set (8 LTS + 10 LTS); powerful hosts also get the
 # older/EOL SDKs (3.1/5/6/7/9).
-Install-WingetPackage -Id "Microsoft.DotNet.SDK.8"
+Install-WingetPackage -Id "Microsoft.DotNet.SDK.8" -Verify {
+    $dotnetPath = Join-Path $env:ProgramFiles 'dotnet\dotnet.exe'
+    (Test-Path $dotnetPath) -and (@(& $dotnetPath --list-sdks 2>$null) -match '^8\.')
+}
 Install-WingetPackage -Id "Microsoft.DotNet.SDK.10"
 if ($isPowerfulPc) {
     Install-WingetPackage -Id "Microsoft.DotNet.SDK.3_1"
@@ -345,23 +706,29 @@ Install-WingetPackage -Id "Microsoft.Coreutils"
 Install-WingetPackage -Id "Microsoft.BingWallpaper"
 
 # --- Microsoft Store apps (msstore source) ---
+# LINE Desktop (the Store manifest supplies a Microsoft-hosted installer and SHA-256; this replaces
+# Chocolatey's stale upstream checksum).
+Install-WingetPackage -Id "XPFCC4CD725961" -Source "msstore" -Verify {
+    (Test-InstalledApplication -DisplayNamePattern 'LINE') -or
+    (Test-Path -LiteralPath (Join-Path $env:LOCALAPPDATA 'LINE\bin\LineLauncher.exe'))
+}
 # Microsoft.Whiteboard
-Install-WingetPackage -Id "9MSPC6MP8FM4" -Source "msstore"
+Install-WingetPackage -Id "9MSPC6MP8FM4" -Source "msstore" -AppxName "Microsoft.Whiteboard"
 # NuGetPackageExplorer
-Install-WingetPackage -Id "9WZDNCRDMDM3" -Source "msstore"
+Install-WingetPackage -Id "9WZDNCRDMDM3" -Source "msstore" -AppxName "50582LuanNguyen.NuGetPackageExplorer"
 # Spotify
-Install-WingetPackage -Id "9NCBCSZSJRSB" -Source "msstore"
+Install-WingetPackage -Id "9NCBCSZSJRSB" -Source "msstore" -AppxName "SpotifyAB.SpotifyMusic"
 # Netflix
-Install-WingetPackage -Id "9WZDNCRFJ3TJ" -Source "msstore"
+Install-WingetPackage -Id "9WZDNCRFJ3TJ" -Source "msstore" -AppxName "4DF9E0F8.Netflix"
 # Sysinternals Suite
-Install-WingetPackage -Id "9P7KNL5RWT25" -Source "msstore"
+Install-WingetPackage -Id "9P7KNL5RWT25" -Source "msstore" -AppxName "Microsoft.SysinternalsSuite"
 # Media Extensions
-Install-WingetPackage -Id "9PMMSR1CGPWG" -Source "msstore"
-Install-WingetPackage -Id "9N4D0MSMP0PT" -Source "msstore"
-Install-WingetPackage -Id "9N5TDP8VCMHS" -Source "msstore"
-Install-WingetPackage -Id "9PG2DK419DRG" -Source "msstore"
+Install-WingetPackage -Id "9PMMSR1CGPWG" -Source "msstore" -AppxName "Microsoft.HEIFImageExtension"
+Install-WingetPackage -Id "9N4D0MSMP0PT" -Source "msstore" -AppxName "Microsoft.VP9VideoExtensions"
+Install-WingetPackage -Id "9N5TDP8VCMHS" -Source "msstore" -AppxName "Microsoft.WebMediaExtensions"
+Install-WingetPackage -Id "9PG2DK419DRG" -Source "msstore" -AppxName "Microsoft.WebpImageExtension"
 # Region to Share
-Install-WingetPackage -Id "9N4066W2R5Q4" -Source "msstore"
+Install-WingetPackage -Id "9N4066W2R5Q4" -Source "msstore" -AppxName "15863TomEnglert.RegionToShare"
 # Xodo PDF
 # Install-WingetPackage -Id "9WZDNCRDJXP4" -Source "msstore"
 # Disney
@@ -382,35 +749,88 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' +
 
 # Install Little Big Mouse
 Show-Section -Message "Install Little Big Mouse" -Emoji "🖱️" -Color "Green"
-$lbmUrl = "https://github.com/mgth/LittleBigMouse/releases/download/v5.2.3/LittleBigMouse-5.2.3.0.exe";
-$lbmFile = Join-Path $env:TEMP "LittleBigMouse-5.2.3.0.exe";  # $PSScriptRoot is empty under iex
-Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
-Start-Process -FilePath $lbmFile -ArgumentList "/S" -PassThru
-Show-Success -Message "Little Big Mouse installed."
+if (Test-InstalledApplication -DisplayNamePattern 'LittleBigMouse*') {
+    Show-Info -Message "Little Big Mouse is already installed; skipping." -Emoji "⏭️"
+} else {
+    $lbmUrl = "https://github.com/mgth/LittleBigMouse/releases/download/v5.2.3/LittleBigMouse-5.2.3.0.exe"
+    $lbmDirectory = $null
+    $lbmFile = $null
+    $lbmExpectedHash = '99BCDE2EBDB72206AF313101DA41CA58506543925E2536727BB94A1110183508'
+    try {
+        if (-not (Wait-MsiIdle)) { throw 'Windows Installer remained busy for five minutes.' }
+        $lbmDirectory = New-ProtectedInstallerDirectory
+        $lbmFile = New-ProtectedInstallerFile -Directory $lbmDirectory -Name 'LittleBigMouse-5.2.3.0.exe'
+        Invoke-WebRequest -Uri $lbmUrl -OutFile $lbmFile
+        $lbmActualHash = (Get-FileHash -Path $lbmFile -Algorithm SHA256).Hash
+        if ($lbmActualHash -ne $lbmExpectedHash) {
+            throw "SHA-256 mismatch (expected $lbmExpectedHash, got $lbmActualHash)."
+        }
+        $lbmProc = Start-Process -FilePath $lbmFile -ArgumentList "/S" -Wait -PassThru
+        if ($lbmProc.ExitCode -eq 0 -and (Test-InstalledApplication -DisplayNamePattern 'LittleBigMouse*')) {
+            Show-Success -Message "Little Big Mouse installed and verified."
+        } else {
+            Add-StepWarning -Item 'LittleBigMouse' -Message "Little Big Mouse exited $($lbmProc.ExitCode) and did not verify as installed."
+        }
+    } catch {
+        Add-StepWarning -Item 'LittleBigMouse' -Message "Failed to install Little Big Mouse: $($_.Exception.Message)"
+    } finally {
+        if ($lbmDirectory) { Remove-Item -LiteralPath $lbmDirectory -Recurse -Force -ErrorAction SilentlyContinue }
+    }
+}
 
 # Install SayIt (latest GitHub release; not available in WinGet).
 # Use the MSI: SayIt's Tauri updater targets the .msi for windows-x86_64, so installing
 # via MSI keeps the initial install consistent with future auto-updates.
 Show-Section -Message "Install SayIt" -Emoji "🗣️" -Color "Green"
-try {
-    $sayItRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/lettucebo/SayIt/releases/latest" -Headers @{ "User-Agent" = "Ci.Environment" }
-    $sayItAsset = $sayItRelease.assets |
-        Where-Object { $_.name -like "*_x64*.msi" } |
-        Select-Object -First 1
-    if ($sayItAsset) {
-        $sayItFile = Join-Path $env:TEMP $sayItAsset.name
-        Invoke-WebRequest -Uri $sayItAsset.browser_download_url -OutFile $sayItFile
-        $sayItProc = Start-Process -FilePath "msiexec.exe" -ArgumentList "/i `"$sayItFile`" /qn /norestart" -Wait -PassThru
-        if ($sayItProc.ExitCode -eq 0 -or $sayItProc.ExitCode -eq 3010) {
-            Show-Success -Message "SayIt $($sayItRelease.tag_name) installed."
-        } else {
-            Show-Warning -Message "SayIt installer (msiexec) exited with code $($sayItProc.ExitCode); continuing."
+if (Test-InstalledApplication -DisplayNamePattern 'SayIt*') {
+    Show-Info -Message "SayIt is already installed; skipping." -Emoji "⏭️"
+} else {
+    $sayItDirectory = $null
+    $sayItFile = $null
+    try {
+        $sayItRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/lettucebo/SayIt/releases/latest" -Headers @{ "User-Agent" = "Ci.Environment" }
+        $sayItAsset = $sayItRelease.assets |
+            Where-Object { $_.name -like "*_x64*.msi" } |
+            Select-Object -First 1
+        if (-not $sayItAsset) { throw 'No Windows x64 MSI asset was found in the latest release.' }
+        if ($sayItAsset.digest -notmatch '^sha256:([A-Fa-f0-9]{64})$') {
+            throw "The release asset '$($sayItAsset.name)' does not publish a SHA-256 digest."
         }
-    } else {
-        Show-Warning -Message "SayIt: no Windows MSI asset found in the latest release."
+
+        $sayItExpectedHash = $Matches[1].ToUpperInvariant()
+        if (-not (Wait-MsiIdle)) { throw 'Windows Installer remained busy for five minutes.' }
+        $sayItDirectory = New-ProtectedInstallerDirectory
+        $sayItFile = New-ProtectedInstallerFile -Directory $sayItDirectory -Name ([IO.Path]::GetFileName($sayItAsset.name))
+        Invoke-WebRequest -Uri $sayItAsset.browser_download_url -OutFile $sayItFile
+        $sayItActualHash = (Get-FileHash -Path $sayItFile -Algorithm SHA256).Hash
+        if ($sayItActualHash -ne $sayItExpectedHash) {
+            throw "SHA-256 mismatch (expected $sayItExpectedHash, got $sayItActualHash)."
+        }
+
+        $sayItExitCode = $null
+        $sayItLog = $null
+        for ($attempt = 1; $attempt -le 3; $attempt++) {
+            if (-not (Wait-MsiIdle)) { throw 'Windows Installer remained busy for five minutes.' }
+            $sayItLog = Get-InstallerLogPath -Name "SayIt-msi-attempt-$attempt"
+            $sayItArguments = "/i `"$sayItFile`" /qn /norestart /l*v `"$sayItLog`""
+            $sayItProc = Start-Process -FilePath "msiexec.exe" -ArgumentList $sayItArguments -Wait -PassThru
+            $sayItExitCode = $sayItProc.ExitCode
+            if (Test-InstalledApplication -DisplayNamePattern 'SayIt*') { break }
+            if ($sayItExitCode -ne 1618 -or $attempt -eq 3) { break }
+            Show-Warning -Message "SayIt encountered Windows Installer contention (1618); retrying after 15 seconds. Log: $sayItLog"
+            Start-Sleep -Seconds 15
+        }
+
+        if (Test-InstalledApplication -DisplayNamePattern 'SayIt*') {
+            Show-Success -Message "SayIt $($sayItRelease.tag_name) installed and verified."
+        } else {
+            Add-StepWarning -Item 'SayIt' -Message "SayIt installer exited $sayItExitCode and did not verify as installed. Log: $sayItLog"
+        }
+    } catch {
+        Add-StepWarning -Item 'SayIt' -Message "Failed to install SayIt: $($_.Exception.Message)"
+    } finally {
+        if ($sayItDirectory) { Remove-Item -LiteralPath $sayItDirectory -Recurse -Force -ErrorAction SilentlyContinue }
     }
-} catch {
-    Show-Warning -Message "Failed to install SayIt: $($_.Exception.Message)"
 }
 
 # Download Azure Storage Emulator
@@ -458,15 +878,7 @@ Set-ItemProperty $explorerKey Hidden 1
 Set-ItemProperty $explorerKey HideFileExt 0
 Show-Success -Message "File Explorer configured."
 
-# Create C:\Source\Repos and pin folders to File Explorer Quick Access in a fixed relative order
-# (Repos -> Decks -> Microsoft Scout). Uses the cross-locale shell verbs pintohome / unpinfromhome
-# and the System.Home.IsPinned property. Each pin/unpin is verified by polling IsPinned (InvokeVerb
-# returns no status), pintohome is only invoked on a folder confirmed NOT pinned (avoids the known
-# pintohome toggle-off behavior), and each pin/unpin is guarded so a single failure can't abort the
-# rest; the final pinned order is re-verified and a warning is emitted if any target is missing or out
-# of order. Best-effort: the new pins land after the default Desktop/Downloads pins, but that absolute
-# placement is not a documented Shell guarantee. Pins for the interactive (elevated same-account) user;
-# Explorer reflects it after the reboot.
+# Create C:\Source\Repos and pin available work folders in a fixed relative Quick Access order.
 Show-Section -Message "Create C:\Source\Repos and pin Quick Access folders" -Emoji "📌" -Color "Green"
 $reposPath = 'C:\Source\Repos'
 try {
@@ -474,80 +886,101 @@ try {
         New-Item -ItemType Directory -Path $reposPath -Force -ErrorAction Stop | Out-Null
         Show-Info -Message "Created $reposPath" -Emoji "📁"
     }
-} catch { Show-Warning -Message "Could not create ${reposPath}: $($_.Exception.Message)" }
-
-# Resolve the OneDrive-for-Business root: env var, then the registry UserFolder, then the conventional name.
-$odRoot = $env:OneDriveCommercial
-if (-not $odRoot -or -not (Test-Path -LiteralPath $odRoot)) {
-    $odRoot = Get-ChildItem 'HKCU:\Software\Microsoft\OneDrive\Accounts\Business*' -ErrorAction SilentlyContinue |
-        ForEach-Object { (Get-ItemProperty $_.PSPath -Name UserFolder -ErrorAction SilentlyContinue).UserFolder } |
-        Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
+} catch {
+    Add-StepWarning -Item 'FileExplorer.QuickAccess' -Message "Could not create ${reposPath}: $($_.Exception.Message)"
 }
-if (-not $odRoot) { $odRoot = Join-Path $env:USERPROFILE 'OneDrive - Microsoft' }
 
-# Desired order; only pin folders that actually exist. Normalize trailing separators for reliable matching.
-# Wrap in @() so the result is always an array (reliable .Count / foreach for 0, 1, or many matches).
+$oneDriveRoot = $env:OneDriveCommercial
+if (-not $oneDriveRoot -or -not (Test-Path -LiteralPath $oneDriveRoot)) {
+    $oneDriveRoot = Get-ChildItem 'HKCU:\Software\Microsoft\OneDrive\Accounts\Business*' -ErrorAction SilentlyContinue |
+        ForEach-Object { (Get-ItemProperty $_.PSPath -Name UserFolder -ErrorAction SilentlyContinue).UserFolder } |
+        Where-Object { $_ -and (Test-Path -LiteralPath $_) } |
+        Select-Object -First 1
+}
+if (-not $oneDriveRoot) { $oneDriveRoot = Join-Path $env:USERPROFILE 'OneDrive - Microsoft' }
+
 $quickAccessTargets = @(@(
-    $reposPath,
-    (Join-Path $odRoot 'MTT\Decks'),
-    (Join-Path $odRoot 'Documents\Microsoft Scout')
-) | Where-Object { Test-Path -LiteralPath $_ } | ForEach-Object { $_.TrimEnd('\') })
+        $reposPath,
+        (Join-Path $oneDriveRoot 'MTT\Decks'),
+        (Join-Path $oneDriveRoot 'Documents\Microsoft Scout')
+    ) | Where-Object { Test-Path -LiteralPath $_ } | ForEach-Object { $_.TrimEnd('\') })
 
+$shellApp = $null
 if ($quickAccessTargets.Count -eq 0) {
-    Show-Warning -Message "No target folders exist to pin to Quick Access; skipping."
+    Add-StepWarning -Item 'FileExplorer.QuickAccess' -Message 'No target folders exist to pin to Quick Access.'
 } else {
     try {
-        $qaNamespace = 'shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}'
+        $quickAccessNamespace = 'shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}'
         $shellApp = New-Object -ComObject shell.application
-        $getPinned = { @($shellApp.Namespace($qaNamespace).Items() | Where-Object { $_.ExtendedProperty('System.Home.IsPinned') -eq $true } | ForEach-Object { $_.Path.TrimEnd('\') }) }
+        $getPinned = {
+            @($shellApp.Namespace($quickAccessNamespace).Items() |
+                Where-Object { $_.ExtendedProperty('System.Home.IsPinned') -eq $true } |
+                ForEach-Object { $_.Path.TrimEnd('\') })
+        }
 
-        # Idempotent AND order-aware: only skip when the pinned targets already appear in exactly the
-        # desired relative order (a plain membership test would preserve a wrong order).
         $pinnedTargetsInOrder = @(& $getPinned | Where-Object { $quickAccessTargets -contains $_ })
         if (($pinnedTargetsInOrder -join '|') -eq ($quickAccessTargets -join '|')) {
             Show-Info -Message "Quick Access already has the target folders pinned in order; leaving as-is." -Emoji "📌"
         } else {
-            # Unpin every target that is currently pinned (poll until confirmed) so re-pinning yields the order.
-            # Each unpin is isolated so a single failure can't abort the re-pin phase that follows.
             foreach ($target in $quickAccessTargets) {
                 try {
-                    $item = $shellApp.Namespace($qaNamespace).Items() | Where-Object { $_.Path.TrimEnd('\') -eq $target -and $_.ExtendedProperty('System.Home.IsPinned') -eq $true } | Select-Object -First 1
+                    $item = $shellApp.Namespace($quickAccessNamespace).Items() |
+                        Where-Object { $_.Path.TrimEnd('\') -eq $target -and $_.ExtendedProperty('System.Home.IsPinned') -eq $true } |
+                        Select-Object -First 1
                     if ($item) {
                         $item.InvokeVerb('unpinfromhome')
-                        for ($i = 0; $i -lt 20 -and ((& $getPinned) -contains $target); $i++) { Start-Sleep -Milliseconds 150 }
+                        for ($index = 0; $index -lt 20 -and ((& $getPinned) -contains $target); $index++) {
+                            Start-Sleep -Milliseconds 150
+                        }
                     }
                 } catch {
-                    Show-Warning -Message "  Could not unpin '$target' before reordering: $($_.Exception.Message)"
+                    Show-Warning -Message "Could not unpin '$target' before reordering: $($_.Exception.Message)"
                 }
             }
-            # Pin each target in order; never invoke pintohome while still pinned; verify afterwards.
             foreach ($target in $quickAccessTargets) {
                 try {
-                    if ((& $getPinned) -contains $target) { Show-Info -Message "  Already pinned: $target" -Emoji "✔️"; continue }
+                    if ((& $getPinned) -contains $target) {
+                        Show-Info -Message "Already pinned: $target" -Emoji "✔️"
+                        continue
+                    }
                     $folder = $shellApp.Namespace($target)
-                    if (-not $folder) { Show-Warning -Message "  Shell could not open '$target'; skipping."; continue }
+                    if (-not $folder) {
+                        Show-Warning -Message "Shell could not open '$target'; skipping."
+                        continue
+                    }
                     $folder.Self.InvokeVerb('pintohome')
-                    for ($i = 0; $i -lt 20 -and -not ((& $getPinned) -contains $target); $i++) { Start-Sleep -Milliseconds 150 }
-                    if ((& $getPinned) -contains $target) { Show-Info -Message "  Pinned to Quick Access: $target" -Emoji "📌" }
-                    else { Show-Warning -Message "  Pin did not confirm for '$target'." }
+                    for ($index = 0; $index -lt 20 -and -not ((& $getPinned) -contains $target); $index++) {
+                        Start-Sleep -Milliseconds 150
+                    }
+                    if ((& $getPinned) -contains $target) {
+                        Show-Info -Message "Pinned to Quick Access: $target" -Emoji "📌"
+                    } else {
+                        Show-Warning -Message "Pin did not confirm for '$target'."
+                    }
                 } catch {
-                    Show-Warning -Message "  Could not pin '$target': $($_.Exception.Message)"
+                    Show-Warning -Message "Could not pin '$target': $($_.Exception.Message)"
                 }
             }
         }
 
-        # Verify the end state instead of assuming success: the pinned targets must appear in exactly
-        # the desired relative order. Report missing or misordered targets explicitly.
         $finalTargetsInOrder = @(& $getPinned | Where-Object { $quickAccessTargets -contains $_ })
         if (($finalTargetsInOrder -join '|') -eq ($quickAccessTargets -join '|')) {
             Show-Success -Message "Quick Access folders configured."
         } else {
             $missing = @($quickAccessTargets | Where-Object { $finalTargetsInOrder -notcontains $_ })
-            if ($missing.Count -gt 0) { Show-Warning -Message "Quick Access not fully configured; not pinned: $($missing -join ', ')." }
-            else { Show-Warning -Message "Quick Access targets are pinned but not in the desired order (got: $($finalTargetsInOrder -join ', '))." }
+            $message = if ($missing.Count -gt 0) {
+                "Quick Access not fully configured; not pinned: $($missing -join ', ')."
+            } else {
+                "Quick Access targets are pinned but not in the desired order (got: $($finalTargetsInOrder -join ', '))."
+            }
+            Add-StepWarning -Item 'FileExplorer.QuickAccess' -Message $message
         }
     } catch {
-        Show-Warning -Message "Could not configure Quick Access pins: $($_.Exception.Message)"
+        Add-StepWarning -Item 'FileExplorer.QuickAccess' -Message "Could not configure Quick Access pins: $($_.Exception.Message)"
+    } finally {
+        if ($shellApp) {
+            try { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shellApp) } catch { }
+        }
     }
 }
 
@@ -857,7 +1290,7 @@ Show-Info -Message "Enable Telnet Client" -Emoji "🔌"
 try {
     Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName TelnetClient -ErrorAction Stop
 } catch {
-    Show-Warning -Message "Failed to enable Telnet Client: $($_.Exception.Message)"
+    Add-StepWarning -Item 'TelnetClient' -Message "Failed to enable Telnet Client: $($_.Exception.Message)"
     $featuresSucceeded = $false
 }
 
@@ -868,7 +1301,7 @@ if ($isPowerfulPc) {
     try {
         Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Hyper-V -All -ErrorAction Stop
     } catch {
-        Show-Warning -Message "Failed to enable Hyper-V: $($_.Exception.Message)"
+        Add-StepWarning -Item 'Microsoft-Hyper-V' -Message "Failed to enable Hyper-V: $($_.Exception.Message)"
         $featuresSucceeded = $false
     }
 
@@ -876,7 +1309,7 @@ if ($isPowerfulPc) {
     try {
         Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Containers-DisposableClientVM -All -ErrorAction Stop
     } catch {
-        Show-Warning -Message "Failed to enable Sandbox: $($_.Exception.Message)"
+        Add-StepWarning -Item 'Containers-DisposableClientVM' -Message "Failed to enable Sandbox: $($_.Exception.Message)"
         $featuresSucceeded = $false
     }
 } else {
@@ -909,7 +1342,7 @@ try {
     iex "& { $(irm https://aka.ms/install-artifacts-credprovider.ps1) } -AddNetfx"
     Show-Success -Message "Azure Artifacts Credential Provider installed."
 } catch {
-    Show-Error -Message "Failed to install Azure Artifacts Credential Provider: $($_.Exception.Message)"
+    Add-StepWarning -Item 'AzureArtifactsCredentialProvider' -Message "Failed to install Azure Artifacts Credential Provider: $($_.Exception.Message)"
 }
 
 # Config GIT
@@ -946,15 +1379,34 @@ Show-Success -Message "Git and GPG configured."
 
 ## Install .NET Core Tools
 Show-Section -Message "Install .NET Core Tools" -Emoji "🔧" -Color "Green"
-$dotnetFailed = $false
-dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
-if ($LASTEXITCODE -ne 0) { $dotnetFailed = $true }
-dotnet tool install --global dotnet-ef
-if ($LASTEXITCODE -ne 0) { $dotnetFailed = $true }
-if ($dotnetFailed) {
-    Show-Error -Message "Failed to install .NET Core Tools. Please check the error above."
+if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
+    Add-StepWarning -Item 'dotnet-ef' -Message "dotnet was not found on PATH; .NET Core Tools could not be installed."
 } else {
-    Show-Success -Message ".NET Core Tools installed."
+    $nugetSources = (dotnet nuget list source 2>&1) -join "`n"
+    if ($nugetSources -notmatch [regex]::Escape('https://api.nuget.org/v3/index.json')) {
+        dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
+        $nugetSources = (dotnet nuget list source 2>&1) -join "`n"
+    }
+
+    $toolList = (dotnet tool list --global 2>&1) -join "`n"
+    $dotnetEfWasInstalled = $toolList -match '(?im)^dotnet-ef\s'
+    if ($dotnetEfWasInstalled) {
+        dotnet tool update --global dotnet-ef
+        if ($LASTEXITCODE -ne 0) {
+            Show-Warning -Message "dotnet-ef is installed, but the update attempt did not complete cleanly."
+        }
+    } else {
+        dotnet tool install --global dotnet-ef
+    }
+    $toolList = (dotnet tool list --global 2>&1) -join "`n"
+
+    $nugetReady = $nugetSources -match [regex]::Escape('https://api.nuget.org/v3/index.json')
+    $dotnetEfReady = $toolList -match '(?im)^dotnet-ef\s'
+    if ($nugetReady -and $dotnetEfReady) {
+        Show-Success -Message ".NET Core Tools installed and verified."
+    } else {
+        Add-StepWarning -Item 'dotnet-ef' -Message "Failed to verify NuGet.org and dotnet-ef after setup."
+    }
 }
 
 ## Set IPv4 priority
@@ -1162,10 +1614,10 @@ try {
     if ($wtVerify.defaultProfile -eq $ps7ProfileGuid) {
         Show-Info -Message "Windows Terminal: default profile = PowerShell 7 + Nerd Font -> $wtSettingsPath" -Emoji "🔤"
     } else {
-        Show-Warning -Message "Windows Terminal settings written but defaultProfile did not verify."
+        Add-StepWarning -Item 'WindowsTerminal.Settings' -Message "Windows Terminal settings written but defaultProfile did not verify."
     }
 } catch {
-    Show-Warning -Message "Failed to update Windows Terminal settings.json: $($_.Exception.Message)"
+    Add-StepWarning -Item 'WindowsTerminal.Settings' -Message "Failed to update Windows Terminal settings.json: $($_.Exception.Message)"
 } finally {
     if (Test-Path -LiteralPath $wtTmp) { Remove-Item -LiteralPath $wtTmp -Force -ErrorAction SilentlyContinue }
 }
@@ -1188,10 +1640,10 @@ if (Get-AppxPackage -Name "Microsoft.WindowsTerminal" -ErrorAction SilentlyConti
     if ($rbC -eq $wtConsoleGuid -and $rbT -eq $wtTerminalGuid) {
         Show-Success -Message "Windows Terminal set as the default terminal application."
     } else {
-        Show-Warning -Message "Default-terminal registry write did not verify (console=$rbC, terminal=$rbT)."
+        Add-StepWarning -Item 'WindowsTerminal.DefaultApplication' -Message "Default-terminal registry write did not verify (console=$rbC, terminal=$rbT)."
     }
 } else {
-    Show-Warning -Message "Stable Windows Terminal (Microsoft.WindowsTerminal) not detected; skipping the default-terminal-application setting."
+    Add-StepWarning -Item 'WindowsTerminal.DefaultApplication' -Message "Stable Windows Terminal (Microsoft.WindowsTerminal) not detected; skipping the default-terminal-application setting."
 }
 
 ## Install VS 2025
@@ -1201,83 +1653,96 @@ if (Get-AppxPackage -Name "Microsoft.WindowsTerminal" -ErrorAction SilentlyConti
 # Visual Studio 2026 Enterprise — powerful hosts only (multi-GB install + heavy background
 # processes; thin-and-light laptops use the VS Code installed above).
 if ($isPowerfulPc) {
-Show-Section -Message "Install Visual Studio 2025" -Emoji "💻" -Color "Green"
-$vs2025Url = "https://aka.ms/vs/18/Stable/vs_enterprise.exe";
-# Under `iex`, $PSScriptRoot is empty, so "$PSScriptRoot\vs_enterprise.exe" would write to the
-# drive root. Use $env:TEMP so the download target is always writable.
-$vs2025Exe = Join-Path $env:TEMP "vs_enterprise.exe";
-$start_time = Get-Date
+    Show-Section -Message "Install Visual Studio 2026" -Emoji "💻" -Color "Green"
+    $vs2025Url = 'https://aka.ms/vs/18/Stable/vs_enterprise.exe'
+    $vsDirectory = $null
+    try {
+        $vsDirectory = New-ProtectedInstallerDirectory -Prefix 'CiEnvironmentVisualStudio'
+        $vs2025Exe = New-ProtectedInstallerFile -Directory $vsDirectory -Name 'vs_enterprise.exe'
+        $startTime = Get-Date
+        Invoke-WebRequest -Uri $vs2025Url -OutFile $vs2025Exe -ErrorAction Stop
+        $vsSignature = Get-AuthenticodeSignature -LiteralPath $vs2025Exe
+        if ($vsSignature.Status -ne 'Valid' -or $vsSignature.SignerCertificate.Subject -notmatch 'Microsoft Corporation') {
+            throw "Visual Studio bootstrapper signature verification failed: $($vsSignature.Status), $($vsSignature.SignerCertificate.Subject)"
+        }
+        Show-Info -Message "Downloaded and signature-verified Visual Studio bootstrapper in $([math]::Round(((Get-Date) - $startTime).TotalMilliseconds)) ms." -Emoji "⏱️"
 
-Invoke-WebRequest -Uri $vs2025Url -OutFile $vs2025Exe
-Show-Info -Message "Time taken: $((Get-Date).Subtract($start_time).Milliseconds) ms, at $vs2025Exe" -Emoji "⏱️"
-
-$vsProc = Start-Process -FilePath $vs2025Exe -ArgumentList `
-"--addProductLang", "En-us", `
-"--add", "Microsoft.VisualStudio.Workload.Azure", `
-"--add", "Microsoft.VisualStudio.Workload.ManagedDesktop", `
-"--add", "Microsoft.VisualStudio.Workload.NetWeb", `
-"--add", "Microsoft.VisualStudio.Workload.Universal", `
-"--add", "Microsoft.VisualStudio.Workload.VisualStudioExtension", `
-"--add", "Microsoft.VisualStudio.Component.LinqToSql", `
-"--add", "Microsoft.VisualStudio.Workload.NetCrossPlat", `
-"--add", "Microsoft.Net.Component.3.5.DeveloperTools", `
-"--add", "Microsoft.Net.Component.4.6.1.SDK", `
-"--add", "Microsoft.Net.Component.4.6.1.TargetingPack", `
-"--add", "Microsoft.Net.Component.4.6.2.SDK", `
-"--add", "Microsoft.Net.Component.4.6.2.TargetingPack", `
-"--add", "Microsoft.Net.Component.4.7.SDK", `
-"--add", "Microsoft.Net.Component.4.7.TargetingPack", `
-"--add", "Microsoft.Net.Component.4.7.1.SDK", `
-"--add", "Microsoft.Net.Component.4.7.1.TargetingPack", `
-"--add", "Microsoft.Net.Component.4.7.2.SDK", `
-"--add", "Microsoft.Net.Component.4.7.2.TargetingPack", `
-"--add", "Microsoft.Net.Component.4.8.SDK", `
-"--add", "Microsoft.Net.Component.4.8.TargetingPack", `
-"--add", "Microsoft.Net.Component.4.8.1.SDK", `
-"--add", "Microsoft.Net.Component.4.8.1.TargetingPack", `
-"--add", "Microsoft.Net.Core.Component.SDK.2.1", `
-"--add", "Microsoft.NetCore.Component.Runtime.3.1", `
-"--add", "Microsoft.NetCore.Component.Runtime.5.0", `
-"--add", "Microsoft.NetCore.Component.Runtime.6.0", `
-"--add", "Microsoft.NetCore.Component.Runtime.7.0", `
-"--add", "Microsoft.NetCore.Component.Runtime.8.0", `
-"--add", "Microsoft.NetCore.Component.Runtime.9.0", `
-"--add", "Microsoft.NetCore.Component.Runtime.10.0", `
-"--add", "Microsoft.NetCore.ComponentGroup.DevelopmentTools.2.1", `
-"--add", "Microsoft.NetCore.ComponentGroup.Web.2.1", `
-"--add", "Microsoft.VisualStudio.Web.Mvc4.ComponentGroup", `
-"--add", "Microsoft.VisualStudio.Component.Git", `
-"--add", "Microsoft.VisualStudio.Component.DiagnosticTools", `
-"--add", "Microsoft.VisualStudio.Component.AppInsights.Tools", `
-"--add", "Microsoft.VisualStudio.Component.DependencyValidation.Enterprise", `
-"--add", "Microsoft.VisualStudio.Component.Windows10SDK.IpOverUsb", `
-"--add", "Microsoft.VisualStudio.Component.CodeMap", `
-"--add", "Microsoft.VisualStudio.Component.ClassDesigner", `
-"--add", "Microsoft.ComponentGroup.Blend", `
-"--includeRecommended", `
-"--passive", `
-"--norestart", `
-"--wait" `
--Wait -PassThru
-# The following components were removed because they are absent from the VS 2026 (v18) catalog
-# and would make the unattended install warn/fail: Workload.NetCoreTools, TestTools.CodedUITest,
-# TestTools.FeedbackClient, TestTools.MicrosoftTestManager, TypeScript.3.0, Windows10SDK.17134,
-# Net.Component.4.5.2.SDK, Net.Component.4.5.2.TargetingPack, Component.Dotfuscator,
-# TestTools.WebLoadTest, Component.GitHub.VisualStudio, Component.Azure.Storage.AzCopy,
-# TestTools.Core.
-if ($vsProc.ExitCode -eq 0) {
-    Show-Success -Message "Visual Studio install completed."
-} elseif ($vsProc.ExitCode -eq 3010 -or $vsProc.ExitCode -eq 1641) {
-    Show-Warning -Message "Visual Studio installed; a reboot is required (exit $($vsProc.ExitCode))."
-} else {
-    Show-Warning -Message "Visual Studio installer exited with code $($vsProc.ExitCode); review the VS installer logs."
-}
+        $vsProc = Start-Process -FilePath $vs2025Exe -ArgumentList `
+            "--addProductLang", "En-us", `
+            "--add", "Microsoft.VisualStudio.Workload.Azure", `
+            "--add", "Microsoft.VisualStudio.Workload.ManagedDesktop", `
+            "--add", "Microsoft.VisualStudio.Workload.NetWeb", `
+            "--add", "Microsoft.VisualStudio.Workload.Universal", `
+            "--add", "Microsoft.VisualStudio.Workload.VisualStudioExtension", `
+            "--add", "Microsoft.VisualStudio.Component.LinqToSql", `
+            "--add", "Microsoft.VisualStudio.Workload.NetCrossPlat", `
+            "--add", "Microsoft.Net.Component.3.5.DeveloperTools", `
+            "--add", "Microsoft.Net.Component.4.6.1.SDK", `
+            "--add", "Microsoft.Net.Component.4.6.1.TargetingPack", `
+            "--add", "Microsoft.Net.Component.4.6.2.SDK", `
+            "--add", "Microsoft.Net.Component.4.6.2.TargetingPack", `
+            "--add", "Microsoft.Net.Component.4.7.SDK", `
+            "--add", "Microsoft.Net.Component.4.7.TargetingPack", `
+            "--add", "Microsoft.Net.Component.4.7.1.SDK", `
+            "--add", "Microsoft.Net.Component.4.7.1.TargetingPack", `
+            "--add", "Microsoft.Net.Component.4.7.2.SDK", `
+            "--add", "Microsoft.Net.Component.4.7.2.TargetingPack", `
+            "--add", "Microsoft.Net.Component.4.8.SDK", `
+            "--add", "Microsoft.Net.Component.4.8.TargetingPack", `
+            "--add", "Microsoft.Net.Component.4.8.1.SDK", `
+            "--add", "Microsoft.Net.Component.4.8.1.TargetingPack", `
+            "--add", "Microsoft.Net.Core.Component.SDK.2.1", `
+            "--add", "Microsoft.NetCore.Component.Runtime.3.1", `
+            "--add", "Microsoft.NetCore.Component.Runtime.5.0", `
+            "--add", "Microsoft.NetCore.Component.Runtime.6.0", `
+            "--add", "Microsoft.NetCore.Component.Runtime.7.0", `
+            "--add", "Microsoft.NetCore.Component.Runtime.8.0", `
+            "--add", "Microsoft.NetCore.Component.Runtime.9.0", `
+            "--add", "Microsoft.NetCore.Component.Runtime.10.0", `
+            "--add", "Microsoft.NetCore.ComponentGroup.DevelopmentTools.2.1", `
+            "--add", "Microsoft.NetCore.ComponentGroup.Web.2.1", `
+            "--add", "Microsoft.VisualStudio.Web.Mvc4.ComponentGroup", `
+            "--add", "Microsoft.VisualStudio.Component.Git", `
+            "--add", "Microsoft.VisualStudio.Component.DiagnosticTools", `
+            "--add", "Microsoft.VisualStudio.Component.AppInsights.Tools", `
+            "--add", "Microsoft.VisualStudio.Component.DependencyValidation.Enterprise", `
+            "--add", "Microsoft.VisualStudio.Component.Windows10SDK.IpOverUsb", `
+            "--add", "Microsoft.VisualStudio.Component.CodeMap", `
+            "--add", "Microsoft.VisualStudio.Component.ClassDesigner", `
+            "--add", "Microsoft.ComponentGroup.Blend", `
+            "--includeRecommended", `
+            "--passive", `
+            "--norestart", `
+            "--wait" `
+            -Wait -PassThru -ErrorAction Stop
+        # The following components were removed because they are absent from the VS 2026 (v18)
+        # catalog and would make the unattended install warn/fail: Workload.NetCoreTools,
+        # TestTools.CodedUITest, TestTools.FeedbackClient, TestTools.MicrosoftTestManager,
+        # TypeScript.3.0, Windows10SDK.17134, Net.Component.4.5.2.SDK,
+        # Net.Component.4.5.2.TargetingPack, Component.Dotfuscator, TestTools.WebLoadTest,
+        # Component.GitHub.VisualStudio, Component.Azure.Storage.AzCopy, TestTools.Core.
+        if ($vsProc.ExitCode -eq 0) {
+            Show-Success -Message "Visual Studio install completed."
+        } elseif ($vsProc.ExitCode -eq 3010 -or $vsProc.ExitCode -eq 1641) {
+            Show-Warning -Message "Visual Studio installed; a reboot is required (exit $($vsProc.ExitCode))."
+        } else {
+            Add-StepWarning -Item 'VisualStudio.Enterprise' -Message "Visual Studio installer exited with code $($vsProc.ExitCode); review the VS installer logs."
+        }
+    } catch {
+        Add-StepWarning -Item 'VisualStudio.Enterprise' -Message "Visual Studio could not be securely installed: $($_.Exception.Message)"
+    } finally {
+        if ($vsDirectory) { Remove-Item -LiteralPath $vsDirectory -Recurse -Force -ErrorAction SilentlyContinue }
+    }
 } else {
     Show-Info -Message "Thin-and-light host; skipping Visual Studio 2026 Enterprise (VS Code is installed instead)." -Emoji "🪶"
 }
 
 $elapsed = (Get-Date) - $scriptStart
 Show-Section -NoNumber -Message ("Step 3 complete (elapsed {0:hh\:mm\:ss})" -f $elapsed) -Emoji "🏁" -Color "Magenta"
+if ($script:StepWarnings.Count -gt 0) {
+    Show-Warning -Message "Step 3 completed with $($script:StepWarnings.Count) verified warning(s); review the installer logs."
+}
+Write-StepResult
 
 # Restart (native shutdown; 03 previously relied on PSTimers installed by 00/01)
 if ($env:CI_ENV_ORCHESTRATED -ne '1') {

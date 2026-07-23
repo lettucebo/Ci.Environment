@@ -10,27 +10,122 @@ function Show-Warning { param([string]$Message,[string]$Emoji="⚠️") Write-Ho
 function Show-Error { param([string]$Message,[string]$Emoji="❌") Write-Host "$Emoji $Message" -ForegroundColor Red }
 function Show-Success { param([string]$Message,[string]$Emoji="✅") Write-Host "$Emoji $Message" -ForegroundColor Green }
 
+$script:StepWarnings = @()
+function Add-StepWarning {
+    param(
+        [Parameter(Mandatory)][string]$Item,
+        [Parameter(Mandatory)][string]$Message,
+        [string]$Status = 'failed'
+    )
+    $script:StepWarnings += [ordered]@{ item = $Item; status = $Status; message = $Message }
+    Show-Warning -Message $Message
+}
+function Get-ValidatedOrchestratorArtifactPath {
+    param([Parameter(Mandatory)][string]$Path)
+    if ($env:CI_ENV_ORCHESTRATED -ne '1') { throw 'Orchestrator artifact variables are only accepted during an orchestrated run.' }
+    $root = [IO.Path]::GetFullPath((Join-Path $env:ProgramData 'CiEnvironment'))
+    $logRoot = [IO.Path]::GetFullPath((Join-Path $root 'logs')).TrimEnd('\')
+    $candidate = [IO.Path]::GetFullPath($Path)
+    if (-not $candidate.StartsWith($logRoot + '\', [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Orchestrator artifact path is outside the protected log directory: $candidate"
+    }
+    $paths = @($root, $logRoot)
+    $current = $logRoot
+    foreach ($segment in $candidate.Substring($logRoot.Length).TrimStart('\').Split('\')) {
+        if ([string]::IsNullOrWhiteSpace($segment)) { continue }
+        $current = Join-Path $current $segment
+        $paths += $current
+    }
+    foreach ($artifactPath in $paths | Select-Object -Unique) {
+        if (-not (Test-Path -LiteralPath $artifactPath)) { throw "Protected artifact path does not exist: $artifactPath" }
+        $item = Get-Item -LiteralPath $artifactPath -Force
+        if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Protected artifact path is a reparse point: $artifactPath" }
+        $acl = Get-Acl -LiteralPath $artifactPath
+        $owner = $acl.GetOwner([Security.Principal.SecurityIdentifier]).Value
+        if (@('S-1-5-32-544', 'S-1-5-18') -notcontains $owner -or -not $acl.AreAccessRulesProtected) {
+            throw "Protected artifact path has an untrusted owner or inherited ACL: $artifactPath"
+        }
+        foreach ($ace in $acl.Access) {
+            $sid = $ace.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
+            if (@('S-1-5-32-544', 'S-1-5-18') -notcontains $sid) { throw "Protected artifact path grants access to SID ${sid}: $artifactPath" }
+        }
+    }
+    return $candidate
+}
+function Write-StepResult {
+    if ([string]::IsNullOrWhiteSpace($env:CI_ENV_STEP_RESULT_PATH)) { return }
+    $status = if ($script:StepWarnings.Count -eq 0) { 'completed' } else { 'completed_with_warnings' }
+    $result = [ordered]@{
+        version = 1
+        status = $status
+        warnings = @($script:StepWarnings)
+        completedUtc = (Get-Date).ToUniversalTime().ToString('o')
+    }
+    try {
+        $resultPath = Get-ValidatedOrchestratorArtifactPath -Path $env:CI_ENV_STEP_RESULT_PATH
+        $result | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $resultPath -Encoding UTF8 -ErrorAction Stop
+    } catch {
+        Show-Warning -Message "Could not write the step result to '$env:CI_ENV_STEP_RESULT_PATH': $($_.Exception.Message)"
+    }
+}
+
+function Set-VerifiedRegistryValue {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][object]$Value,
+        [Parameter(Mandatory)][ValidateSet('DWord', 'String', 'MultiString')][string]$Type
+    )
+    Set-ItemProperty -LiteralPath $Path -Name $Name -Value $Value -Type $Type -ErrorAction Stop
+    $key = Get-Item -LiteralPath $Path -ErrorAction Stop
+    $actualType = [string]$key.GetValueKind($Name)
+    if ($actualType -ne $Type) { throw "Registry value '$Path\$Name' has type '$actualType', expected '$Type'." }
+    $actual = Get-ItemPropertyValue -LiteralPath $Path -Name $Name -ErrorAction Stop
+    if ($Type -eq 'MultiString') {
+        $expectedValues = @($Value)
+        $actualValues = @($actual)
+        if ($expectedValues.Count -ne $actualValues.Count) {
+            throw "Registry value '$Path\$Name' has $($actualValues.Count) entries, expected $($expectedValues.Count)."
+        }
+        for ($index = 0; $index -lt $expectedValues.Count; $index++) {
+            if ([string]$actualValues[$index] -cne [string]$expectedValues[$index]) {
+                throw "Registry value '$Path\$Name' failed verification at entry $index."
+            }
+        }
+    } elseif ($actual -ne $Value) {
+        throw "Registry value '$Path\$Name' is '$actual', expected '$Value'."
+    }
+}
+
 Show-Section -Message "Step 5: Microsoft Edge Extensions Installation" -Emoji "🌐" -Color "Magenta"
 $scriptStart = Get-Date
 Show-Info -Message ("Current Time: " + $scriptStart) -Emoji "⏰"
 
 # Set ExecutionPolicy to RemoteSigned for script execution
 Show-Section -Message "Set Execution Policy" -Emoji "🔐" -Color "Yellow"
-Set-ExecutionPolicy RemoteSigned -Force
-Show-Success -Message "Execution policy set to RemoteSigned."
+Set-ExecutionPolicy RemoteSigned -Scope LocalMachine -Force -ErrorAction SilentlyContinue
+$localMachinePolicy = Get-ExecutionPolicy -Scope LocalMachine
+$effectivePolicy = Get-ExecutionPolicy
+if ($localMachinePolicy -ne 'RemoteSigned') {
+    Show-Warning -Message "LocalMachine execution policy is '$localMachinePolicy', not RemoteSigned (a higher-level policy may control it)."
+} elseif ($effectivePolicy -eq 'RemoteSigned') {
+    Show-Success -Message "Execution policy set to RemoteSigned."
+} else {
+    Show-Info -Message "LocalMachine execution policy is RemoteSigned; this process uses '$effectivePolicy' from a higher-priority scope." -Emoji "🛡️"
+}
 
 # Check if the script is running with administrator rights
 Show-Section -Message "Check Administrator Rights" -Emoji "🔒" -Color "Red"
 If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Show-Error -Message "You do not have Administrator rights to run this script!`nPlease re-run this script as an Administrator!"
-    exit
+    exit 1
 } else { Show-Success -Message "Administrator rights confirmed." }
 
 # Check PowerShell version
 Show-Section -Message "Check PowerShell Version" -Emoji "🛡️" -Color "Yellow"
 if($PSversionTable.PsVersion.Major -lt 7){
     Show-Error -Message "Please use PowerShell 7 to execute this script!"
-    exit
+    exit 1
 } else { Show-Success -Message "PowerShell version is $($PSversionTable.PsVersion.Major)." }
 
 # Stop any running Edge processes so the policy registry is re-read on next launch
@@ -58,13 +153,13 @@ if ([string]::IsNullOrEmpty($PSScriptRoot)) {
         Show-Success -Message "EdgeExtensions.md downloaded from GitHub."
     } catch {
         Show-Error -Message "Failed to download EdgeExtensions.md from GitHub: $($_.Exception.Message)"
-        exit
+        exit 1
     }
 } else {
     $extensionsFile = Join-Path $PSScriptRoot "EdgeExtensions.md"
     if (-not (Test-Path $extensionsFile)) {
         Show-Error -Message "EdgeExtensions.md not found at: $extensionsFile"
-        exit
+        exit 1
     }
     $content = Get-Content $extensionsFile -Raw
     Show-Success -Message "EdgeExtensions.md file loaded."
@@ -85,8 +180,8 @@ foreach ($extensionId in $extensionIds) {
 }
 
 if ($extensionIds.Count -eq 0) {
-    Show-Warning -Message "No Microsoft Edge extension IDs found in EdgeExtensions.md"
-    exit
+    Show-Error -Message "No Microsoft Edge extension IDs found in EdgeExtensions.md"
+    exit 1
 }
 
 Show-Success -Message "Found $(@($extensionIds).Count) Edge extension(s) to install."
@@ -98,9 +193,13 @@ Show-Section -Message "Configure Edge Extensions via Registry" -Emoji "⚙️" -
 $edgeExtensionsRegPath = "HKLM:\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist"
 
 # Create the registry key if it doesn't exist
-if (-not (Test-Path $edgeExtensionsRegPath)) {
-    New-Item -Path $edgeExtensionsRegPath -Force | Out-Null
-    Show-Info -Message "Created registry key: $edgeExtensionsRegPath" -Emoji "📝"
+try {
+    if (-not (Test-Path $edgeExtensionsRegPath)) {
+        New-Item -Path $edgeExtensionsRegPath -Force -ErrorAction Stop | Out-Null
+        Show-Info -Message "Created registry key: $edgeExtensionsRegPath" -Emoji "📝"
+    }
+} catch {
+    Add-StepWarning -Item 'Edge.ExtensionPolicy' -Message "Failed to create the Edge extension policy key: $($_.Exception.Message)"
 }
 
 # Get existing entries to determine the next index
@@ -136,11 +235,11 @@ foreach ($extensionId in $extensionIds) {
     
     if (-not $alreadyExists) {
         try {
-            Set-ItemProperty -Path $edgeExtensionsRegPath -Name $nextIndex -Value $extensionValue
+            Set-VerifiedRegistryValue -Path $edgeExtensionsRegPath -Name $nextIndex -Value $extensionValue -Type String
             Show-Success -Message "Added extension $extensionId at index $nextIndex"
             $nextIndex++
         } catch {
-            Show-Error -Message "Failed to add extension $extensionId at index $nextIndex. Error: $($_.Exception.Message)"
+            Add-StepWarning -Item "Edge.Extension.$extensionId" -Message "Failed to add extension $extensionId at index $nextIndex. Error: $($_.Exception.Message)"
         }
     }
 }
@@ -157,46 +256,23 @@ Show-Section -Message "Configure Default Search Engine (Google)" -Emoji "🔎" -
 
 $edgePoliciesRegPath = "HKLM:\SOFTWARE\Policies\Microsoft\Edge"
 
-# Create the registry key if it doesn't exist
-if (-not (Test-Path $edgePoliciesRegPath)) {
-    New-Item -Path $edgePoliciesRegPath -Force | Out-Null
-    Show-Info -Message "Created registry key: $edgePoliciesRegPath" -Emoji "📝"
+try {
+    if (-not (Test-Path $edgePoliciesRegPath)) {
+        New-Item -Path $edgePoliciesRegPath -Force -ErrorAction Stop | Out-Null
+        Show-Info -Message "Created registry key: $edgePoliciesRegPath" -Emoji "📝"
+    }
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPath -Name "DefaultSearchProviderEnabled" -Value 1 -Type DWord
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPath -Name "DefaultSearchProviderName" -Value "Google" -Type String
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPath -Name "DefaultSearchProviderSearchURL" -Value "https://www.google.com/search?q={searchTerms}" -Type String
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPath -Name "DefaultSearchProviderSuggestURL" -Value "https://www.google.com/complete/search?output=chrome&q={searchTerms}" -Type String
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPath -Name "DefaultSearchProviderKeyword" -Value "google.com" -Type String
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPath -Name "DefaultSearchProviderEncodings" -Value @('UTF-8') -Type MultiString
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPath -Name "DefaultSearchProviderIconURL" -Value "https://www.google.com/favicon.ico" -Type String
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPath -Name "NewTabPageSearchBox" -Value "redirect" -Type String
+    Show-Success -Message "Google search provider policy and new-tab redirect configured and verified under HKLM."
+} catch {
+    Add-StepWarning -Item 'Edge.SearchPolicy.HKLM' -Message "Failed to configure or verify the HKLM Edge search policy: $($_.Exception.Message)"
 }
-
-# Enable default search provider
-Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderEnabled" -Value 1 -Type DWord
-Show-Success -Message "Default search provider enabled."
-
-# Set Google as the default search provider
-Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderName" -Value "Google" -Type String
-Show-Success -Message "Default search provider set to Google."
-
-# Set Google search URL (used for address bar searches)
-Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderSearchURL" -Value "https://www.google.com/search?q={searchTerms}" -Type String
-Show-Success -Message "Google search URL configured for address bar."
-
-# Set Google suggest URL for search suggestions
-Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderSuggestURL" -Value "https://www.google.com/complete/search?output=chrome&q={searchTerms}" -Type String
-Show-Success -Message "Google search suggestions URL configured."
-
-# Set Google as keyword for address bar
-Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderKeyword" -Value "google.com" -Type String
-Show-Success -Message "Google keyword configured."
-
-# Required companion field: without DefaultSearchProviderEncodings Edge may silently
-# treat the provider record as malformed and fall back to Bing.
-# Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#defaultsearchproviderencodings
-Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderEncodings" -Value @('UTF-8') -Type MultiString
-Show-Success -Message "Google search encodings configured (UTF-8)."
-
-# Icon URL: completes the provider record (favicon shown in Settings UI)
-Set-ItemProperty -Path $edgePoliciesRegPath -Name "DefaultSearchProviderIconURL" -Value "https://www.google.com/favicon.ico" -Type String
-Show-Success -Message "Google search provider icon URL configured."
-
-# Configure new tab page search box to redirect to address bar
-# Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#newtabpagesearchbox
-Set-ItemProperty -Path $edgePoliciesRegPath -Name "NewTabPageSearchBox" -Value "redirect" -Type String
-Show-Success -Message "New tab page search configured to use address bar."
 
 # Mirror the search provider policy to HKCU for the current user.
 # Unmanaged personal Windows devices often ignore HKLM\SOFTWARE\Policies\Microsoft\Edge\DefaultSearchProvider*
@@ -204,19 +280,23 @@ Show-Success -Message "New tab page search configured to use address bar."
 # Writing to HKCU as well greatly increases the chance the policy actually applies.
 Show-Section -Message "Mirror Search Engine Policy to HKCU" -Emoji "👤" -Color "Green"
 $edgePoliciesRegPathHkcu = "HKCU:\SOFTWARE\Policies\Microsoft\Edge"
-if (-not (Test-Path $edgePoliciesRegPathHkcu)) {
-    New-Item -Path $edgePoliciesRegPathHkcu -Force | Out-Null
-    Show-Info -Message "Created registry key: $edgePoliciesRegPathHkcu" -Emoji "📝"
+try {
+    if (-not (Test-Path $edgePoliciesRegPathHkcu)) {
+        New-Item -Path $edgePoliciesRegPathHkcu -Force -ErrorAction Stop | Out-Null
+        Show-Info -Message "Created registry key: $edgePoliciesRegPathHkcu" -Emoji "📝"
+    }
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderEnabled" -Value 1 -Type DWord
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderName" -Value "Google" -Type String
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderKeyword" -Value "google.com" -Type String
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderSearchURL" -Value "https://www.google.com/search?q={searchTerms}" -Type String
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderSuggestURL" -Value "https://www.google.com/complete/search?output=chrome&q={searchTerms}" -Type String
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderEncodings" -Value @('UTF-8') -Type MultiString
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderIconURL" -Value "https://www.google.com/favicon.ico" -Type String
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPathHkcu -Name "NewTabPageSearchBox" -Value "redirect" -Type String
+    Show-Success -Message "Search engine policy configured and verified under HKCU for the current user."
+} catch {
+    Add-StepWarning -Item 'Edge.SearchPolicy.HKCU' -Message "Failed to configure or verify the HKCU Edge search policy: $($_.Exception.Message)"
 }
-Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderEnabled"   -Value 1 -Type DWord
-Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderName"      -Value "Google" -Type String
-Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderKeyword"   -Value "google.com" -Type String
-Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderSearchURL" -Value "https://www.google.com/search?q={searchTerms}" -Type String
-Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderSuggestURL" -Value "https://www.google.com/complete/search?output=chrome&q={searchTerms}" -Type String
-Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderEncodings" -Value @('UTF-8') -Type MultiString
-Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "DefaultSearchProviderIconURL"   -Value "https://www.google.com/favicon.ico" -Type String
-Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "NewTabPageSearchBox"            -Value "redirect" -Type String
-Show-Success -Message "Search engine policy mirrored to HKCU for the current user."
 
 # Seed default search engine for future / not-yet-created Edge profiles via initial_preferences.
 # This is the only programmatic path that survives "Edge for Business" personal-profile policy
@@ -232,7 +312,7 @@ $edgeApplicationDirs = @(
 ) | Where-Object { Test-Path (Join-Path $_ 'msedge.exe') }
 
 if ($edgeApplicationDirs.Count -eq 0) {
-    Show-Warning -Message "Edge install directory not found under Program Files; skipping initial_preferences seeding."
+    Add-StepWarning -Item 'Edge.InitialPreferences' -Message "Edge install directory not found under Program Files; skipping initial_preferences seeding."
 } else {
     $initialPrefsJson = @'
 {
@@ -264,7 +344,7 @@ if ($edgeApplicationDirs.Count -eq 0) {
                 [System.IO.File]::WriteAllText($target, $initialPrefsJson, [System.Text.UTF8Encoding]::new($false))
                 Show-Success -Message "Wrote $target"
             } catch {
-                Show-Warning -Message "Failed to write ${target}: $($_.Exception.Message)"
+                Add-StepWarning -Item 'Edge.InitialPreferences' -Message "Failed to write ${target}: $($_.Exception.Message)"
             }
         }
     }
@@ -277,15 +357,14 @@ if ($edgeApplicationDirs.Count -eq 0) {
 Show-Section -Message "Configure Extension Developer Mode" -Emoji "🛠️" -Color "Green"
 
 # DeveloperToolsAvailability: 0 = Disabled by default, 1 = Enabled, 2 = Disallowed
-Set-ItemProperty -Path $edgePoliciesRegPath -Name "DeveloperToolsAvailability" -Value 1 -Type DWord
-Show-Success -Message "Developer Tools enabled."
-
-# ExtensionDeveloperModeSettings controls the edge://extensions Developer Mode toggle (Edge 128+).
-# Allow (0) = users can turn developer mode on; Disallow (1) = cannot. This makes the toggle
-# AVAILABLE (it does not force it on). The previous "ExtensionsEnabled" write was removed - it is
-# not a valid Edge policy - and the redundant ExtensionSettings {"*":"allowed"} default was dropped.
-Set-ItemProperty -Path $edgePoliciesRegPath -Name "ExtensionDeveloperModeSettings" -Value 0 -Type DWord
-Show-Success -Message "Extension Developer Mode allowed on edge://extensions."
+try {
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPath -Name "DeveloperToolsAvailability" -Value 1 -Type DWord
+    # ExtensionDeveloperModeSettings=0 allows the edge://extensions Developer Mode toggle; it does not force it on.
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPath -Name "ExtensionDeveloperModeSettings" -Value 0 -Type DWord
+    Show-Success -Message "Developer Tools and the Extension Developer Mode toggle are allowed and verified."
+} catch {
+    Add-StepWarning -Item 'Edge.DeveloperModePolicy' -Message "Failed to configure or verify Edge developer-mode policy: $($_.Exception.Message)"
+}
 
 # =========================
 # Configure Vertical Tabs and Hide Title Bar
@@ -295,9 +374,13 @@ Show-Section -Message "Configure Vertical Tabs and Hide Title Bar" -Emoji "📐"
 
 # VerticalTabsAllowed: allow the vertical-tabs feature (this only PERMITS it; it does not turn it on).
 # Write to both HKLM and HKCU. Value: 1 = Allowed (default), 0 = Disabled.
-Set-ItemProperty -Path $edgePoliciesRegPath     -Name "VerticalTabsAllowed" -Value 1 -Type DWord
-Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "VerticalTabsAllowed" -Value 1 -Type DWord
-Show-Success -Message "Vertical tabs feature allowed (policy)."
+try {
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPath -Name "VerticalTabsAllowed" -Value 1 -Type DWord
+    Set-VerifiedRegistryValue -Path $edgePoliciesRegPathHkcu -Name "VerticalTabsAllowed" -Value 1 -Type DWord
+    Show-Success -Message "Vertical tabs feature allowed and verified by policy."
+} catch {
+    Add-StepWarning -Item 'Edge.VerticalTabsPolicy' -Message "Failed to configure or verify the vertical-tabs policy: $($_.Exception.Message)"
+}
 
 # Best-effort ENABLE of vertical tabs + hide title bar. There is NO supported Edge policy or documented
 # initial_preferences key for these; they are per-user UI state stored in each profile's `Preferences`
@@ -314,7 +397,7 @@ try {
     $edgeProcs = @(Get-Process msedge -ErrorAction SilentlyContinue)
     if ($edgeProcs.Count -gt 0) { $edgeProcs | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1 }
     if (@(Get-Process msedge -ErrorAction SilentlyContinue).Count -gt 0) {
-        Show-Warning -Message "Edge is still running; skipping the vertical-tabs profile edit. Close Edge and re-run to apply."
+        Add-StepWarning -Item 'Edge.VerticalTabs' -Status 'manual_action_required' -Message "Edge is still running; skipping the vertical-tabs profile edit. Close Edge and re-run to apply."
     } else {
         $edgeUserData = "$env:LOCALAPPDATA\Microsoft\Edge\User Data"   # NOTE: Stable channel, default User Data only
         # Enumerate profile directories authoritatively from Local State -> profile.info_cache.
@@ -370,17 +453,20 @@ try {
             }
         }
         Show-Info -Message "Vertical tabs (Stable default User Data only): $vtUpdated updated, $vtAlready already-on, $vtSkipped skipped, $vtFailed failed. Best-effort/unsupported; may need a manual toggle after an Edge update." -Emoji "ℹ️"
+        if ($vtFailed -gt 0) {
+            Add-StepWarning -Item 'Edge.VerticalTabs' -Message "$vtFailed Edge profile(s) failed vertical-tabs verification."
+        }
+        if ($vtSkipped -gt 0) {
+            Add-StepWarning -Item 'Edge.VerticalTabs' -Status 'manual_action_required' -Message "$vtSkipped Edge profile(s) were skipped because Edge restarted."
+        }
     }
 } catch {
-    Show-Warning -Message "Vertical-tabs best-effort step failed: $($_.Exception.Message)"
+    Add-StepWarning -Item 'Edge.VerticalTabs' -Message "Vertical-tabs best-effort step failed: $($_.Exception.Message)"
 }
 
 Show-Section -Message "Installation Complete" -Emoji "🎉" -Color "Green"
-Show-Success -Message "Edge extensions have been configured for force installation."
+Show-Info -Message "Edge extension, search, developer-mode, and vertical-tabs configuration was attempted; the final result below reflects all verified warnings." -Emoji "🧾"
 Show-Info -Message "Google configured as the default search engine via policy + first-run seed. Existing personal (Microsoft-account) profiles may still show Bing and need a manual change (see the note below)." -Emoji "🔎"
-Show-Success -Message "New tab page search redirects to address bar."
-Show-Success -Message "Extension Developer Mode has been enabled."
-Show-Success -Message "Vertical tabs allowed (policy) and enabled + title bar hidden for existing profiles (best-effort)."
 Show-Info -Message "Extensions will be installed automatically when Microsoft Edge is launched." -Emoji "ℹ️"
 Show-Info -Message "To hide title bar: Settings > Appearance > Hide title bar while in vertical tabs" -Emoji "💡"
 Show-Info -Message "If Google does not become the default after relaunching Edge, open edge://policy and confirm the DefaultSearchProvider* rows show status OK (not 'Ignored because the device is not managed'). The HKCU mirror added here typically resolves the unmanaged-device case." -Emoji "🔎"
@@ -397,13 +483,18 @@ For such existing profiles, the user must set Google manually: open the profile 
 "@
 
 if ($chromeExtensionNames.Count -gt 0) {
-    Show-Warning -Message "Note: $($chromeExtensionNames.Count) extension(s) from Chrome Web Store require manual installation:"
+    Add-StepWarning -Item 'Edge.ChromeWebStoreExtensions' -Status 'manual_action_required' -Message "$($chromeExtensionNames.Count) Chrome Web Store extension(s) require manual installation."
     foreach ($chromeName in $chromeExtensionNames) {
         Show-Info -Message "  - $chromeName" -Emoji "🔗"
     }
 }
 
-Show-Success -Message "Edge configuration complete."
+if ($script:StepWarnings.Count -eq 0) {
+    Show-Success -Message "Edge configuration completed and verified."
+} else {
+    Show-Warning -Message "Edge configuration completed with $($script:StepWarnings.Count) warning(s)."
+}
 
 $elapsed = (Get-Date) - $scriptStart
 Show-Section -Message ("Step 5 complete (elapsed {0:hh\:mm\:ss})" -f $elapsed) -Emoji "🏁" -Color "Magenta"
+Write-StepResult
