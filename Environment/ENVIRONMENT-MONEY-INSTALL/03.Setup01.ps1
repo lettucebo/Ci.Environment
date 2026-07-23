@@ -343,7 +343,7 @@ if ($isPowerfulPc) {
 # GitHub Copilot CLI (standalone; replaces the retired `gh extension install github/gh-copilot`, deprecated 2025-10-25)
 Install-WingetPackage -Id "GitHub.Copilot"
 # Intelligent Terminal
-Install-WingetPackage -Id "Microsoft.IntelligentTerminal"
+Install-WingetPackage -Id "Microsoft.WindowsTerminal"
 # Coreutils for Windows
 Install-WingetPackage -Id "Microsoft.Coreutils"
 # Bing Wallpaper
@@ -1012,7 +1012,7 @@ $objFolder.CopyHere($fontFira18File, 0x10)
 Show-Success -Message "FiraCode fonts installed."
 
 # Config Terminal Nerd Font
-## 設定 VS Code、VS Code Insiders、Windows Terminal Canary 使用 FiraCode Nerd Font Mono
+## 設定 VS Code、VS Code Insiders、Windows Terminal 使用 FiraCode Nerd Font Mono
 ## 讓 Starship 的 Nerd Font 圖示（如 OS icon）正確顯示，避免亂碼
 Show-Section -Message "Config Terminal Nerd Font" -Emoji "🔤" -Color "Green"
 $nerdFontFace = "FiraCode Nerd Font Mono"
@@ -1035,26 +1035,76 @@ foreach ($appDataFolder in @("Code", "Code - Insiders")) {
     Show-Info -Message "Set Nerd Font for $appDataFolder -> $vsSettingsPath" -Emoji "🔤"
 }
 
-$wtSettingsFile = Get-Item "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminalCanary_*\LocalState\settings.json" -ErrorAction SilentlyContinue
-if ($wtSettingsFile) {
-    $wtJson = Get-Content $wtSettingsFile.FullName -Raw | ConvertFrom-Json
-    if (-not $wtJson.PSObject.Properties['profiles']) {
-        $wtJson | Add-Member -NotePropertyName 'profiles' -NotePropertyValue ([PSCustomObject]@{})
-    }
-    if (-not $wtJson.profiles.PSObject.Properties['defaults']) {
-        $wtJson.profiles | Add-Member -NotePropertyName 'defaults' -NotePropertyValue ([PSCustomObject]@{})
-    }
-    if ($wtJson.profiles.defaults.PSObject.Properties['font']) {
-        $wtJson.profiles.defaults.font | Add-Member -NotePropertyName 'face' -NotePropertyValue $nerdFontFace -Force
-    } else {
-        $wtJson.profiles.defaults | Add-Member -NotePropertyName 'font' -NotePropertyValue ([PSCustomObject]@{ face = $nerdFontFace })
-    }
-    $wtJson | ConvertTo-Json -Depth 10 | Set-Content -Path $wtSettingsFile.FullName -Encoding UTF8
-    Show-Info -Message "Set Nerd Font for Windows Terminal Canary -> $($wtSettingsFile.FullName)" -Emoji "🔤"
+# Windows Terminal (stable): default profile = PowerShell 7 + Nerd Font. {574e775e-...} is WT's
+# deterministic dynamic-profile GUID for the detected PowerShell 7 (source Windows.Terminal.PowershellCore).
+$ps7ProfileGuid = "{574e775e-4f2a-5b96-ac1e-a2962a402336}"
+$wtStableDir    = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"
+$wtSettingsPath = Join-Path $wtStableDir "settings.json"
+$wtExisted = Test-Path $wtSettingsPath
+if ($wtExisted) {
+    $wtJson = Get-Content $wtSettingsPath -Raw | ConvertFrom-Json
+    if (-not $wtJson) { $wtJson = [PSCustomObject]@{} }   # empty / 0-byte file -> start from an empty object
 } else {
-    Show-Warning -Message "Windows Terminal Canary settings.json not found; skipping font config."
+    # Create a minimal settings.json; Windows Terminal merges it with its built-in defaults on first
+    # launch, so defaultProfile/font apply even before WT has ever been opened.
+    if (-not (Test-Path $wtStableDir)) { New-Item -ItemType Directory -Path $wtStableDir -Force | Out-Null }
+    $wtJson = [PSCustomObject]@{ '$help' = "https://aka.ms/terminal-documentation" }
+}
+if ($wtJson.PSObject.Properties['defaultProfile']) { $wtJson.defaultProfile = $ps7ProfileGuid }
+else { $wtJson | Add-Member -NotePropertyName 'defaultProfile' -NotePropertyValue $ps7ProfileGuid }
+if (-not $wtJson.PSObject.Properties['profiles']) {
+    $wtJson | Add-Member -NotePropertyName 'profiles' -NotePropertyValue ([PSCustomObject]@{})
+}
+if (-not $wtJson.profiles.PSObject.Properties['defaults']) {
+    $wtJson.profiles | Add-Member -NotePropertyName 'defaults' -NotePropertyValue ([PSCustomObject]@{})
+}
+if ($wtJson.profiles.defaults.PSObject.Properties['font']) {
+    $wtJson.profiles.defaults.font | Add-Member -NotePropertyName 'face' -NotePropertyValue $nerdFontFace -Force
+} else {
+    $wtJson.profiles.defaults | Add-Member -NotePropertyName 'font' -NotePropertyValue ([PSCustomObject]@{ face = $nerdFontFace })
+}
+# -Depth 100 avoids truncating deep newTabMenu structures; write to a temp file then atomically
+# replace (with backup) so an interrupted write can't corrupt an existing settings.json.
+$wtTmp = "$wtSettingsPath.cienv.tmp"
+[System.IO.File]::WriteAllText($wtTmp, ($wtJson | ConvertTo-Json -Depth 100), (New-Object System.Text.UTF8Encoding($false)))
+try {
+    if ($wtExisted) { [System.IO.File]::Replace($wtTmp, $wtSettingsPath, "$wtSettingsPath.cienv.bak", $false) }
+    else { Move-Item -LiteralPath $wtTmp -Destination $wtSettingsPath -Force }
+    $wtVerify = Get-Content $wtSettingsPath -Raw | ConvertFrom-Json
+    if ($wtVerify.defaultProfile -eq $ps7ProfileGuid) {
+        Show-Info -Message "Windows Terminal: default profile = PowerShell 7 + Nerd Font -> $wtSettingsPath" -Emoji "🔤"
+    } else {
+        Show-Warning -Message "Windows Terminal settings written but defaultProfile did not verify."
+    }
+} catch {
+    Show-Warning -Message "Failed to update Windows Terminal settings.json: $($_.Exception.Message)"
+} finally {
+    if (Test-Path -LiteralPath $wtTmp) { Remove-Item -LiteralPath $wtTmp -Force -ErrorAction SilentlyContinue }
 }
 Show-Success -Message "Terminal Nerd Font configured."
+
+# Set Windows Terminal (stable) as the DEFAULT TERMINAL APPLICATION so new console windows (cmd,
+# PowerShell, etc.) open inside it. Reference: HKCU\Console\%%Startup DelegationConsole/DelegationTerminal
+# (microsoft/terminal spec #492). GATED: only when the stable package is actually installed, because the
+# GUIDs must point at a registered handler or console apps fall back to conhost.
+Show-Section -Message "Set Windows Terminal as default terminal application" -Emoji "🖥️" -Color "Green"
+if (Get-AppxPackage -Name "Microsoft.WindowsTerminal" -ErrorAction SilentlyContinue) {
+    $wtConsoleGuid  = "{2EACA947-7F5F-4CFA-BA87-8F7FBEEFBE69}"   # stable Windows Terminal DelegationConsole
+    $wtTerminalGuid = "{E12CFF52-A866-4C77-9A90-F570A7AA2C6B}"   # stable Windows Terminal DelegationTerminal
+    $startupKey = "HKCU:\Console\%%Startup"
+    if (-not (Test-Path -LiteralPath $startupKey)) { New-Item -Path $startupKey -Force | Out-Null }
+    Set-ItemProperty -LiteralPath $startupKey -Name "DelegationConsole"  -Value $wtConsoleGuid  -Type String
+    Set-ItemProperty -LiteralPath $startupKey -Name "DelegationTerminal" -Value $wtTerminalGuid -Type String
+    $rbC = (Get-ItemProperty -LiteralPath $startupKey -Name DelegationConsole  -ErrorAction SilentlyContinue).DelegationConsole
+    $rbT = (Get-ItemProperty -LiteralPath $startupKey -Name DelegationTerminal -ErrorAction SilentlyContinue).DelegationTerminal
+    if ($rbC -eq $wtConsoleGuid -and $rbT -eq $wtTerminalGuid) {
+        Show-Success -Message "Windows Terminal set as the default terminal application."
+    } else {
+        Show-Warning -Message "Default-terminal registry write did not verify (console=$rbC, terminal=$rbT)."
+    }
+} else {
+    Show-Warning -Message "Stable Windows Terminal (Microsoft.WindowsTerminal) not detected; skipping the default-terminal-application setting."
+}
 
 ## Install VS 2025
 # https://learn.microsoft.com/en-us/visualstudio/install/workload-and-component-ids

@@ -293,23 +293,94 @@ Show-Success -Message "Extension Developer Mode allowed on edge://extensions."
 # =========================
 Show-Section -Message "Configure Vertical Tabs and Hide Title Bar" -Emoji "📐" -Color "Green"
 
-# VerticalTabsAllowed: Allow users to enable vertical tabs
-# Value: 1 = Allowed (default), 0 = Disabled
-Set-ItemProperty -Path $edgePoliciesRegPath -Name "VerticalTabsAllowed" -Value 1 -Type DWord
-Show-Success -Message "Vertical tabs feature allowed."
+# VerticalTabsAllowed: allow the vertical-tabs feature (this only PERMITS it; it does not turn it on).
+# Write to both HKLM and HKCU. Value: 1 = Allowed (default), 0 = Disabled.
+Set-ItemProperty -Path $edgePoliciesRegPath     -Name "VerticalTabsAllowed" -Value 1 -Type DWord
+Set-ItemProperty -Path $edgePoliciesRegPathHkcu -Name "VerticalTabsAllowed" -Value 1 -Type DWord
+Show-Success -Message "Vertical tabs feature allowed (policy)."
 
-# Note: Hiding the title bar when using vertical tabs is a user preference setting.
-# There is no official Group Policy to enforce this setting.
-# Users can enable it via: Settings > Appearance > Hide title bar while in vertical tabs
-# Or by right-clicking on the vertical tabs panel and selecting "Hide title bar"
-Show-Info -Message "Hide title bar option is a user preference (Settings > Appearance > Hide title bar while in vertical tabs)." -Emoji "ℹ️"
+# Best-effort ENABLE of vertical tabs + hide title bar. There is NO supported Edge policy or documented
+# initial_preferences key for these; they are per-user UI state stored in each profile's `Preferences`
+# under `edge.vertical_tabs` ({opened, hide_titlebar}). That object lives in plain `Preferences` (NOT the
+# MAC-protected `Secure Preferences`), so it can be edited while Edge is fully closed. This is UNSUPPORTED
+# and undocumented (Microsoft may change the keys); the reliable fallback is Settings > Appearance.
+# We use System.Text.Json (a type-preserving DOM) NOT ConvertFrom-Json/ConvertTo-Json, because the latter
+# coerces Edge's many ISO timestamps to DateTime and would rewrite/corrupt unrelated values.
+Show-Info -Message "Enabling vertical tabs + hide title bar for existing profiles (best-effort, unsupported)..." -Emoji "🧪"
+try {
+    # Re-check Edge right before editing (Startup Boost / background mode can relaunch it after the
+    # earlier stop). One gentle stop attempt; if it won't stay closed we SKIP rather than aggressively
+    # loop-kill (this is best-effort and force-killing risks losing the user's session).
+    $edgeProcs = @(Get-Process msedge -ErrorAction SilentlyContinue)
+    if ($edgeProcs.Count -gt 0) { $edgeProcs | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1 }
+    if (@(Get-Process msedge -ErrorAction SilentlyContinue).Count -gt 0) {
+        Show-Warning -Message "Edge is still running; skipping the vertical-tabs profile edit. Close Edge and re-run to apply."
+    } else {
+        $edgeUserData = "$env:LOCALAPPDATA\Microsoft\Edge\User Data"   # NOTE: Stable channel, default User Data only
+        # Enumerate profile directories authoritatively from Local State -> profile.info_cache.
+        $profileDirs = @()
+        $localStatePath = Join-Path $edgeUserData "Local State"
+        if (Test-Path $localStatePath) {
+            try {
+                $ls = [System.Text.Json.Nodes.JsonNode]::Parse([System.IO.File]::ReadAllText($localStatePath))
+                $prof = $ls['profile']
+                if ($prof) { $cache = $prof['info_cache']; if ($cache) { foreach ($kv in $cache.AsObject()) { $profileDirs += $kv.Key } } }
+            } catch { }
+        }
+        if ($profileDirs.Count -eq 0) {
+            $profileDirs = @(Get-ChildItem $edgeUserData -Directory -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -eq 'Default' -or $_.Name -like 'Profile *' } | Select-Object -ExpandProperty Name)
+        }
+        $relaxed = [System.Text.Encodings.Web.JavaScriptEncoder]::UnsafeRelaxedJsonEscaping
+        $vtUpdated = 0; $vtAlready = 0; $vtFailed = 0; $vtSkipped = 0
+        foreach ($profileName in $profileDirs) {
+            $prefPath = Join-Path (Join-Path $edgeUserData $profileName) "Preferences"
+            if (-not (Test-Path -LiteralPath $prefPath)) { continue }
+            # Skip this profile if Edge came back, to avoid racing Edge's own atomic write of Preferences.
+            if (@(Get-Process msedge -ErrorAction SilentlyContinue).Count -gt 0) {
+                Show-Warning -Message "  Edge restarted; skipping '$profileName'."; $vtSkipped++; continue
+            }
+            $tmpPref = "$prefPath.cienv.tmp"
+            try {
+                $root = [System.Text.Json.Nodes.JsonNode]::Parse([System.IO.File]::ReadAllText($prefPath))
+                $edgeObj = $root['edge']
+                if ($null -eq $edgeObj) { $edgeObj = [System.Text.Json.Nodes.JsonObject]::new(); $root['edge'] = $edgeObj }
+                $vt = $edgeObj['vertical_tabs']
+                if ($null -eq $vt) { $vt = [System.Text.Json.Nodes.JsonObject]::new(); $edgeObj['vertical_tabs'] = $vt }
+                $openedOk = ($null -ne $vt['opened'])        -and ($vt['opened'].ToJsonString() -eq 'true')
+                $hideOk   = ($null -ne $vt['hide_titlebar']) -and ($vt['hide_titlebar'].ToJsonString() -eq 'true')
+                if ($openedOk -and $hideOk) { Show-Info -Message "  '$profileName' already has vertical tabs + hidden title bar." -Emoji "✔️"; $vtAlready++; continue }
+                $vt['opened']        = [System.Text.Json.Nodes.JsonValue]::Create($true)
+                $vt['hide_titlebar'] = [System.Text.Json.Nodes.JsonValue]::Create($true)
+                $opts = [System.Text.Json.JsonSerializerOptions]::new(); $opts.WriteIndented = $false; $opts.Encoder = $relaxed
+                [System.IO.File]::WriteAllText($tmpPref, $root.ToJsonString($opts), (New-Object System.Text.UTF8Encoding($false)))
+                # Atomic replace with backup: [IO.File]::Replace is a single NTFS operation, unlike
+                # Move-Item -Force (delete-then-move) which can leave Preferences missing on interrupt.
+                [System.IO.File]::Replace($tmpPref, $prefPath, "$prefPath.cienv.bak", $false)
+                $chk = [System.Text.Json.Nodes.JsonNode]::Parse([System.IO.File]::ReadAllText($prefPath))
+                if ($chk['edge']['vertical_tabs']['opened'].ToJsonString() -eq 'true' -and $chk['edge']['vertical_tabs']['hide_titlebar'].ToJsonString() -eq 'true') {
+                    Show-Success -Message "  Enabled vertical tabs + hidden title bar for '$profileName'."; $vtUpdated++
+                } else {
+                    Show-Warning -Message "  Wrote '$profileName' but verification failed."; $vtFailed++
+                }
+            } catch {
+                Show-Warning -Message "  Could not update '$profileName' Preferences: $($_.Exception.Message)"; $vtFailed++
+            } finally {
+                if (Test-Path -LiteralPath $tmpPref) { Remove-Item -LiteralPath $tmpPref -Force -ErrorAction SilentlyContinue }
+            }
+        }
+        Show-Info -Message "Vertical tabs (Stable default User Data only): $vtUpdated updated, $vtAlready already-on, $vtSkipped skipped, $vtFailed failed. Best-effort/unsupported; may need a manual toggle after an Edge update." -Emoji "ℹ️"
+    }
+} catch {
+    Show-Warning -Message "Vertical-tabs best-effort step failed: $($_.Exception.Message)"
+}
 
 Show-Section -Message "Installation Complete" -Emoji "🎉" -Color "Green"
 Show-Success -Message "Edge extensions have been configured for force installation."
-Show-Success -Message "Google has been set as the default search engine for Edge."
+Show-Info -Message "Google configured as the default search engine via policy + first-run seed. Existing personal (Microsoft-account) profiles may still show Bing and need a manual change (see the note below)." -Emoji "🔎"
 Show-Success -Message "New tab page search redirects to address bar."
 Show-Success -Message "Extension Developer Mode has been enabled."
-Show-Success -Message "Vertical tabs feature has been allowed."
+Show-Success -Message "Vertical tabs allowed (policy) and enabled + title bar hidden for existing profiles (best-effort)."
 Show-Info -Message "Extensions will be installed automatically when Microsoft Edge is launched." -Emoji "ℹ️"
 Show-Info -Message "To hide title bar: Settings > Appearance > Hide title bar while in vertical tabs" -Emoji "💡"
 Show-Info -Message "If Google does not become the default after relaunching Edge, open edge://policy and confirm the DefaultSearchProvider* rows show status OK (not 'Ignored because the device is not managed'). The HKCU mirror added here typically resolves the unmanaged-device case." -Emoji "🔎"
