@@ -4,12 +4,15 @@
 # =========================
 
 # Message display helper functions for better UX
+$script:SectionCount = 0
 function Show-Section {
     param(
         [string]$Message,
         [string]$Emoji = "➤",
-        [string]$Color = "Cyan"
+        [string]$Color = "Cyan",
+        [switch]$NoNumber
     )
+    if (-not $NoNumber) { $script:SectionCount++; $Message = "[$script:SectionCount] $Message" }
     Write-Host ""
     Write-Host ("=" * 60) -ForegroundColor DarkGray
     Write-Host "$Emoji $Message" -ForegroundColor $Color -BackgroundColor Black
@@ -54,6 +57,8 @@ function Install-WingetPackage {
         [string]$Version,
         [string]$Custom
     )
+    $script:WingetIndex = [int]$script:WingetIndex + 1
+    Show-Info -Message "[$script:WingetIndex] Installing $Id ..." -Emoji "⏳"
     $wingetArgs = @(
         "install", "--id", $Id, "--exact", "--source", $Source,
         "--silent", "--accept-package-agreements", "--accept-source-agreements",
@@ -75,8 +80,33 @@ function Install-WingetPackage {
     }
 }
 
-Show-Section -Message "Step 3: System and Environment Setup" -Emoji "🛠️" -Color "Magenta"
-Show-Info -Message ("Current Time: " + (Get-Date)) -Emoji "⏰"
+# Install a package via Chocolatey with the same continue-on-failure + progress + aggregation
+# behavior as Install-WingetPackage. Reboot-required exit codes (1641/3010) count as success.
+function Install-ChocoPackage {
+    param(
+        [Parameter(Mandatory)][string]$Id,
+        [string[]]$ExtraArgs
+    )
+    $script:ChocoIndex = [int]$script:ChocoIndex + 1
+    Show-Info -Message "[$script:ChocoIndex] Installing (choco) $Id ..." -Emoji "⏳"
+    $chocoArgs = @("install", $Id, "-y") + $ExtraArgs
+    try {
+        & choco @chocoArgs
+        if (@(0, 1641, 3010) -contains $LASTEXITCODE) {
+            Show-Success -Message "$Id installed."
+        } else {
+            Show-Warning -Message "choco install $Id exited with code $LASTEXITCODE; continuing."
+            $global:ChocoFailures += $Id
+        }
+    } catch {
+        Show-Warning -Message "Failed to install (choco) ${Id}: $($_.Exception.Message)"
+        $global:ChocoFailures += $Id
+    }
+}
+
+Show-Section -NoNumber -Message "Step 3: System and Environment Setup" -Emoji "🛠️" -Color "Magenta"
+$scriptStart = Get-Date
+Show-Info -Message ("Current Time: " + $scriptStart) -Emoji "⏰"
 
 # Set ExecutionPolicy to RemoteSigned for script execution
 Show-Section -Message "Set Execution Policy" -Emoji "🔐" -Color "Yellow"
@@ -234,16 +264,21 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.We
 #   - git.install: preserves /NoShellIntegration (WinGet has no reliable equivalent switch)
 #   - line: not in the WinGet default source (Microsoft Store only)
 #   - dotnetcore-2.1/2.2-sdk: not available in WinGet (both are EOL)
-choco install -y nerd-fonts-hack
-choco install -y git.install --params "/NoShellIntegration"
-choco install -y line
-# Heavy / powerful-host-only: Snagit (licensed, ~0.5GB) and the EOL .NET Core 2.1/2.2 SDKs.
+$global:ChocoFailures = @()
+$script:ChocoIndex = 0
+Install-ChocoPackage -Id "nerd-fonts-hack"
+Install-ChocoPackage -Id "git.install" -ExtraArgs @("--params", "/NoShellIntegration")
+Install-ChocoPackage -Id "line"
+# Heavy / powerful-host-only: the EOL .NET Core 2.1/2.2 SDKs.
 if ($isPowerfulPc) {
-    choco install -y snagit --ignorechecksum --version=2022.1.4
-    choco install -y dotnetcore-2.1-sdk
-    choco install -y dotnetcore-2.2-sdk
+    Install-ChocoPackage -Id "dotnetcore-2.1-sdk"
+    Install-ChocoPackage -Id "dotnetcore-2.2-sdk"
 }
-Show-Success -Message "Chocolatey and packages installed."
+if ($global:ChocoFailures.Count -eq 0) {
+    Show-Success -Message "Chocolatey packages installed."
+} else {
+    Show-Warning -Message "Chocolatey finished with $($global:ChocoFailures.Count) package(s) that did not complete cleanly: $($global:ChocoFailures -join ', ')"
+}
 
 # Install applications via WinGet (placed directly below Chocolatey so all installs live together)
 Show-Section -Message "Install Applications via WinGet" -Emoji "🏪" -Color "Green"
@@ -254,6 +289,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
     exit 1
 }
 $global:WingetFailures = @()
+$script:WingetIndex = 0
 
 # --- Developer tools, runtimes & apps (winget source) ---
 Install-WingetPackage -Id "Microsoft.DotNet.Framework.DeveloperPack_4" -Version "4.8"
@@ -1101,6 +1137,9 @@ if ($vsProc.ExitCode -eq 0) {
 } else {
     Show-Info -Message "Thin-and-light host; skipping Visual Studio 2026 Enterprise (VS Code is installed instead)." -Emoji "🪶"
 }
+
+$elapsed = (Get-Date) - $scriptStart
+Show-Section -NoNumber -Message ("Step 3 complete (elapsed {0:hh\:mm\:ss})" -f $elapsed) -Emoji "🏁" -Color "Magenta"
 
 # Restart (native shutdown; 03 previously relied on PSTimers installed by 00/01)
 if ($env:CI_ENV_ORCHESTRATED -ne '1') {

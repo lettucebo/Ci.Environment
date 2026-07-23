@@ -11,7 +11,8 @@ function Show-Error { param([string]$Message,[string]$Emoji="❌") Write-Host "$
 function Show-Success { param([string]$Message,[string]$Emoji="✅") Write-Host "$Emoji $Message" -ForegroundColor Green }
 
 Show-Section -Message "Step 5: Microsoft Edge Extensions Installation" -Emoji "🌐" -Color "Magenta"
-Show-Info -Message ("Current Time: " + (Get-Date)) -Emoji "⏰"
+$scriptStart = Get-Date
+Show-Info -Message ("Current Time: " + $scriptStart) -Emoji "⏰"
 
 # Set ExecutionPolicy to RemoteSigned for script execution
 Show-Section -Message "Set Execution Policy" -Emoji "🔐" -Color "Yellow"
@@ -332,3 +333,6 @@ if ($chromeExtensionNames.Count -gt 0) {
 }
 
 Show-Success -Message "Edge configuration complete."
+
+$elapsed = (Get-Date) - $scriptStart
+Show-Section -Message ("Step 5 complete (elapsed {0:hh\:mm\:ss})" -f $elapsed) -Emoji "🏁" -Color "Magenta"

@@ -46,7 +46,8 @@ function Show-Success {
 }
 
 Show-Section -Message "Step 4: Extended Setup" -Emoji "🚀" -Color "Magenta"
-Show-Info -Message ("Current Time: " + (Get-Date)) -Emoji "⏰"
+$scriptStart = Get-Date
+Show-Info -Message ("Current Time: " + $scriptStart) -Emoji "⏰"
 
 # Check PowerShell version first before making any system changes
 Show-Section -Message "Check PowerShell Version" -Emoji "🛡️" -Color "Yellow"
@@ -410,5 +411,6 @@ Remove-Item -Path $odtTempDir -Recurse -Force -ErrorAction SilentlyContinue
 Show-Success -Message "Temporary files cleaned up."
 
 # Script complete
-Show-Section -Message "Setup Complete" -Emoji "🎉" -Color "Magenta"
+$elapsed = (Get-Date) - $scriptStart
+Show-Section -Message ("Step 4 complete (elapsed {0:hh\:mm\:ss})" -f $elapsed) -Emoji "🎉" -Color "Magenta"
 Show-Success -Message "Environment configuration complete!"

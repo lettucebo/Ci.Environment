@@ -12,7 +12,7 @@
 - 伺服器環境設定腳本
 - AI 輔助開發工具（Claude、GitHub Copilot）
 - 多版本 .NET SDK 支援（.NET Core 2.1 至 .NET 10）
-- 依效能分層安裝：強力工作站（`MONEY-PC`、`MONEY-SLS2`）安裝完整工具集，輕薄筆電（預設，依電腦名稱判斷）則略過重量級軟體（Visual Studio Enterprise 與擴充、Docker Desktop 與資料庫容器、Hyper-V/Sandbox、Power BI、SSMS、Snagit、舊版 .NET SDK）；WSL2 於所有機器皆保留啟用。
+- 依效能分層安裝：強力工作站（`MONEY-PC`、`MONEY-SLS2`）安裝完整工具集，輕薄筆電（預設，依電腦名稱判斷）則略過重量級軟體（Visual Studio Enterprise 與擴充、Docker Desktop 與資料庫容器、Hyper-V/Sandbox、Power BI、SSMS、舊版 .NET SDK）；WSL2 於所有機器皆保留啟用。
 
 ## 包含工具
 

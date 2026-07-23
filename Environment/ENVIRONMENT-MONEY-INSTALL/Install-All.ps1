@@ -491,6 +491,7 @@ function Invoke-Orchestrator {
             }
             $entry.status = 'running'
             Save-OrchState -State $state
+            Write-OrchLog "Starting step [$($i + 1)/$($Pipeline.Count)]: $($entry.name) (attempt $($entry.attempts))."
 
             Update-OrchestratorEnvironment   # pick up PATH/env from prior steps so continuing without a reboot works
             $code = Invoke-Step -Entry $entry -State $state
@@ -512,7 +513,7 @@ function Invoke-Orchestrator {
                 $state.rebootReissues   = 0
             }
             Save-OrchState -State $state
-            Write-OrchLog "Completed $($entry.name)." 'Success'
+            Write-OrchLog "Completed step [$($i + 1)/$($Pipeline.Count)]: $($entry.name)." 'Success'
 
             if ($needReboot) {
                 Ensure-ResumeTask
@@ -525,7 +526,8 @@ function Invoke-Orchestrator {
         $state.status = 'completed'
         Save-OrchState -State $state
         Unregister-ResumeTask
-        Show-Success -Message "All steps completed. Ci.Environment setup finished. Logs: $LogPath"
+        $totalElapsed = (Get-Date).ToUniversalTime() - ([datetime]$state.startedUtc).ToUniversalTime()
+        Show-Success -Message ("All steps completed. Ci.Environment setup finished in {0:d\.hh\:mm\:ss}. Logs: $LogPath" -f $totalElapsed)
         Write-OrchLog "Pipeline completed successfully." 'Success'
         if (Test-RebootPending) { Show-Warning -Message "A reboot is still pending; please restart the machine when convenient to finish applying changes." }
     }

@@ -52,7 +52,15 @@ function Show-Success {
 }
 
 Show-Section -Message "Step 2: NVIDIA Driver and Hardware Setup" -Emoji "🎮" -Color "Magenta"
-Show-Info -Message ("Current Time: " + (Get-Date)) -Emoji "⏰"
+$scriptStart = Get-Date
+Show-Info -Message ("Current Time: " + $scriptStart) -Emoji "⏰"
+
+# Print the Step 2 completion banner + elapsed time. Called at every SUCCESSFUL exit (including the
+# no-GPU / already-current early returns) so the step always reports closure.
+function Show-Step2Complete {
+    $e = (Get-Date) - $scriptStart
+    Show-Section -Message ("Step 2 complete (elapsed {0:hh\:mm\:ss})" -f $e) -Emoji "🏁" -Color "Magenta"
+}
 
 # -------------------------
 # Pre-flight: execution policy + admin rights
@@ -469,6 +477,7 @@ $nvidiaAdapter = $videoControllers | Where-Object {
 if (-not $nvidiaAdapter) {
     Show-Info -Message "No NVIDIA GPU detected on this system. Skipping driver installation." -Emoji "ℹ"
     Show-Success -Message "Nothing to do."
+    Show-Step2Complete
     return
 }
 
@@ -646,6 +655,7 @@ if ($installedVersion) {
 
 if (-not $needsInstall) {
     Show-Success -Message "No installation required for $driverTypeName (installed: $installedVersion; latest: $latestVersion)."
+    Show-Step2Complete
     return
 }
 
@@ -701,3 +711,5 @@ try {
 
 Show-Info -Message "A reboot may be required to finish loading the new driver. No automatic reboot has been performed." -Emoji "🔁"
 Show-Success -Message "NVIDIA $driverTypeName step complete."
+
+Show-Step2Complete

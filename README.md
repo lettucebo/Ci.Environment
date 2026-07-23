@@ -12,7 +12,7 @@ Automated Windows development environment setup scripts using PowerShell, [WinGe
 - Server environment setup scripts
 - AI-powered development tools (Claude, GitHub Copilot)
 - Multiple .NET SDK versions (.NET Core 2.1 through .NET 10)
-- Performance-aware install: powerful workstations (`MONEY-PC`, `MONEY-SLS2`) get the full toolset, while thin-and-light laptops (the default, matched by computer name) skip heavy software (Visual Studio Enterprise + extensions, Docker Desktop + DB containers, Hyper-V/Sandbox, Power BI, SSMS, Snagit, older .NET SDKs). WSL2 stays enabled on every host.
+- Performance-aware install: powerful workstations (`MONEY-PC`, `MONEY-SLS2`) get the full toolset, while thin-and-light laptops (the default, matched by computer name) skip heavy software (Visual Studio Enterprise + extensions, Docker Desktop + DB containers, Hyper-V/Sandbox, Power BI, SSMS, older .NET SDKs). WSL2 stays enabled on every host.
 
 ## What's Included
 

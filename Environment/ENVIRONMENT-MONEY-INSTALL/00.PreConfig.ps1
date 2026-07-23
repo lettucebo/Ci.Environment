@@ -46,7 +46,8 @@ function Show-Success {
 }
 
 Show-Section -Message "Step 0: Pre-Configuration" -Emoji "🚀" -Color "Magenta"
-Show-Info -Message ("Current Time: " + (Get-Date)) -Emoji "⏰"
+$scriptStart = Get-Date
+Show-Info -Message ("Current Time: " + $scriptStart) -Emoji "⏰"
 
 # Set ExecutionPolicy to RemoteSigned for script execution
 Show-Section -Message "Set Execution Policy" -Emoji "🔐" -Color "Yellow"
@@ -193,6 +194,9 @@ Set-NetFirewallProfile -All -Enabled True
 # Use the invariant firewall group reference; the localized DisplayGroup 'Remote Desktop'
 # fails on non-English Windows (this machine is set to zh-TW above).
 Enable-NetFirewallRule -Group '@FirewallAPI.dll,-28752'
+
+$elapsed = (Get-Date) - $scriptStart
+Show-Section -Message ("Step 0 complete (elapsed {0:hh\:mm\:ss})" -f $elapsed) -Emoji "🏁" -Color "Magenta"
 
 # Restart the computer to apply changes.
 # Native shutdown /r /t schedules the reboot (no PSGallery PSTimers dependency);

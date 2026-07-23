@@ -1,6 +1,6 @@
 # =========================
-# PowerShell 7 Windows Update Script
-# This script installs PowerShell 7, configures update modules, and runs Windows Update.
+# Windows Update Script
+# This script installs the PSWindowsUpdate module and runs Windows Update. Requires PowerShell 7.
 # =========================
 
 # Message display helper functions for better UX
@@ -10,8 +10,9 @@ function Show-Warning { param([string]$Message,[string]$Emoji="⚠️") Write-Ho
 function Show-Error { param([string]$Message,[string]$Emoji="❌") Write-Host "$Emoji $Message" -ForegroundColor Red }
 function Show-Success { param([string]$Message,[string]$Emoji="✅") Write-Host "$Emoji $Message" -ForegroundColor Green }
 
-Show-Section -Message "Step 1: Install PowerShell 7" -Emoji "🚀" -Color "Magenta"
-Show-Info -Message ("Current Time: " + (Get-Date)) -Emoji "⏰"
+Show-Section -Message "Step 1: Windows Update" -Emoji "🚀" -Color "Magenta"
+$scriptStart = Get-Date
+Show-Info -Message ("Current Time: " + $scriptStart) -Emoji "⏰"
 
 # Set ExecutionPolicy to RemoteSigned for script execution
 Show-Section -Message "Set Execution Policy" -Emoji "🔐" -Color "Yellow"
@@ -57,6 +58,10 @@ Show-Success -Message "PSWindowsUpdate module installed."
 # Start Windows Update (install without auto-reboot; a single controlled reboot follows)
 Show-Section -Message "Start Windows Update" -Emoji "🔄" -Color "Green"
 Install-WindowsUpdate -AcceptAll -IgnoreReboot
+Show-Success -Message "Windows Update pass finished."
+
+$elapsed = (Get-Date) - $scriptStart
+Show-Section -Message ("Step 1 complete (elapsed {0:hh\:mm\:ss})" -f $elapsed) -Emoji "🏁" -Color "Magenta"
 
 # Restart the computer to apply changes.
 # Native shutdown /r /t schedules the reboot (no PSGallery PSTimers dependency);
