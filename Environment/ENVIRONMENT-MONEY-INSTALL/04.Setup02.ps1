@@ -212,6 +212,7 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 # skip heavy-loading software. Keep $powerfulHosts in sync with 03.Setup01.ps1.
 $powerfulHosts = @('MONEY-PC', 'MONEY-SLS2')
 $isPowerfulPc  = $powerfulHosts -contains $env:COMPUTERNAME
+$isMoneyPc     = $env:COMPUTERNAME -eq 'MONEY-PC'
 if ($isPowerfulPc) {
     Show-Info -Message "Host '$env:COMPUTERNAME' is a powerful workstation; installing the full (heavy) toolset." -Emoji "💪"
 } else {
@@ -257,8 +258,8 @@ if ($wslDistros -match 'Ubuntu') {
   }
 }
 
-# [1/8] Install Node.js using nvm (LTS + latest)
-Show-Section -Message "[1/8] Install Node.js using nvm" -Emoji "📦" -Color "Green"
+# [1/9] Install Node.js using nvm (LTS + latest)
+Show-Section -Message "[1/9] Install Node.js using nvm" -Emoji "📦" -Color "Green"
 # nvm-windows accepts the 'lts' and 'latest' aliases directly (for both install and use),
 # which is far more robust than scraping the 'nvm list available' table layout.
 if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
@@ -276,8 +277,8 @@ if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
   }
 }
 
-# [2/8] Auto-start gpg-agent for the current user at logon
-Show-Section -Message "[2/8] Auto-start GPG agent at logon" -Emoji "🔑" -Color "Green"
+# [2/9] Auto-start gpg-agent for the current user at logon
+Show-Section -Message "[2/9] Auto-start GPG agent at logon" -Emoji "🔑" -Color "Green"
 # gpg-agent is PER-USER (it serves the caller's GNUPGHOME), so a LocalSystem Windows service
 # cannot serve the interactive user's socket - which is why the old NSSM 'GpgAgentService'
 # (running `gpg-agent.exe --launch gpg-agent`; --launch is a gpgconf verb, not a gpg-agent one)
@@ -364,11 +365,11 @@ try {
     Add-StepWarning -Item 'StartGpgAgentAtLogon' -Message "Failed to set up gpg-agent auto-start: $($_.Exception.Message)"
 }
 
-# [3/8] Install Visual Studio extensions — powerful hosts only (they require VS Enterprise,
+# [3/9] Install Visual Studio extensions — powerful hosts only (they require VS Enterprise,
 # which 03.Setup01.ps1 only installs on powerful hosts).
 if ($isPowerfulPc) {
-# [3/8] Install Visual Studio extensions via helper script
-Show-Section -Message "[3/8] Install Visual Studio Extensions" -Emoji "🧩" -Color "Green"
+# [3/9] Install Visual Studio extensions via helper script
+Show-Section -Message "[3/9] Install Visual Studio Extensions" -Emoji "🧩" -Color "Green"
 # Under `iex`, $PSScriptRoot is empty, so "$PSScriptRoot\install-vsix.ps1" would resolve to the
 # drive root (and could pick up a stale copy). Download to an Administrators-only directory.
 $vsixTempDir = $null
@@ -423,8 +424,8 @@ if ($vsixTempDir) { Remove-Item -LiteralPath $vsixTempDir -Recurse -Force -Error
     Show-Info -Message "Thin-and-light host; skipping Visual Studio extensions (no VS Enterprise here)." -Emoji "🪶"
 }
 
-# [4/8] Install developer tools using Chocolatey
-Show-Section -Message "[4/8] Install Developer Tools" -Emoji "🍫" -Color "Green"
+# [4/9] Install developer tools using Chocolatey
+Show-Section -Message "[4/9] Install Developer Tools" -Emoji "🍫" -Color "Green"
 #choco install -y dotpeek
 #choco install -y resharper
 #choco install -y dotultimate --params "'/NoCpp /NoTeamCityAddin'"
@@ -434,8 +435,8 @@ Show-Section -Message "[4/8] Install Developer Tools" -Emoji "🍫" -Color "Gree
 # choco install -y sqltoolbelt --params "/products:'SQL Compare, SQL Data Compare, SQL Prompt, SQL Search, SQL Data Generator, SQL Doc, SQL Dependency Tracker, SQL Backup, SSMS Integration Pack'"
 Show-Success -Message "Developer tools installed."
 
-# [5/8] Reset Windows TCP NAT service to clear reserved port ranges
-Show-Section -Message "[5/8] Reset Windows TCP" -Emoji "🔄" -Color "Green"
+# [5/9] Reset Windows TCP NAT service to clear reserved port ranges
+Show-Section -Message "[5/9] Reset Windows TCP" -Emoji "🔄" -Color "Green"
 # Reference: https://blog.darkthread.net/blog/clear-reserved-tcp-port-ranges/
 # Intentionally NOT gated by host tier: WinNAT's dynamic port reservation is driven by Hyper-V
 # networking (used by BOTH Docker Desktop and WSL2). Thin hosts keep WSL2, so this fix still applies.
@@ -449,8 +450,8 @@ if ($stopExitCode -eq 0 -and $startExitCode -eq 0) {
     Add-StepWarning -Item 'WinNAT' -Message "Failed to reset Windows TCP NAT service. (stop exit code: $stopExitCode, start exit code: $startExitCode)"
 }
 
-# [6/8] Exclude commonly used ports from Windows NAT to avoid conflicts
-Show-Section -Message "[6/8] Exclude Ports from Windows NAT" -Emoji "🔌" -Color "Green"
+# [6/9] Exclude commonly used ports from Windows NAT to avoid conflicts
+Show-Section -Message "[6/9] Exclude Ports from Windows NAT" -Emoji "🔌" -Color "Green"
 # Reference: https://blog.miniasp.com/post/2019/03/31/Ports-blocked-by-Windows-10-for-unknown-reason
 # (1433 is intentionally NOT excluded here: the SQL Server container below publishes 1433, and an
 #  administered port exclusion would block Docker/HNS from binding it.)
@@ -463,9 +464,9 @@ netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=8080
 netsh int ipv4 add excludedportrange protocol=tcp numberofports=1 startport=8888
 Show-Success -Message "Ports excluded from Windows NAT."
 
-# [7/8] Run basic Docker containers for SQL Server, Redis, and Postgres — powerful hosts only,
+# [7/9] Run basic Docker containers for SQL Server, Redis, and Postgres — powerful hosts only,
 # and only when the docker CLI is present (Docker Desktop is gated to powerful hosts in 03).
-Show-Section -Message "[7/8] Run Basic Docker Containers" -Emoji "🐳" -Color "Green"
+Show-Section -Message "[7/9] Run Basic Docker Containers" -Emoji "🐳" -Color "Green"
 if (-not $isPowerfulPc) {
     Show-Info -Message "Thin-and-light host; skipping Docker dev containers." -Emoji "🪶"
 } elseif (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
@@ -553,10 +554,10 @@ function Test-OfficeTraditionalChineseLanguagePack {
     return [pscustomobject]@{ Present = $present; Missing = $missing; Evidence = $evidence }
 }
 
-# [8/8] Install Office 64-bit Chinese (Traditional) Language Pack
+# [8/9] Install Office 64-bit Chinese (Traditional) Language Pack
 # Reference: https://learn.microsoft.com/en-us/deployoffice/overview-deploying-languages-microsoft-365-apps
 # Reference: https://learn.microsoft.com/en-us/deployoffice/office-deployment-tool-configuration-options
-Show-Section -Message "[8/8] Install Office Chinese (Traditional) Language Pack" -Emoji "🌐" -Color "Green"
+Show-Section -Message "[8/9] Install Office Chinese (Traditional) Language Pack" -Emoji "🌐" -Color "Green"
 
 # Create an Administrators-only temporary directory for the elevated executable.
 $odtTempDir = New-ProtectedInstallerDirectory -Prefix 'CiEnvironmentOfficeLangPack'
@@ -652,6 +653,203 @@ if ($odtInstallSuccess) {
 Show-Info -Message "Cleaning up temporary files..." -Emoji "🧹"
 Remove-Item -Path $odtTempDir -Recurse -Force -ErrorAction SilentlyContinue
 Show-Success -Message "Temporary files cleaned up."
+
+# [9/9] Disable unnecessary startup apps (tiered, reversible, fail-closed).
+# Acts ONLY on Task Manager "Startup apps": it writes the StartupApproved 0x03 "disabled" flag under HKCU
+# (exactly like Task Manager's Disable button, leaving the original Run entry / shortcut intact) and, for a
+# targeted service, sets its startup type to Manual. It never disables raw scheduled tasks, never writes
+# HKLM, and never deletes anything. Each rule positively identifies the source (the entry exists, its target
+# executable exists on disk and matches the expected name/path) before acting, transitions only
+# absent/well-formed-enabled records, and verifies the written record byte-for-byte; absent entries are
+# reported as "deferred". Everything here is reversible from Task Manager > Startup apps (or Services).
+Show-Section -Message "[9/9] Disable Unnecessary Startup Apps" -Emoji "🚫" -Color "Green"
+
+$startupApprovedRun    = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run'
+$startupApprovedFolder = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder'
+$hkcuRun               = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+$userStartupFolder     = [Environment]::GetFolderPath('Startup')
+$script:saDisabled = 0; $script:saAlready = 0; $script:saDeferred = 0; $script:saSkipped = 0; $script:saFailed = 0
+
+# The 12-byte "disabled" record Task Manager writes: 0x03, three zero bytes, then an 8-byte FILETIME.
+function New-DisabledStartupPayload {
+    $bytes = New-Object 'System.Byte[]' 12
+    $bytes[0] = 0x03
+    $ft = [System.BitConverter]::GetBytes(([DateTime]::Now).ToFileTime())
+    [System.Array]::Copy($ft, 0, $bytes, 4, 8)
+    return ,$bytes
+}
+
+# Classify a StartupApproved record (fail-closed): absent | enabled | disabled | locked | malformed | error.
+# Only 'absent' and a well-formed 'enabled' record (0x02/0x06, 12 bytes, bytes 1-3 zero) may be transitioned.
+function Get-StartupApprovedState {
+    param([string]$Key, [string]$Name)
+    try {
+        if (-not (Test-Path -LiteralPath $Key -ErrorAction Stop)) { return 'absent' }
+        if (@((Get-Item -LiteralPath $Key -ErrorAction Stop).Property) -notcontains $Name) { return 'absent' }
+    } catch { return 'error' }
+    $bytes = $null
+    try { $bytes = (Get-ItemProperty -LiteralPath $Key -Name $Name -ErrorAction Stop).$Name } catch { return 'error' }
+    if ($bytes -isnot [byte[]] -or $bytes.Length -ne 12) { return 'malformed' }
+    if ($bytes[1] -ne 0 -or $bytes[2] -ne 0 -or $bytes[3] -ne 0) { return 'malformed' }
+    $b0 = $bytes[0]
+    if ($b0 -eq 0x02 -or $b0 -eq 0x06) { return 'enabled' }
+    if ($b0 -eq 0x03) { return 'disabled' }
+    if ($b0 -eq 0x08 -or $b0 -eq 0x09) { return 'locked' }
+    return 'malformed'
+}
+
+# Extract the executable path from a Run command line (quote-aware; expands environment variables).
+function Get-RunCommandExe {
+    param([string]$Command)
+    if (-not $Command) { return '' }
+    $c = $Command.Trim()
+    if ($c.StartsWith('"')) {
+        $end = $c.IndexOf('"', 1)
+        $exe = if ($end -gt 1) { $c.Substring(1, $end - 1) } else { $c.Trim('"') }
+    } else {
+        # Unquoted: cut at the first " -" or " /" argument delimiter; otherwise take the whole string
+        # (handles unquoted paths that contain spaces but no switch-style arguments).
+        $delims = @($c.IndexOf(' -'), $c.IndexOf(' /')) | Where-Object { $_ -ge 0 } | Sort-Object
+        $exe = if ($delims.Count -gt 0) { $c.Substring(0, $delims[0]) } else { $c }
+    }
+    return [Environment]::ExpandEnvironmentVariables($exe.Trim())
+}
+
+# Disable one Task-Manager "Startup apps" entry (Run value or Startup-folder shortcut) via StartupApproved.
+function Disable-StartupApp {
+    param(
+        [Parameter(Mandatory)][string]$Label,
+        [string]$RunName,
+        [string]$RunPattern,
+        [string]$StartupFolderName,
+        [Parameter(Mandatory)][string]$ExpectExe,
+        [string]$ExpectPathLike
+    )
+    try {
+        if ($StartupFolderName) {
+            $lnk = Join-Path $userStartupFolder $StartupFolderName
+            if (-not (Test-Path -LiteralPath $lnk)) {
+                Show-Info -Message "  ${Label}: not present (startup folder); deferred." -Emoji "⏭️"; $script:saDeferred++; return
+            }
+            $target = ''
+            try { $target = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk).TargetPath } catch {}
+            $leaf = ''; try { $leaf = [System.IO.Path]::GetFileName($target) } catch {}
+            if (-not $target -or -not (Test-Path -LiteralPath $target -PathType Leaf) -or ($leaf -ne $ExpectExe) -or ($ExpectPathLike -and ($target -notlike $ExpectPathLike))) {
+                Show-Warning -Message "  ${Label}: shortcut target missing or unexpected; skipping."; $script:saSkipped++; return
+            }
+            $approvedKey = $startupApprovedFolder; $approvedName = $StartupFolderName
+        } else {
+            $props = @()
+            if (Test-Path -LiteralPath $hkcuRun) { $props = @((Get-Item -LiteralPath $hkcuRun).Property) }
+            $name = $null
+            if ($RunName) {
+                if ($props -contains $RunName) { $name = $RunName }
+            } elseif ($RunPattern) {
+                $matched = @($props | Where-Object { $_ -match $RunPattern })
+                if ($matched.Count -gt 1) { Show-Warning -Message "  ${Label}: multiple entries matched; skipping (ambiguous)."; $script:saSkipped++; return }
+                if ($matched.Count -eq 1) { $name = $matched[0] }
+            }
+            if (-not $name) {
+                Show-Info -Message "  ${Label}: not present (Run); deferred." -Emoji "⏭️"; $script:saDeferred++; return
+            }
+            $exe = Get-RunCommandExe ([string]((Get-ItemProperty -LiteralPath $hkcuRun -Name $name).$name))
+            $leaf = ''; try { $leaf = [System.IO.Path]::GetFileName($exe) } catch {}
+            if (-not $exe -or -not (Test-Path -LiteralPath $exe -PathType Leaf) -or ($leaf -ne $ExpectExe) -or ($ExpectPathLike -and ($exe -notlike $ExpectPathLike))) {
+                Show-Warning -Message "  ${Label}: Run target missing or unexpected; skipping."; $script:saSkipped++; return
+            }
+            $approvedKey = $startupApprovedRun; $approvedName = $name
+        }
+
+        switch (Get-StartupApprovedState -Key $approvedKey -Name $approvedName) {
+            'enabled'   { }  # well-formed enabled record -> safe to disable
+            'absent'    { }  # no record yet -> safe to create a disabled record
+            'disabled'  { Show-Info -Message "  ${Label}: already disabled." -Emoji "✔️"; $script:saAlready++; return }
+            'locked'    { Show-Warning -Message "  ${Label}: locked by policy; skipping."; $script:saSkipped++; return }
+            'malformed' { Show-Warning -Message "  ${Label}: unrecognized StartupApproved state; skipping."; $script:saSkipped++; return }
+            'error'     { Show-Warning -Message "  ${Label}: could not read StartupApproved state; skipping."; $script:saSkipped++; return }
+            default     { Show-Warning -Message "  ${Label}: unexpected state; skipping."; $script:saSkipped++; return }
+        }
+
+        if (-not (Test-Path -LiteralPath $approvedKey)) { New-Item -Path $approvedKey -Force | Out-Null }
+        $payload = New-DisabledStartupPayload
+        Set-ItemProperty -LiteralPath $approvedKey -Name $approvedName -Value $payload -Type Binary
+        $verify = $null
+        try { $verify = (Get-ItemProperty -LiteralPath $approvedKey -Name $approvedName -ErrorAction Stop).$approvedName } catch {}
+        $ok = ($verify -and $verify.Length -eq 12)
+        if ($ok) { for ($i = 0; $i -lt 12; $i++) { if ($verify[$i] -ne $payload[$i]) { $ok = $false; break } } }
+        if ($ok) { Show-Info -Message "  ${Label}: disabled." -Emoji "🚫"; $script:saDisabled++ }
+        else { Show-Warning -Message "  ${Label}: disable not confirmed."; $script:saFailed++ }
+    } catch {
+        Show-Warning -Message "  ${Label}: failed to disable: $($_.Exception.Message)"; $script:saFailed++
+    }
+}
+
+# Set a service's startup type to Manual (reversible; used when the app's autostart is a service).
+function Set-ServiceManual {
+    param([Parameter(Mandatory)][string]$Name, [string]$Label = $Name)
+    try {
+        $svc = $null
+        try { $svc = Get-CimInstance Win32_Service -Filter "Name='$Name'" -ErrorAction Stop } catch {
+            Show-Warning -Message "  ${Label} service: query failed; skipping: $($_.Exception.Message)"; $script:saFailed++; return
+        }
+        if (-not $svc) { Show-Info -Message "  ${Label} service: not present; skipping." -Emoji "⏭️"; $script:saDeferred++; return }
+        if ($svc.StartMode -eq 'Auto') {
+            Set-Service -Name $Name -StartupType Manual -ErrorAction Stop
+            $after = (Get-CimInstance Win32_Service -Filter "Name='$Name'" -ErrorAction SilentlyContinue).StartMode
+            if ($after -eq 'Manual') { Show-Info -Message "  ${Label} service: startup set to Manual." -Emoji "🛠️"; $script:saDisabled++ }
+            else { Show-Warning -Message "  ${Label} service: change not confirmed (now '$after')."; $script:saFailed++ }
+        } else {
+            Show-Info -Message "  ${Label} service: already '$($svc.StartMode)'; leaving as-is." -Emoji "✔️"; $script:saAlready++
+        }
+    } catch { Show-Warning -Message "  ${Label} service: failed to set Manual: $($_.Exception.Message)"; $script:saFailed++ }
+}
+
+# --- Deny rules (tiered) ---
+# Always (all hosts):
+Disable-StartupApp -Label 'Claude'           -RunName 'Claude' -ExpectExe 'claude.exe'
+Disable-StartupApp -Label 'Edge auto-launch' -RunPattern '^MicrosoftEdgeAutoLaunch_[0-9A-Fa-f]+$' -ExpectExe 'msedge.exe' -ExpectPathLike '*\Microsoft\Edge\Application\*'
+Disable-StartupApp -Label 'LINE'             -RunName 'Line' -ExpectExe 'LineLauncher.exe' -ExpectPathLike '*\LINE\bin\*'
+# Powerful workstations only (Docker Desktop is installed there):
+if ($isPowerfulPc) {
+    Disable-StartupApp -Label 'Docker Desktop' -RunName 'Docker Desktop' -ExpectExe 'Docker Desktop.exe'
+}
+# Thin-and-light laptops only:
+if (-not $isPowerfulPc) {
+    Disable-StartupApp -Label 'ShareX'                    -StartupFolderName 'ShareX.lnk' -ExpectExe 'ShareX.exe'
+    Disable-StartupApp -Label 'Microsoft Teams'           -RunName 'Teams'                -ExpectExe 'ms-teams.exe'
+    Disable-StartupApp -Label 'OneDrive (Run entry only)' -RunName 'OneDrive'             -ExpectExe 'OneDrive.exe'
+    Disable-StartupApp -Label 'Microsoft Lists sync'      -RunName 'Microsoft.Lists'      -ExpectExe 'OneDrive.Sync.Service.exe'
+}
+# Wacom's autostart is a service (not a Startup app): set it to Manual on every host except MONEY-PC.
+if (-not $isMoneyPc) {
+    Set-ServiceManual -Name 'WTabletServicePro' -Label 'Wacom'
+}
+
+$saSummary = ("Startup cleanup: {0} disabled/Manual, {1} already, {2} deferred (absent), {3} skipped, {4} failed." -f $script:saDisabled, $script:saAlready, $script:saDeferred, $script:saSkipped, $script:saFailed)
+if ($script:saFailed -gt 0) {
+    Show-Warning -Message $saSummary
+    Add-StepWarning -Item 'StartupApps' -Message "$($script:saFailed) startup entry/entries failed to disable; review Task Manager > Startup apps."
+} else { Show-Success -Message $saSummary }
+
+# report-only (no action): list HKCU Run values / .lnk startup entries NOT marked disabled (state <> 'disabled'),
+# by NAME only (never command-line arguments). This is a point-in-time view of classic startup entries and
+# deliberately does NOT cover MSIX/AppModel or scheduled-task startup.
+try {
+    $notDisabled = @()
+    if (Test-Path -LiteralPath $hkcuRun) {
+        foreach ($n in @((Get-Item -LiteralPath $hkcuRun).Property)) {
+            if ((Get-StartupApprovedState -Key $startupApprovedRun -Name $n) -ne 'disabled') { $notDisabled += $n }
+        }
+    }
+    if (Test-Path -LiteralPath $userStartupFolder) {
+        foreach ($f in @(Get-ChildItem -LiteralPath $userStartupFolder -Filter '*.lnk' -ErrorAction SilentlyContinue)) {
+            if ((Get-StartupApprovedState -Key $startupApprovedFolder -Name $f.Name) -ne 'disabled') { $notDisabled += $f.Name }
+        }
+    }
+    if ($notDisabled.Count -gt 0) {
+        Show-Info -Message ("HKCU Run values / .lnk startup entries not marked disabled (review in Task Manager; excludes MSIX & scheduled tasks): {0}" -f ($notDisabled -join ', ')) -Emoji "📋"
+    }
+} catch { }
 
 # Script complete
 $elapsed = (Get-Date) - $scriptStart
