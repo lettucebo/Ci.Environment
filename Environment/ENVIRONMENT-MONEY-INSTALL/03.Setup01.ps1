@@ -247,12 +247,17 @@ function Install-FontFile {
 
     Add-Type -AssemblyName PresentationCore -ErrorAction Stop
     $glyphTypeface = New-Object System.Windows.Media.GlyphTypeface ([Uri]$fullPath)
+    # Win32FamilyNames/Win32FaceNames 只包含字型 name table 裡實際存在的語系。實測本 repo
+    # 這 28 個字型，InvariantCulture 一個都查不到、全部要靠 en-US，所以不能只查一種語系：
+    # 依序嘗試 Invariant → en-US → 字典裡第一個非空值，避免因語系不合就整個安裝失敗。
     $invariant = [System.Globalization.CultureInfo]::InvariantCulture
     $english = [System.Globalization.CultureInfo]::GetCultureInfo('en-us')
     $family = $glyphTypeface.Win32FamilyNames[$invariant]
     if (-not $family) { $family = $glyphTypeface.Win32FamilyNames[$english] }
+    if (-not $family) { $family = $glyphTypeface.Win32FamilyNames.Values | Where-Object { $_ } | Select-Object -First 1 }
     $face = $glyphTypeface.Win32FaceNames[$invariant]
     if (-not $face) { $face = $glyphTypeface.Win32FaceNames[$english] }
+    if (-not $face) { $face = $glyphTypeface.Win32FaceNames.Values | Where-Object { $_ } | Select-Object -First 1 }
     if ([string]::IsNullOrWhiteSpace($family)) { throw "Could not read the Win32 family name from: $fullPath" }
     if ([string]::IsNullOrWhiteSpace($face)) { $face = 'Regular' }
 
