@@ -218,6 +218,156 @@ function Test-InstalledApplication {
         Select-Object -First 1)
 }
 
+# GDI 字型 API。安裝後呼叫 AddFontResourceW，讓字型不必登出／重開機就能在本次工作階段使用；
+# WM_FONTCHANGE 廣播則讓已在執行中的應用程式刷新自己的字型快取。
+# 以 -as [type] 做守衛，重複執行時不會因為型別已存在而拋錯。
+if (-not ('CiEnvironment.FontApi' -as [type])) {
+    Add-Type -Namespace CiEnvironment -Name FontApi -MemberDefinition @'
+[DllImport("gdi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+public static extern int AddFontResourceW(string lpFileName);
+
+[DllImport("user32.dll", CharSet = CharSet.Auto)]
+public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult);
+'@
+}
+
+function Install-FontFile {
+    # 以「確定性、同步」的方式安裝字型：複製到 %WINDIR%\Fonts、寫入 HKLM 字型登錄檔，
+    # 再用 AddFontResourceW 讓字型在本次工作階段立即可用。
+    #
+    # 不用 Shell.Application.CopyHere 的原因（兩者都會造成無法驗證的安裝）：
+    #   1. 它是非同步的，官方文件明載不提供任何完成通知，因此安裝後立刻驗證會有 race。
+    #      https://learn.microsoft.com/en-us/windows/win32/shell/folder-copyhere
+    #   2. 失敗時完全靜默 —— 傳入無效路徑（例如 iex 下 $PSScriptRoot 為空所產生的 "\Foo.ttf"）
+    #      只會 no-op，腳本卻仍會往下報成功。
+    param([Parameter(Mandatory)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { throw "Font file not found: $Path" }
+    $fullPath = (Resolve-Path -LiteralPath $Path).ProviderPath
+
+    Add-Type -AssemblyName PresentationCore -ErrorAction Stop
+    $glyphTypeface = New-Object System.Windows.Media.GlyphTypeface ([Uri]$fullPath)
+    $invariant = [System.Globalization.CultureInfo]::InvariantCulture
+    $english = [System.Globalization.CultureInfo]::GetCultureInfo('en-us')
+    $family = $glyphTypeface.Win32FamilyNames[$invariant]
+    if (-not $family) { $family = $glyphTypeface.Win32FamilyNames[$english] }
+    $face = $glyphTypeface.Win32FaceNames[$invariant]
+    if (-not $face) { $face = $glyphTypeface.Win32FaceNames[$english] }
+    if ([string]::IsNullOrWhiteSpace($family)) { throw "Could not read the Win32 family name from: $fullPath" }
+    if ([string]::IsNullOrWhiteSpace($face)) { $face = 'Regular' }
+
+    # 登錄檔值名稱沿用 Windows 內建字型安裝器的慣例：Regular 面「省略」face 名稱
+    # （例如 "Arial (TrueType)"、"FiraCode Nerd Font Mono (TrueType)"），其餘面才附上
+    # （例如 "Arial Bold (TrueType)"）。注意 Chocolatey 的 nerd-fonts-* 套件改採保留
+    # "Regular" 的寫法（"Hack Nerd Font Mono Regular (TrueType)"），所以
+    # Test-FontFaceInstalled 兩種形式都會比對。
+    $fileName = [IO.Path]::GetFileName($fullPath)
+    $typeSuffix = if ([IO.Path]::GetExtension($fullPath) -ieq '.otf') { '(OpenType)' } else { '(TrueType)' }
+    $valueName = if ($face -eq 'Regular') { "$family $typeSuffix" } else { "$family $face $typeSuffix" }
+    $destination = Join-Path $env:WINDIR "Fonts\$fileName"
+
+    # 覆寫失敗時「絕對不能」只因為目的檔存在就當作成功：那會用「新下載檔的 metadata」
+    # 去註冊一個「內容不同的舊檔案」，並對舊檔呼叫 AddFontResourceW，最後還回報安裝成功。
+    # 只有在來源與目的內容完全相同（SHA-256 相符，代表同一份字型已安裝且正在使用中而被鎖定）
+    # 時，才可以接受覆寫失敗並繼續 —— 這也維持了可重複執行。
+    $destinationExisted = Test-Path -LiteralPath $destination -PathType Leaf
+    try {
+        Copy-Item -LiteralPath $fullPath -Destination $destination -Force -ErrorAction Stop
+    } catch {
+        if (-not $destinationExisted) {
+            throw "Could not place the font file at '$destination': $($_.Exception.Message)"
+        }
+        # 目的檔可能正被 GDI 開啟中，所以要用允許共用的方式讀取來計算雜湊
+        # （Get-FileHash 的共用模式較嚴格，對載入中的字型會直接失敗）。
+        $sourceHash = (Get-FileHash -LiteralPath $fullPath -Algorithm SHA256).Hash
+        $destinationHash = $null
+        try {
+            $destinationStream = [IO.File]::Open(
+                $destination, [IO.FileMode]::Open, [IO.FileAccess]::Read,
+                ([IO.FileShare]::ReadWrite -bor [IO.FileShare]::Delete))
+            try {
+                $sha256 = [Security.Cryptography.SHA256]::Create()
+                try {
+                    $destinationHash = [BitConverter]::ToString($sha256.ComputeHash($destinationStream)).Replace('-', '')
+                } finally { $sha256.Dispose() }
+            } finally { $destinationStream.Dispose() }
+        } catch {
+            $destinationHash = $null
+        }
+        if (-not $destinationHash) {
+            throw "A font file already exists at '$destination', could not be replaced, and could not be read to confirm it is identical: $($_.Exception.Message)"
+        }
+        if ($sourceHash -ne $destinationHash) {
+            throw "A different font file is already installed at '$destination' and could not be replaced (it is most likely in use): $($_.Exception.Message)"
+        }
+    }
+    if (-not (Test-Path -LiteralPath $destination -PathType Leaf)) {
+        throw "Could not place the font file at: $destination"
+    }
+
+    # 位於 %WINDIR%\Fonts 的字型，登錄檔慣例只存檔名而非完整路徑。
+    New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts' `
+        -Name $valueName -Value $fileName -PropertyType String -Force -ErrorAction Stop | Out-Null
+
+    # AddFontResourceW 回傳「加入的字型數」，0 代表失敗。檔案與登錄檔此時都已就位，
+    # 所以這不算安裝失敗 —— 只是要重新登入才會生效。
+    if ([CiEnvironment.FontApi]::AddFontResourceW($destination) -le 0) {
+        Show-Info -Message "Registered '$valueName' but it could not be loaded into the current session; it will be available after the next sign-in." -Emoji "ℹ️"
+    }
+    return $valueName
+}
+
+function Install-FontSet {
+    # 安裝一組字型檔，逐檔隔離失敗，並把結果彙整成一則 Add-StepWarning。
+    # 回傳失敗描述的陣列（全部成功時為空）。
+    param(
+        [Parameter(Mandatory)][string]$Label,
+        [Parameter(Mandatory)][string[]]$Paths
+    )
+    $failures = @()
+    foreach ($fontPath in $Paths) {
+        try {
+            [void](Install-FontFile -Path $fontPath)
+        } catch {
+            $failures += "$([IO.Path]::GetFileName($fontPath)): $($_.Exception.Message)"
+        }
+    }
+    if ($failures.Count -gt 0) {
+        Add-StepWarning -Item "Fonts.$Label" -Message "$($failures.Count)/$($Paths.Count) $Label font file(s) could not be installed -> $($failures -join '; ')"
+    }
+    return $failures
+}
+
+function Test-FontFaceInstalled {
+    # 判斷某個 Win32 字型家族名稱（例如 "FiraCode Nerd Font Mono"）是否真的可被解析。
+    # 這正是 Windows Terminal / VS Code 解析 font face 的依據；若字型不存在，兩者會靜默回退到
+    # 內建字型（Cascadia Mono），Starship 的 Nerd Font 圖示就會變成空白或缺字方塊。
+    param([Parameter(Mandatory)][string]$FaceName)
+
+    # 1) WPF 的字型列舉是最權威的比對（與 DirectWrite 同一份字型集合）。
+    try {
+        Add-Type -AssemblyName PresentationCore -ErrorAction Stop
+        $families = [System.Windows.Media.Fonts]::SystemFontFamilies | ForEach-Object { $_.Source }
+        if ($families -contains $FaceName) { return $true }
+    } catch {
+        # PresentationCore 不可用（如 Server Core）時，改由下方登錄檔判斷。
+    }
+
+    # 2) WPF 的字型集合是 per-process 快取，本次執行中剛安裝的字型不會出現在上面的列舉裡，
+    #    因此仍需查登錄檔。兩種安裝器命名慣例都要比對（Regular 面可能省略或保留 "Regular"）。
+    foreach ($hive in @(
+            'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts',
+            'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts')) {
+        if (-not (Test-Path -LiteralPath $hive)) { continue }
+        $valueNames = (Get-ItemProperty -LiteralPath $hive -ErrorAction SilentlyContinue).PSObject.Properties.Name
+        if ($valueNames -contains "$FaceName (TrueType)" -or $valueNames -contains "$FaceName Regular (TrueType)") {
+            return $true
+        }
+    }
+
+    return $false
+}
+
 function Get-WingetExecutable {
     $appInstallers = @(Get-AppxPackage -Name Microsoft.DesktopAppInstaller -ErrorAction SilentlyContinue |
         Sort-Object @{ Expression = {
@@ -1418,146 +1568,172 @@ netsh interface ipv6 set prefixpolicy ::ffff:0:0/96 45 4
 ##### https://gist.github.com/anthonyeden/0088b07de8951403a643a8485af2709b
 ##### https://gist.github.com/cosine83/e83c44878a6bdeac0c7c59e3dbfd1f71
 Show-Section -Message "Install Developer Fonts" -Emoji "🔤" -Color "Green"
-$fontUrl = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/YaHei%20Consolas.ttf";
-$fontFile = "$PSScriptRoot\YaHei.ttf";
-$fontNoto1Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Black.otf";
-$fontNoto1File = "$PSScriptRoot\NotoSansCJKtc-Black.otf";
-$fontNoto2Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Bold.otf";
-$fontNoto2File = "$PSScriptRoot\NotoSansCJKtc-Bold.otf";
-$fontNoto3Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-DemiLight.otf";
-$fontNoto3File = "$PSScriptRoot\NotoSansCJKtc-DemiLight.otf";
-$fontNoto4Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Light.otf";
-$fontNoto4File = "$PSScriptRoot\NotoSansCJKtc-Light.otf";
-$fontNoto5Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Medium.otf";
-$fontNoto5File = "$PSScriptRoot\NotoSansCJKtc-Medium.otf";
-$fontNoto6Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Regular.otf";
-$fontNoto6File = "$PSScriptRoot\NotoSansCJKtc-Regular.otf";
-$fontNoto7Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Thin.otf";
-$fontNoto7File = "$PSScriptRoot\NotoSansCJKtc-Thin.otf";
-$fontNoto8Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansMonoCJKtc-Bold.otf";
-$fontNoto8File = "$PSScriptRoot\NotoSansMonoCJKtc-Bold.otf";
-$fontNoto9Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansMonoCJKtc-Regular.otf";
-$fontNoto9File = "$PSScriptRoot\NotoSansMonoCJKtc-Regular.otf";
-$fontFira01Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFont-Bold.ttf"
-$fontFira01File = "$PSScriptRoot\FiraCodeNerdFont-Bold.ttf";
-$fontFira02Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFont-Light.ttf"
-$fontFira02File = "$PSScriptRoot\FiraCodeNerdFont-Light.ttf";
-$fontFira03Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFont-Medium.ttf"
-$fontFira03File = "$PSScriptRoot\FiraCodeNerdFont-Medium.ttf";
-$fontFira04Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontMono-Bold.ttf"
-$fontFira04File = "$PSScriptRoot\FiraCodeNerdFontMono-Bold.ttf";
-$fontFira05Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontMono-Light.ttf"
-$fontFira05File = "$PSScriptRoot\FiraCodeNerdFontMono-Light.ttf";
-$fontFira06Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontMono-Medium.ttf"
-$fontFira06File = "$PSScriptRoot\FiraCodeNerdFontMono-Medium.ttf";
-$fontFira07Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontMono-Regular.ttf"
-$fontFira07File = "$PSScriptRoot\FiraCodeNerdFontMono-Regular.ttf";
-$fontFira08Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontMono-Retina.ttf"
-$fontFira08File = "$PSScriptRoot\FiraCodeNerdFontMono-Retina.ttf";
-$fontFira09Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontMono-SemiBold.ttf"
-$fontFira09File = "$PSScriptRoot\FiraCodeNerdFontMono-SemiBold.ttf";
-$fontFira10Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontPropo-Bold.ttf"
-$fontFira10File = "$PSScriptRoot\FiraCodeNerdFontPropo-Bold.ttf";
-$fontFira11Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontPropo-Light.ttf"
-$fontFira11File = "$PSScriptRoot\FiraCodeNerdFontPropo-Light.ttf";
-$fontFira12Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontPropo-Medium.ttf"
-$fontFira12File = "$PSScriptRoot\FiraCodeNerdFontPropo-Medium.ttf";
-$fontFira13Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontPropo-Regular.ttf"
-$fontFira13File = "$PSScriptRoot\FiraCodeNerdFontPropo-Regular.ttf";
-$fontFira14Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontPropo-Retina.ttf"
-$fontFira14File = "$PSScriptRoot\FiraCodeNerdFontPropo-Retina.ttf";
-$fontFira15Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontPropo-SemiBold.ttf"
-$fontFira15File = "$PSScriptRoot\FiraCodeNerdFontPropo-SemiBold.ttf";
-$fontFira16Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFont-Regular.ttf"
-$fontFira16File = "$PSScriptRoot\FiraCodeNerdFont-Regular.ttf";
-$fontFira17Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFont-Retina.ttf"
-$fontFira17File = "$PSScriptRoot\FiraCodeNerdFont-Retina.ttf";
-$fontFira18Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFont-SemiBold.ttf"
-$fontFira18File = "$PSScriptRoot\FiraCodeNerdFont-SemiBold.ttf";
 
-Show-Info -Message "Downloading YaHei Consolas font..." -Emoji "⬇️"
-Invoke-WebRequest -Uri $fontUrl -OutFile $fontFile
-Show-Info -Message "Downloading NotoSansCJKtc-Black font..." -Emoji "⬇️"
-Invoke-WebRequest -Uri $fontNoto1Url -OutFile $fontNoto1File
-Show-Info -Message "Downloading NotoSansCJKtc-Bold font..." -Emoji "⬇️"
-Invoke-WebRequest -Uri $fontNoto2Url -OutFile $fontNoto2File
-Show-Info -Message "Downloading NotoSansCJKtc-DemiLight font..." -Emoji "⬇️"
-Invoke-WebRequest -Uri $fontNoto3Url -OutFile $fontNoto3File
-Show-Info -Message "Downloading NotoSansCJKtc-Light font..." -Emoji "⬇️"
-Invoke-WebRequest -Uri $fontNoto4Url -OutFile $fontNoto4File
-Show-Info -Message "Downloading NotoSansCJKtc-Medium font..." -Emoji "⬇️"
-Invoke-WebRequest -Uri $fontNoto5Url -OutFile $fontNoto5File
-Show-Info -Message "Downloading NotoSansCJKtc-Regular font..." -Emoji "⬇️"
-Invoke-WebRequest -Uri $fontNoto6Url -OutFile $fontNoto6File
-Show-Info -Message "Downloading NotoSansCJKtc-Thin font..." -Emoji "⬇️"
-Invoke-WebRequest -Uri $fontNoto7Url -OutFile $fontNoto7File
-Show-Info -Message "Downloading NotoSansMonoCJKtc-Bold font..." -Emoji "⬇️"
-Invoke-WebRequest -Uri $fontNoto8Url -OutFile $fontNoto8File
-Show-Info -Message "Downloading NotoSansMonoCJKtc-Regular font..." -Emoji "⬇️"
-Invoke-WebRequest -Uri $fontNoto9Url -OutFile $fontNoto9File
+# 字型檔的下載暫存目錄。README 記載的唯一支援用法是 iex (Invoke-RestMethod ...)，此時
+# $PSScriptRoot 為空字串，"$PSScriptRoot\Foo.ttf" 會退化成 "\Foo.ttf"（目前磁碟根目錄），
+# 整段字型安裝因此無聲失敗。這裡改用與 Visual Studio 安裝相同的受保護暫存目錄
+# （ProgramData + GUID + Administrators/SYSTEM-only ACL + High integrity + reparse point 檢查）：
+# 本步驟是提權執行的，若把下載的字型放在使用者可寫的可預測路徑（例如 %TEMP% 固定名稱），
+# 未提權的行程可以搶先建立該目錄或替換檔案，讓 admin 權限去安裝被掉包的字型檔。
+# New-ProtectedInstallerDirectory 會在無法建立/保護目錄時丟出例外。這一整段包在 try 裡，
+# 是為了讓字型安裝失敗只降級成一則警告，而不是讓 script 頂層的終止錯誤中斷後面所有步驟。
+$fontDownloadDir = $null
+try {
+    $fontDownloadDir = New-ProtectedInstallerDirectory -Prefix 'CiEnvironmentFonts'
+    Show-Info -Message "Font download directory: $fontDownloadDir" -Emoji "📁"
+    $fontUrl = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/YaHei%20Consolas.ttf";
+    $fontFile = "$fontDownloadDir\YaHei.ttf";
+    $fontNoto1Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Black.otf";
+    $fontNoto1File = "$fontDownloadDir\NotoSansCJKtc-Black.otf";
+    $fontNoto2Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Bold.otf";
+    $fontNoto2File = "$fontDownloadDir\NotoSansCJKtc-Bold.otf";
+    $fontNoto3Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-DemiLight.otf";
+    $fontNoto3File = "$fontDownloadDir\NotoSansCJKtc-DemiLight.otf";
+    $fontNoto4Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Light.otf";
+    $fontNoto4File = "$fontDownloadDir\NotoSansCJKtc-Light.otf";
+    $fontNoto5Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Medium.otf";
+    $fontNoto5File = "$fontDownloadDir\NotoSansCJKtc-Medium.otf";
+    $fontNoto6Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Regular.otf";
+    $fontNoto6File = "$fontDownloadDir\NotoSansCJKtc-Regular.otf";
+    $fontNoto7Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansCJKtc-Thin.otf";
+    $fontNoto7File = "$fontDownloadDir\NotoSansCJKtc-Thin.otf";
+    $fontNoto8Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansMonoCJKtc-Bold.otf";
+    $fontNoto8File = "$fontDownloadDir\NotoSansMonoCJKtc-Bold.otf";
+    $fontNoto9Url = "https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/NotoSansMonoCJKtc-Regular.otf";
+    $fontNoto9File = "$fontDownloadDir\NotoSansMonoCJKtc-Regular.otf";
+    $fontFira01Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFont-Bold.ttf"
+    $fontFira01File = "$fontDownloadDir\FiraCodeNerdFont-Bold.ttf";
+    $fontFira02Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFont-Light.ttf"
+    $fontFira02File = "$fontDownloadDir\FiraCodeNerdFont-Light.ttf";
+    $fontFira03Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFont-Medium.ttf"
+    $fontFira03File = "$fontDownloadDir\FiraCodeNerdFont-Medium.ttf";
+    $fontFira04Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontMono-Bold.ttf"
+    $fontFira04File = "$fontDownloadDir\FiraCodeNerdFontMono-Bold.ttf";
+    $fontFira05Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontMono-Light.ttf"
+    $fontFira05File = "$fontDownloadDir\FiraCodeNerdFontMono-Light.ttf";
+    $fontFira06Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontMono-Medium.ttf"
+    $fontFira06File = "$fontDownloadDir\FiraCodeNerdFontMono-Medium.ttf";
+    $fontFira07Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontMono-Regular.ttf"
+    $fontFira07File = "$fontDownloadDir\FiraCodeNerdFontMono-Regular.ttf";
+    $fontFira08Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontMono-Retina.ttf"
+    $fontFira08File = "$fontDownloadDir\FiraCodeNerdFontMono-Retina.ttf";
+    $fontFira09Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontMono-SemiBold.ttf"
+    $fontFira09File = "$fontDownloadDir\FiraCodeNerdFontMono-SemiBold.ttf";
+    $fontFira10Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontPropo-Bold.ttf"
+    $fontFira10File = "$fontDownloadDir\FiraCodeNerdFontPropo-Bold.ttf";
+    $fontFira11Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontPropo-Light.ttf"
+    $fontFira11File = "$fontDownloadDir\FiraCodeNerdFontPropo-Light.ttf";
+    $fontFira12Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontPropo-Medium.ttf"
+    $fontFira12File = "$fontDownloadDir\FiraCodeNerdFontPropo-Medium.ttf";
+    $fontFira13Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontPropo-Regular.ttf"
+    $fontFira13File = "$fontDownloadDir\FiraCodeNerdFontPropo-Regular.ttf";
+    $fontFira14Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontPropo-Retina.ttf"
+    $fontFira14File = "$fontDownloadDir\FiraCodeNerdFontPropo-Retina.ttf";
+    $fontFira15Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFontPropo-SemiBold.ttf"
+    $fontFira15File = "$fontDownloadDir\FiraCodeNerdFontPropo-SemiBold.ttf";
+    $fontFira16Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFont-Regular.ttf"
+    $fontFira16File = "$fontDownloadDir\FiraCodeNerdFont-Regular.ttf";
+    $fontFira17Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFont-Retina.ttf"
+    $fontFira17File = "$fontDownloadDir\FiraCodeNerdFont-Retina.ttf";
+    $fontFira18Url="https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/FiraCode/FiraCodeNerdFont-SemiBold.ttf"
+    $fontFira18File = "$fontDownloadDir\FiraCodeNerdFont-SemiBold.ttf";
 
-Show-Info -Message "Downloading FiraCode Nerd fonts (18 files - this may take a while)..." -Emoji "⬇️"
-Invoke-WebRequest -Uri $fontFira01Url -OutFile $fontFira01File
-Invoke-WebRequest -Uri $fontFira02Url -OutFile $fontFira02File
-Invoke-WebRequest -Uri $fontFira03Url -OutFile $fontFira03File
-Invoke-WebRequest -Uri $fontFira04Url -OutFile $fontFira04File
-Invoke-WebRequest -Uri $fontFira05Url -OutFile $fontFira05File
-Invoke-WebRequest -Uri $fontFira06Url -OutFile $fontFira06File
-Invoke-WebRequest -Uri $fontFira07Url -OutFile $fontFira07File
-Invoke-WebRequest -Uri $fontFira08Url -OutFile $fontFira08File
-Invoke-WebRequest -Uri $fontFira09Url -OutFile $fontFira09File
-Invoke-WebRequest -Uri $fontFira10Url -OutFile $fontFira10File
-Invoke-WebRequest -Uri $fontFira11Url -OutFile $fontFira11File
-Invoke-WebRequest -Uri $fontFira12Url -OutFile $fontFira12File
-Invoke-WebRequest -Uri $fontFira13Url -OutFile $fontFira13File
-Invoke-WebRequest -Uri $fontFira14Url -OutFile $fontFira14File
-Invoke-WebRequest -Uri $fontFira15Url -OutFile $fontFira15File
-Invoke-WebRequest -Uri $fontFira16Url -OutFile $fontFira16File
-Invoke-WebRequest -Uri $fontFira17Url -OutFile $fontFira17File
-Invoke-WebRequest -Uri $fontFira18Url -OutFile $fontFira18File
+    Show-Info -Message "Downloading YaHei Consolas font..." -Emoji "⬇️"
+    Invoke-WebRequest -Uri $fontUrl -OutFile $fontFile
+    Show-Info -Message "Downloading NotoSansCJKtc-Black font..." -Emoji "⬇️"
+    Invoke-WebRequest -Uri $fontNoto1Url -OutFile $fontNoto1File
+    Show-Info -Message "Downloading NotoSansCJKtc-Bold font..." -Emoji "⬇️"
+    Invoke-WebRequest -Uri $fontNoto2Url -OutFile $fontNoto2File
+    Show-Info -Message "Downloading NotoSansCJKtc-DemiLight font..." -Emoji "⬇️"
+    Invoke-WebRequest -Uri $fontNoto3Url -OutFile $fontNoto3File
+    Show-Info -Message "Downloading NotoSansCJKtc-Light font..." -Emoji "⬇️"
+    Invoke-WebRequest -Uri $fontNoto4Url -OutFile $fontNoto4File
+    Show-Info -Message "Downloading NotoSansCJKtc-Medium font..." -Emoji "⬇️"
+    Invoke-WebRequest -Uri $fontNoto5Url -OutFile $fontNoto5File
+    Show-Info -Message "Downloading NotoSansCJKtc-Regular font..." -Emoji "⬇️"
+    Invoke-WebRequest -Uri $fontNoto6Url -OutFile $fontNoto6File
+    Show-Info -Message "Downloading NotoSansCJKtc-Thin font..." -Emoji "⬇️"
+    Invoke-WebRequest -Uri $fontNoto7Url -OutFile $fontNoto7File
+    Show-Info -Message "Downloading NotoSansMonoCJKtc-Bold font..." -Emoji "⬇️"
+    Invoke-WebRequest -Uri $fontNoto8Url -OutFile $fontNoto8File
+    Show-Info -Message "Downloading NotoSansMonoCJKtc-Regular font..." -Emoji "⬇️"
+    Invoke-WebRequest -Uri $fontNoto9Url -OutFile $fontNoto9File
 
-Show-Info -Message "Installing NotoSans fonts..." -Emoji "📥"
-$objFolder = (New-Object -ComObject Shell.Application).Namespace(0x14)
-$objFolder.CopyHere($fontFile, 0x10)
-$objFolder.CopyHere($fontNoto1File, 0x10)
-$objFolder.CopyHere($fontNoto2File, 0x10)
-$objFolder.CopyHere($fontNoto3File, 0x10)
-$objFolder.CopyHere($fontNoto4File, 0x10)
-$objFolder.CopyHere($fontNoto5File, 0x10)
-$objFolder.CopyHere($fontNoto6File, 0x10)
-$objFolder.CopyHere($fontNoto7File, 0x10)
-$objFolder.CopyHere($fontNoto8File, 0x10)
-$objFolder.CopyHere($fontNoto9File, 0x10)
-Show-Success -Message "NotoSans fonts installed."
+    Show-Info -Message "Downloading FiraCode Nerd fonts (18 files - this may take a while)..." -Emoji "⬇️"
+    Invoke-WebRequest -Uri $fontFira01Url -OutFile $fontFira01File
+    Invoke-WebRequest -Uri $fontFira02Url -OutFile $fontFira02File
+    Invoke-WebRequest -Uri $fontFira03Url -OutFile $fontFira03File
+    Invoke-WebRequest -Uri $fontFira04Url -OutFile $fontFira04File
+    Invoke-WebRequest -Uri $fontFira05Url -OutFile $fontFira05File
+    Invoke-WebRequest -Uri $fontFira06Url -OutFile $fontFira06File
+    Invoke-WebRequest -Uri $fontFira07Url -OutFile $fontFira07File
+    Invoke-WebRequest -Uri $fontFira08Url -OutFile $fontFira08File
+    Invoke-WebRequest -Uri $fontFira09Url -OutFile $fontFira09File
+    Invoke-WebRequest -Uri $fontFira10Url -OutFile $fontFira10File
+    Invoke-WebRequest -Uri $fontFira11Url -OutFile $fontFira11File
+    Invoke-WebRequest -Uri $fontFira12Url -OutFile $fontFira12File
+    Invoke-WebRequest -Uri $fontFira13Url -OutFile $fontFira13File
+    Invoke-WebRequest -Uri $fontFira14Url -OutFile $fontFira14File
+    Invoke-WebRequest -Uri $fontFira15Url -OutFile $fontFira15File
+    Invoke-WebRequest -Uri $fontFira16Url -OutFile $fontFira16File
+    Invoke-WebRequest -Uri $fontFira17Url -OutFile $fontFira17File
+    Invoke-WebRequest -Uri $fontFira18Url -OutFile $fontFira18File
 
-Show-Info -Message "Installing FiraCode fonts..." -Emoji "📥"
-$objFolder.CopyHere($fontFira01File, 0x10)
-$objFolder.CopyHere($fontFira02File, 0x10)
-$objFolder.CopyHere($fontFira03File, 0x10)
-$objFolder.CopyHere($fontFira04File, 0x10)
-$objFolder.CopyHere($fontFira05File, 0x10)
-$objFolder.CopyHere($fontFira06File, 0x10)
-$objFolder.CopyHere($fontFira07File, 0x10)
-$objFolder.CopyHere($fontFira08File, 0x10)
-$objFolder.CopyHere($fontFira09File, 0x10)
-$objFolder.CopyHere($fontFira10File, 0x10)
-$objFolder.CopyHere($fontFira11File, 0x10)
-$objFolder.CopyHere($fontFira12File, 0x10)
-$objFolder.CopyHere($fontFira13File, 0x10)
-$objFolder.CopyHere($fontFira14File, 0x10)
-$objFolder.CopyHere($fontFira15File, 0x10)
-$objFolder.CopyHere($fontFira16File, 0x10)
-$objFolder.CopyHere($fontFira17File, 0x10)
-$objFolder.CopyHere($fontFira18File, 0x10)
-Show-Success -Message "FiraCode fonts installed."
+    Show-Info -Message "Installing NotoSans fonts..." -Emoji "📥"
+    $notoFailures = @(Install-FontSet -Label 'NotoSans' -Paths @(
+        $fontFile, $fontNoto1File, $fontNoto2File, $fontNoto3File, $fontNoto4File,
+        $fontNoto5File, $fontNoto6File, $fontNoto7File, $fontNoto8File, $fontNoto9File
+    ))
+    if ($notoFailures.Count -eq 0) { Show-Success -Message "NotoSans fonts installed." }
+
+    Show-Info -Message "Installing FiraCode fonts..." -Emoji "📥"
+    $firaFailures = @(Install-FontSet -Label 'FiraCodeNerdFont' -Paths @(
+        $fontFira01File, $fontFira02File, $fontFira03File, $fontFira04File, $fontFira05File,
+        $fontFira06File, $fontFira07File, $fontFira08File, $fontFira09File, $fontFira10File,
+        $fontFira11File, $fontFira12File, $fontFira13File, $fontFira14File, $fontFira15File,
+        $fontFira16File, $fontFira17File, $fontFira18File
+    ))
+
+    # 讓已在執行中的應用程式（例如 Windows Terminal）刷新字型快取。
+    $fontChangeResult = [IntPtr]::Zero
+    [void][CiEnvironment.FontApi]::SendMessageTimeout([IntPtr]0xFFFF, 0x001D, [IntPtr]::Zero, [IntPtr]::Zero, 2, 1000, [ref]$fontChangeResult)
+
+    Show-Info -Message "Verifying FiraCode Nerd Font installation..." -Emoji "🔎"
+    if (Test-FontFaceInstalled -FaceName "FiraCode Nerd Font Mono") {
+        Show-Success -Message "FiraCode fonts installed."
+    } elseif ($firaFailures.Count -eq 0) {
+        # 每個檔案都安裝成功卻仍查不到字型家族，代表命名假設或登錄檔寫入出了問題。
+        Add-StepWarning -Item 'Fonts.FiraCodeNerdFont' -Message "FiraCode Nerd Font Mono is still not resolvable after installing every font file."
+    }
+
+} catch {
+    Add-StepWarning -Item 'Fonts' -Message "Developer fonts could not be installed: $($_.Exception.Message)"
+} finally {
+    # 安裝是同步完成的，所以此時清掉受保護的暫存下載目錄是安全的；放在 finally
+    # 可確保中途失敗也不會留下殘骸。
+    if ($fontDownloadDir) { Remove-Item -LiteralPath $fontDownloadDir -Recurse -Force -ErrorAction SilentlyContinue }
+}
 
 # Config Terminal Nerd Font
 ## 設定 VS Code、VS Code Insiders、Windows Terminal 使用 FiraCode Nerd Font Mono
 ## 讓 Starship 的 Nerd Font 圖示（如 OS icon）正確顯示，避免亂碼
 Show-Section -Message "Config Terminal Nerd Font" -Emoji "🔤" -Color "Green"
-$nerdFontFace = "FiraCode Nerd Font Mono"
+# 只在字型「確實已安裝」時才寫入 face。指向不存在的字型會讓 Windows Terminal / VS Code
+# 靜默回退到 Cascadia Mono，Starship 的 Nerd Font 圖示就會變成空白或缺字方塊（tofu）。
+# 偏好 FiraCode（有連字）；退而求其次用 Hack Nerd Font —— 它由本腳本上方的
+# Install-ChocoPackage -Id "nerd-fonts-hack" 安裝，是另一條獨立的安裝路徑。
+$nerdFontFace = $null
+foreach ($candidateFace in @("FiraCode Nerd Font Mono", "Hack Nerd Font Mono")) {
+    if (Test-FontFaceInstalled -FaceName $candidateFace) { $nerdFontFace = $candidateFace; break }
+}
+if ($nerdFontFace) {
+    Show-Info -Message "Nerd Font face for terminals: $nerdFontFace" -Emoji "🔤"
+} else {
+    Add-StepWarning -Item 'Fonts.NerdFontFace' -Message "No Nerd Font (FiraCode / Hack) is installed; skipping the Windows Terminal and VS Code font-face settings so they are not pointed at a missing font."
+}
 
 foreach ($appDataFolder in @("Code", "Code - Insiders")) {
+    if (-not $nerdFontFace) { break }
     $vsSettingsDir = "$env:APPDATA\$appDataFolder\User"
     $vsSettingsPath = "$vsSettingsDir\settings.json"
     if (!(Test-Path $vsSettingsDir)) { New-Item -Path $vsSettingsDir -ItemType Directory -Force | Out-Null }
@@ -1598,10 +1774,13 @@ if (-not $wtJson.PSObject.Properties['profiles']) {
 if (-not $wtJson.profiles.PSObject.Properties['defaults']) {
     $wtJson.profiles | Add-Member -NotePropertyName 'defaults' -NotePropertyValue ([PSCustomObject]@{})
 }
-if ($wtJson.profiles.defaults.PSObject.Properties['font']) {
-    $wtJson.profiles.defaults.font | Add-Member -NotePropertyName 'face' -NotePropertyValue $nerdFontFace -Force
-} else {
-    $wtJson.profiles.defaults | Add-Member -NotePropertyName 'font' -NotePropertyValue ([PSCustomObject]@{ face = $nerdFontFace })
+# 沒有可用的 Nerd Font 時就不要寫 face，維持 WT 內建字型，避免指向不存在的字型造成缺字。
+if ($nerdFontFace) {
+    if ($wtJson.profiles.defaults.PSObject.Properties['font']) {
+        $wtJson.profiles.defaults.font | Add-Member -NotePropertyName 'face' -NotePropertyValue $nerdFontFace -Force
+    } else {
+        $wtJson.profiles.defaults | Add-Member -NotePropertyName 'font' -NotePropertyValue ([PSCustomObject]@{ face = $nerdFontFace })
+    }
 }
 # -Depth 100 avoids truncating deep newTabMenu structures; write to a temp file then atomically
 # replace (with backup) so an interrupted write can't corrupt an existing settings.json.
@@ -1611,10 +1790,12 @@ try {
     if ($wtExisted) { [System.IO.File]::Replace($wtTmp, $wtSettingsPath, "$wtSettingsPath.cienv.bak", $false) }
     else { Move-Item -LiteralPath $wtTmp -Destination $wtSettingsPath -Force }
     $wtVerify = Get-Content $wtSettingsPath -Raw | ConvertFrom-Json
-    if ($wtVerify.defaultProfile -eq $ps7ProfileGuid) {
-        Show-Info -Message "Windows Terminal: default profile = PowerShell 7 + Nerd Font -> $wtSettingsPath" -Emoji "🔤"
-    } else {
+    if ($wtVerify.defaultProfile -ne $ps7ProfileGuid) {
         Add-StepWarning -Item 'WindowsTerminal.Settings' -Message "Windows Terminal settings written but defaultProfile did not verify."
+    } elseif ($nerdFontFace -and $wtVerify.profiles.defaults.font.face -ne $nerdFontFace) {
+        Add-StepWarning -Item 'WindowsTerminal.FontFace' -Message "Windows Terminal defaultProfile verified but profiles.defaults.font.face is '$($wtVerify.profiles.defaults.font.face)' instead of '$nerdFontFace'."
+    } else {
+        Show-Info -Message "Windows Terminal: default profile = PowerShell 7 + Nerd Font -> $wtSettingsPath" -Emoji "🔤"
     }
 } catch {
     Add-StepWarning -Item 'WindowsTerminal.Settings' -Message "Failed to update Windows Terminal settings.json: $($_.Exception.Message)"

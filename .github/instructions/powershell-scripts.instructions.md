@@ -40,7 +40,7 @@ if (-not (Test-Path $vsixInstallScript)) {                         # remote-exec
 
 `05.EdgeExtensions.ps1` does the same for `EdgeExtensions.md` via `if ([string]::IsNullOrEmpty($PSScriptRoot)) { ... Invoke-RestMethod ... }`. Any **new** sibling dependency must add the same fallback, and its URL must point at `master/`.
 
-Note: not every `$PSScriptRoot` use has a fallback — the binary-asset steps in `03.Setup01.ps1` (fonts under `Fonts\`, `vs_enterprise.exe`, etc.) reference `$PSScriptRoot\...` directly and only work when the repo is on disk. That is existing behavior; don't "fix" it by inventing download URLs for binaries.
+Note: the **font** steps in `03.Setup01.ps1` already ship `https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/...` URLs and download every face at runtime, so `$PSScriptRoot` was only ever a scratch download destination there — and leaving it empty under `iex` made the whole install fail silently. Those downloads now stage into a `New-ProtectedInstallerDirectory` (this step is elevated, so it must not consume files from a predictable user-writable path). The legacy `Work\*` scripts still reference `$PSScriptRoot\...` directly for their binary assets and only work when the repo is on disk; that is existing behavior. Don't "fix" *those* by inventing download URLs for binaries that the repo does not already publish.
 
 ## Registry writes
 
