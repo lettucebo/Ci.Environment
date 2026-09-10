@@ -54,13 +54,3 @@ Writes to `HKEY_CURRENT_USER\...\Explorer\User Shell Folders` use `[microsoft.wi
 
 - **Networking:** fetch this repo's own scripts/text with `Invoke-RestMethod` / `Invoke-WebRequest`, not `(New-Object System.Net.WebClient).DownloadString` — it corrupts their UTF-8 emoji + Traditional Chinese (#45 rewrote the READMEs' `iex` one-liners for this reason). The idiomatic Chocolatey bootstrap `iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))` downloads plain ASCII and is the intentional exception — it is still used in `02.Driver.ps1`, `03.Setup01.ps1`, and `Work\*`.
 - **Comments mix English and Traditional Chinese** — both are first-class; write new comments in whichever language fits the surrounding block.
-
-## Validating (never execute)
-
-Parse-check only — running a script makes persistent, system-wide changes:
-
-```powershell
-$errors = $null; $tokens = $null
-[System.Management.Automation.Language.Parser]::ParseFile('path\to\script.ps1', [ref]$tokens, [ref]$errors) | Out-Null
-if ($errors) { $errors | ForEach-Object { Write-Host $_ -ForegroundColor Red } }
-```
