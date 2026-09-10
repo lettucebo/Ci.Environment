@@ -1,6 +1,6 @@
 # Ci.Environment — Copilot instructions
 
-This repo is **not application code**. It is a collection of standalone PowerShell (plus a few Bash) scripts that bootstrap a Windows developer / server machine end-to-end: Windows configuration, Chocolatey/winget/Marketplace installs, registry tweaks, Edge policies, NVIDIA driver, per-server-role setup, etc. There is **no build, test runner, lint command, or CI**. Validation is limited to syntax/static checks and reasoning about behavior — actually running a script needs an elevated session on a real host and makes persistent, system-wide changes, so **never execute these scripts to "test" them.**
+This repo is **not application code**. It is a collection of standalone PowerShell (plus a few Bash) scripts that bootstrap a Windows developer / server machine end-to-end: Windows configuration, Chocolatey/winget/Marketplace installs, registry tweaks, Edge policies, NVIDIA driver, per-server-role setup, etc. There is **no build, test runner, lint command, or CI**.
 
 ## Path-specific instructions
 
@@ -46,10 +46,6 @@ So **every script must work as a single self-contained file**, which forces thes
 4. **User-facing setup changes are bilingual** — update `README.md` and `README.zh-TW.md` together for new/removed tools, numbered steps, or changed `iex` URLs.
 
 Fetch **this repo's own** scripts/text with `Invoke-RestMethod` / `Invoke-WebRequest`, not `WebClient.DownloadString` — `WebClient` corrupts their UTF-8 (emoji + Traditional Chinese); that was the #45 bug (which rewrote the READMEs' `iex` one-liners). The plain-ASCII Chocolatey bootstrap one-liner that uses `WebClient` is the deliberate exception and is still present in `02.Driver.ps1`, `03.Setup01.ps1`, and the `Work\` scripts — don't "fix" it.
-
-## Commands and validation
-
-There are no build, test, or lint commands. Parse-check modified PowerShell and inspect the diff; do **not** run a setup script.
 
 ### Single PowerShell file
 

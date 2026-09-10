@@ -40,7 +40,7 @@ if (-not (Test-Path $vsixInstallScript)) {                         # remote-exec
 
 `05.EdgeExtensions.ps1` does the same for `EdgeExtensions.md` via `if ([string]::IsNullOrEmpty($PSScriptRoot)) { ... Invoke-RestMethod ... }`. Any **new** sibling dependency must add the same fallback, and its URL must point at `master/`.
 
-Note: not every `$PSScriptRoot` use has a fallback — the binary-asset steps in `03.Setup01.ps1` (fonts under `Fonts\`, `vs_enterprise.exe`, etc.) reference `$PSScriptRoot\...` directly and only work when the repo is on disk. That is existing behavior; don't "fix" it by inventing download URLs for binaries.
+Note: the **font** steps in `03.Setup01.ps1` already ship `https://github.com/lettucebo/Ci.Environment/raw/master/Fonts/...` URLs and download every face at runtime, so `$PSScriptRoot` was only ever a scratch download destination there — and leaving it empty under `iex` made the whole install fail silently. Those downloads now stage into a `New-ProtectedInstallerDirectory` (this step is elevated, so it must not consume files from a predictable user-writable path). The legacy `Work\*` scripts still reference `$PSScriptRoot\...` directly for their binary assets and only work when the repo is on disk; that is existing behavior. Don't "fix" *those* by inventing download URLs for binaries that the repo does not already publish.
 
 ## Registry writes
 
@@ -54,13 +54,3 @@ Writes to `HKEY_CURRENT_USER\...\Explorer\User Shell Folders` use `[microsoft.wi
 
 - **Networking:** fetch this repo's own scripts/text with `Invoke-RestMethod` / `Invoke-WebRequest`, not `(New-Object System.Net.WebClient).DownloadString` — it corrupts their UTF-8 emoji + Traditional Chinese (#45 rewrote the READMEs' `iex` one-liners for this reason). The idiomatic Chocolatey bootstrap `iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))` downloads plain ASCII and is the intentional exception — it is still used in `02.Driver.ps1`, `03.Setup01.ps1`, and `Work\*`.
 - **Comments mix English and Traditional Chinese** — both are first-class; write new comments in whichever language fits the surrounding block.
-
-## Validating (never execute)
-
-Parse-check only — running a script makes persistent, system-wide changes:
-
-```powershell
-$errors = $null; $tokens = $null
-[System.Management.Automation.Language.Parser]::ParseFile('path\to\script.ps1', [ref]$tokens, [ref]$errors) | Out-Null
-if ($errors) { $errors | ForEach-Object { Write-Host $_ -ForegroundColor Red } }
-```
