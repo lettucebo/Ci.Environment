@@ -23,6 +23,7 @@ Automated Windows development environment setup scripts using PowerShell, [WinGe
 - Docker Desktop
 - Git & TortoiseGit
 - GitHub CLI (`gh`) and the standalone GitHub Copilot CLI
+- herdr (terminal workspace for coding agents) and the [`kryptamine/herdr-auto-title`](https://github.com/kryptamine/herdr-auto-title) plugin
 
 ### SDKs & Runtimes
 - .NET Framework 4.8
@@ -31,6 +32,7 @@ Automated Windows development environment setup scripts using PowerShell, [WinGe
 - Node.js (via nvm)
 - Python
 - OpenJDK
+- Go
 
 ### Cloud & DevOps
 - Azure CLI & Azure Functions Core Tools
@@ -108,7 +110,7 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 
 ### Step 3: Core Development Tools
 
-Install core development tools and applications.
+Install core development tools and applications, including Go, herdr, and the herdr-auto-title plugin.
 
 [Open `03.Setup01.ps1`](./Environment/ENVIRONMENT-MONEY-INSTALL/03.Setup01.ps1)
 

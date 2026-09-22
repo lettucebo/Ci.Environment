@@ -831,6 +831,10 @@ Install-WingetPackage -Id "NSSM.NSSM"
 Install-WingetPackage -Id "AgileBits.1Password"
 Install-WingetPackage -Id "Microsoft.Teams"
 Install-WingetPackage -Id "Microsoft.OpenJDK.21"
+# Go toolchain. herdr-auto-title is built from source at plugin-install time and herdr does not
+# install missing toolchains. Measured install is ~225 MB, smaller than the .NET SDKs above, so
+# it is not gated to powerful hosts.
+Install-WingetPackage -Id "GoLang.Go"
 # Remote Desktop Manager (replaces the retired RDCMan)
 Install-WingetPackage -Id "Devolutions.RemoteDesktopManager"
 
@@ -1830,6 +1834,116 @@ if (Get-AppxPackage -Name "Microsoft.WindowsTerminal" -ErrorAction SilentlyConti
     }
 } else {
     Add-StepWarning -Item 'WindowsTerminal.DefaultApplication' -Message "Stable Windows Terminal (Microsoft.WindowsTerminal) not detected; skipping the default-terminal-application setting."
+}
+
+# herdr (https://herdr.dev) has no WinGet package. The official Windows installer is per-user and
+# verifies its download, but it sets StrictMode / ErrorActionPreference and can `exit 1`. Run it in
+# a child pwsh so a failure cannot abort the rest of Step 3. The auto-title plugin is compiled with
+# Go at install time (GoLang.Go above). `plugin install` registers without a running server; the
+# plugin's startup hook launches it the first time the user starts herdr, so no restart action here.
+Show-Section -Message "Install herdr and Auto Title plugin" -Emoji "🐑" -Color "Green"
+$herdrAlias = Join-Path $env:LOCALAPPDATA 'Programs\Herdr\bin\herdr.exe'
+$herdrAlreadyPresent = (Get-Command herdr -ErrorAction SilentlyContinue) -or (Test-Path -LiteralPath $herdrAlias)
+if (-not $herdrAlreadyPresent) {
+    $pwshExe = Join-Path $PSHOME 'pwsh.exe'
+    if (-not (Test-Path -LiteralPath $pwshExe)) {
+        Add-StepWarning -Item 'herdr' -Message "pwsh.exe was not found at $pwshExe; herdr was not installed."
+    } else {
+        Show-Info -Message "Installing herdr from https://herdr.dev/install.ps1 ..." -Emoji "⏳"
+        try {
+            & $pwshExe -NoProfile -ExecutionPolicy Bypass -Command "irm 'https://herdr.dev/install.ps1' | iex"
+            if ($LASTEXITCODE -ne 0) {
+                Add-StepWarning -Item 'herdr' -Message "herdr installer exited $LASTEXITCODE."
+            }
+        } catch {
+            Add-StepWarning -Item 'herdr' -Message "Failed to run the herdr installer: $($_.Exception.Message)"
+        }
+    }
+} else {
+    Show-Info -Message "herdr is already installed; skipping the installer." -Emoji "⏭️"
+}
+
+# The installer writes the User PATH in the registry; this session does not inherit the child's env.
+$env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' +
+            [Environment]::GetEnvironmentVariable('Path', 'User')
+$herdrExe = $null
+$herdrCmd = Get-Command herdr -ErrorAction SilentlyContinue
+if ($herdrCmd -and $herdrCmd.Source) {
+    $herdrExe = $herdrCmd.Source
+} elseif (Test-Path -LiteralPath $herdrAlias) {
+    $herdrExe = $herdrAlias
+}
+
+# Unconditional overwrite, same as the Starship block above. Re-running Step 3 replaces any
+# settings the user changed inside herdr. Config is written even if the binary install failed,
+# so a later manual install still picks up this file.
+$herdrConfigDir = Join-Path $env:APPDATA 'herdr'
+try {
+    if (-not (Test-Path -LiteralPath $herdrConfigDir)) {
+        New-Item -Path $herdrConfigDir -ItemType Directory -Force | Out-Null
+    }
+    $herdrConfigPath = Join-Path $herdrConfigDir 'config.toml'
+    $herdrConfig = @'
+onboarding = false
+
+[theme]
+name = "catppuccin"
+
+[ui]
+status_indicators = "symbols"
+show_agent_labels_on_pane_borders = true
+agent_panel_sort = "priority"
+
+[ui.sound]
+enabled = false
+
+[ui.toast]
+delivery = "terminal"
+
+[terminal]
+default_shell = "pwsh.exe"
+new_cwd = "follow"
+'@
+    # utf8NoBOM: a leading BOM is not valid TOML and herdr's parser would ignore this file.
+    Set-Content -LiteralPath $herdrConfigPath -Value $herdrConfig -Encoding utf8NoBOM
+    $herdrConfigWritten = Get-Content -LiteralPath $herdrConfigPath -Raw
+    if ($herdrConfigWritten -match 'onboarding = false' -and
+        $herdrConfigWritten -match 'default_shell = "pwsh.exe"' -and
+        $herdrConfigWritten -match 'agent_panel_sort = "priority"') {
+        Show-Success -Message "herdr configuration written to $herdrConfigPath."
+    } else {
+        Add-StepWarning -Item 'herdr.config' -Message "herdr config.toml was written but did not verify."
+    }
+} catch {
+    Add-StepWarning -Item 'herdr.config' -Message "Failed to write herdr config.toml: $($_.Exception.Message)"
+}
+
+if (-not $herdrExe) {
+    Add-StepWarning -Item 'herdr.auto-title' -Message "herdr.exe was not found after install; skipping kryptamine/herdr-auto-title."
+} else {
+    $goCmd = Get-Command go -ErrorAction SilentlyContinue
+    if (-not $goCmd) {
+        $goDefault = Join-Path $env:ProgramFiles 'Go\bin\go.exe'
+        if (Test-Path -LiteralPath $goDefault) {
+            $env:Path = "$(Split-Path -Parent $goDefault);$env:Path"
+            $goCmd = Get-Command go -ErrorAction SilentlyContinue
+        }
+    }
+    if (-not $goCmd) {
+        Add-StepWarning -Item 'herdr.auto-title' -Message "go was not found on PATH (GoLang.Go); skipping kryptamine/herdr-auto-title. herdr builds that plugin from source and does not install the toolchain."
+    } else {
+        Show-Info -Message "Installing kryptamine/herdr-auto-title (Go build)..." -Emoji "⏳"
+        try {
+            & $herdrExe plugin install kryptamine/herdr-auto-title --yes
+            if ($LASTEXITCODE -ne 0) {
+                Add-StepWarning -Item 'herdr.auto-title' -Message "herdr plugin install exited $LASTEXITCODE."
+            } else {
+                Show-Success -Message "herdr and Auto Title plugin installed."
+            }
+        } catch {
+            Add-StepWarning -Item 'herdr.auto-title' -Message "Failed to install kryptamine/herdr-auto-title: $($_.Exception.Message)"
+        }
+    }
 }
 
 ## Install VS 2025

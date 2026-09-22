@@ -23,6 +23,7 @@
 - Docker Desktop
 - Git 與 TortoiseGit
 - GitHub CLI（`gh`）與獨立的 GitHub Copilot CLI
+- herdr（coding agent 的終端工作區）與 [`kryptamine/herdr-auto-title`](https://github.com/kryptamine/herdr-auto-title) plugin
 
 ### SDK 與執行環境
 - .NET Framework 4.8
@@ -31,6 +32,7 @@
 - Node.js（透過 nvm）
 - Python
 - OpenJDK
+- Go
 
 ### 雲端與 DevOps
 - Azure CLI 與 Azure Functions Core Tools
@@ -108,7 +110,7 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 
 ### 步驟 3：核心開發工具
 
-安裝核心開發工具與應用程式。
+安裝核心開發工具與應用程式，包含 Go、herdr，以及 herdr-auto-title plugin。
 
 [開啟 `03.Setup01.ps1`](./Environment/ENVIRONMENT-MONEY-INSTALL/03.Setup01.ps1)
 
