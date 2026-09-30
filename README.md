@@ -65,7 +65,7 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 
 The orchestrator snapshots the scripts to `C:\ProgramData\CiEnvironment`, then runs Steps 0 → 5 in order. Windows Update runs **twice** to catch updates that only appear after the first reboot. The machine reboots **only when Windows reports a pending reboot** (so a second update pass that finds nothing simply continues) — typically two to four times — resuming automatically after each reboot via a per-user logon Scheduled Task (`CiEnvironmentResume`).
 
-On a **client** machine, the kickoff asks once, before running any steps, for the VPN server FQDN/IP, L2TP/IPsec PSK, the LAN IPs of `MONEY-PC` and `MONEY-LP3`, and the SSH user. Leave an optional host IP blank to skip it. There is no prompt timeout. Windows asks for the VPN account credentials when you first connect; setup does not handle or log them. The remaining steps run unattended. On either host, kickoff skips client prompts; Step 3 sets up remote access after installing herdr.
+On a **client** machine, the kickoff collects inputs before running any steps. If either VPN profile is missing, it asks for the VPN server FQDN/IP and L2TP/IPsec PSK; press Enter at the server prompt to reuse an existing `MONEY` server. `MONEY-LAN` may use a different server name without changing `MONEY`. It also asks for missing LAN IPs of `MONEY-PC` and `MONEY-LP3`, and the SSH user if a host IP is supplied. Leave an optional host IP blank to skip it. There is no prompt timeout. Windows asks for the VPN account credentials when you first connect; setup does not handle or log them. The remaining steps run unattended. On either host, kickoff skips client prompts; Step 3 sets up remote access after installing herdr.
 
 > **Semi-automatic on passwordless / Windows Hello (PIN) accounts.** Windows disables password-based auto-logon when the account is passwordless/Hello-only, so after each reboot you must **unlock with your PIN**; the install then continues on its own. No password is ever stored. (On a local/AD account with a password, sign-in still just happens normally.)
 
@@ -114,6 +114,8 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 ### Step 3: Core Development Tools
 
 Install core development tools and applications, including Go, herdr, and the herdr-auto-title plugin.
+
+When creating `MONEY-LAN`, you can supply its independent endpoint with `-VpnServer 'vpn.example.com'` to the client helper, or press Enter at the server prompt to reuse the existing `MONEY` endpoint. Neither choice changes an existing `MONEY` profile.
 
 On `MONEY-PC` and `MONEY-LP3`, Step 3 also sets up a user-owned, key-only SSH server on port 2222, bound **only to a home-LAN IPv4 address**, with a firewall rule limited to the home LAN and VPN address pool on Private/Domain networks. The server and `herdr server` start when that user signs in; SSH requires the user to be signed in and the host to be awake and on the home LAN. Setup must be run on the home LAN with an elevated session belonging to the signed-in user. Other machines get an SSH config entry for each supplied host and a separate `MONEY-LAN` L2TP split-tunnel profile that routes only `192.168.111.0/24`; the existing full-tunnel `MONEY` profile is **never changed**. When running Step 3 separately, client prompts happen at the start of the script, not during its unattended installation steps.
 
