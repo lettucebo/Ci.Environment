@@ -117,7 +117,7 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 
 建立 `MONEY-LAN` 時，可對用戶端 helper 傳入 `-VpnServer 'vpn.example.com'` 指定獨立的連線端點，或在 server 提示直接按 Enter 沿用既有 `MONEY` 的端點；兩種選擇都不會修改既有 `MONEY` profile。
 
-在 `MONEY-PC`、`MONEY-LP3` 上，步驟 3 也會設定由使用者執行、只接受金鑰的 SSH server，使用 port 2222，**只綁家中 LAN 的 IPv4**；防火牆只在 Private/Domain 網路放行家中 LAN 與 VPN pool。server 與 `herdr server` 在使用者登入時啟動；使用 SSH 前，使用者必須已登入，主機要保持喚醒並位於家中 LAN。設定時需在家中 LAN，以目前登入者本人的提權工作階段執行。其他電腦會取得各 host 的 SSH config 與獨立的 `MONEY-LAN` L2TP split-tunnel profile，只路由 `192.168.111.0/24`；既有 full-tunnel `MONEY` profile **完全不修改**。單獨執行步驟 3 時，也只會在腳本開頭詢問用戶端設定，不會在無人值守的安裝過程中詢問。
+在 `MONEY-PC`、`MONEY-LP3` 上，步驟 3 也會設定由使用者執行、只接受金鑰的 SSH server，使用 port 2222，**只綁家中 LAN 的 IPv4**；單一防火牆規則只在 Private/Domain 網路放行家中 LAN 與 VPN pool。server 與 `herdr server` 在使用者登入時啟動；使用 SSH 前，使用者必須已登入，主機要保持喚醒並位於家中 LAN。設定時需在家中 LAN，以目前登入者本人的提權工作階段執行。其他電腦會取得各 host 的 SSH config 與獨立的 `MONEY-LAN` L2TP split-tunnel profile，只路由 `192.168.111.0/24`；既有 full-tunnel `MONEY` profile **完全不修改**。單獨執行步驟 3 時，也只會在腳本開頭詢問用戶端設定，不會在無人值守的安裝過程中詢問。
 
 連上 `MONEY-LAN` 後，第一次連線時先比對 host 設定時印出的 SSH host-key 指紋，再執行 `ssh -t money-pc herdr` 或 `ssh -t money-lp3 herdr`。若使用 `Install-All`，步驟 3 的輸出會寫入受保護的紀錄：請在 host 上以提權 PowerShell 7 查看最新的 `C:\ProgramData\CiEnvironment\logs\run-*-03.Setup01-attempt-*\stdout.log`，搜尋 `Host fingerprint:`。保留 SSH 預設的 host-key 提問。SSH 金鑰由 [`ssh-authorized-keys.pub`](./Environment/ENVIRONMENT-MONEY-INSTALL/ssh-authorized-keys.pub) 控管，部署前應審查新增的金鑰。撤銷時透過經審查的 PR 移除金鑰，並在**兩台** host 重跑設定；此後無法以該金鑰建立新連線，但**不保證**已建立的連線會中斷。若只需重跑 host 設定（在各 host 登入並連上家中 LAN），請使用提權的 PowerShell 7：
 
@@ -142,7 +142,7 @@ $ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($psk)
 try { Set-VpnConnection -Name $name -L2tpPsk ([Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)) -Force } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr) }
 ```
 
-不要把 `MONEY` 改成 split tunnel：它刻意讓**所有**流量由地端對外 IP 出去。防火牆政策只在 setup 時檢查，**不會持續監控**；筆電不在家中 LAN 上就不能作為 herdr host。
+不要把 `MONEY` 改成 split tunnel：它刻意讓**所有**流量由地端對外 IP 出去。筆電不在家中 LAN 上就不能作為 herdr host。
 
 [開啟 `03.Setup01.ps1`](./Environment/ENVIRONMENT-MONEY-INSTALL/03.Setup01.ps1)
 
