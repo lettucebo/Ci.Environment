@@ -48,8 +48,7 @@ function Get-RemoteClientUpdatedSshConfig([string]$Existing, [string]$ManagedBlo
         elseif ($end -lt $Existing.Length -and $Existing[$end] -eq "`n") { $end++ }
         return $Existing.Substring(0, $start) + $ManagedBlock + $Existing.Substring($end)
     }
-    if ($Existing -and -not $Existing.EndsWith("`n")) { $Existing += [Environment]::NewLine }
-    return $Existing + $ManagedBlock
+    return $ManagedBlock + $Existing
 }
 
 function Get-RemoteClientSavedHostSettings([string]$Config) {
