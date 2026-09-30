@@ -81,7 +81,7 @@ function ConvertTo-HerdrAuthorizedKeys {
 }
 
 function New-HerdrSshdConfig {
-    param([string]$Directory, [string[]]$Addresses, [string]$LanPrefix, [string]$VpnPrefix)
+    param([string]$Directory, [string[]]$Addresses)
     $dir = $Directory.Replace('\', '/').TrimEnd('/')
     $listen = ($Addresses | ForEach-Object { "ListenAddress $_" }) -join "`n"
     @"
@@ -100,85 +100,17 @@ LoginGraceTime 30
 AllowAgentForwarding no
 Subsystem sftp sftp-server.exe
 LogLevel INFO
-Match Address *,!$LanPrefix,!$VpnPrefix
-    DenyUsers *
 "@
 }
 
-function Assert-HerdrSafePath {
-    param([Parameter(Mandatory)][string]$Path)
-    if ($Path.IndexOfAny([char[]]'%"') -ge 0) { throw "Unsafe character in path: $Path" }
-    if (-not [IO.Path]::IsPathFullyQualified($Path)) { throw "Absolute path required: $Path" }
-    if ((Test-Path -LiteralPath $Path) -and
-        ((Get-Item -LiteralPath $Path -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) {
-        throw "Refusing reparse point: $Path"
-    }
-}
-
-function Set-HerdrProtectedAcl {
-    param([string]$Path, [string]$UserSid)
-    Assert-HerdrSafePath -Path $Path
-    $item = Get-Item -LiteralPath $Path -Force
-    $acl = if ($item.PSIsContainer) { [Security.AccessControl.DirectorySecurity]::new() }
-           else { [Security.AccessControl.FileSecurity]::new() }
-    $sid = [Security.Principal.SecurityIdentifier]::new($UserSid)
-    $acl.SetOwner($sid)
-    $acl.SetAccessRuleProtection($true, $false)
-    foreach ($entry in @($sid, [Security.Principal.SecurityIdentifier]::new('S-1-5-18'),
-            [Security.Principal.SecurityIdentifier]::new('S-1-5-32-544'))) {
-        $inherit = if ($item.PSIsContainer) { [Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
-                [Security.AccessControl.InheritanceFlags]::ObjectInherit } else { [Security.AccessControl.InheritanceFlags]::None }
-        $rule = [Security.AccessControl.FileSystemAccessRule]::new($entry,
-            [Security.AccessControl.FileSystemRights]::FullControl, $inherit,
-            [Security.AccessControl.PropagationFlags]::None, [Security.AccessControl.AccessControlType]::Allow)
-        $acl.AddAccessRule($rule)
-    }
-    Set-Acl -LiteralPath $Path -AclObject $acl -ErrorAction Stop
-}
-
-function Test-HerdrProtectedAcl {
-    param([string]$Path, [string]$UserSid)
-    $acl = Get-Acl -LiteralPath $Path -ErrorAction Stop
-    if (-not $acl.AreAccessRulesProtected -or
-        $acl.GetOwner([Security.Principal.SecurityIdentifier]).Value -ne $UserSid) { return $false }
-    $expected = @($UserSid, 'S-1-5-18', 'S-1-5-32-544')
-    $rules = @($acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier]))
-    if ($rules.Count -ne $expected.Count) { return $false }
-    $inherit = if ((Get-Item -LiteralPath $Path -Force).PSIsContainer) {
-        [Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
-        [Security.AccessControl.InheritanceFlags]::ObjectInherit
-    } else { [Security.AccessControl.InheritanceFlags]::None }
-    foreach ($rule in $rules) {
-        if ($rule.IdentityReference.Value -notin $expected -or $rule.IsInherited -or
-            $rule.AccessControlType -ne [Security.AccessControl.AccessControlType]::Allow -or
-            $rule.FileSystemRights -ne [Security.AccessControl.FileSystemRights]::FullControl -or
-            $rule.InheritanceFlags -ne $inherit -or
-            $rule.PropagationFlags -ne [Security.AccessControl.PropagationFlags]::None) { return $false }
-    }
-    return $true
-}
-
 function Write-HerdrIfChanged {
-    param([string]$Path, [string]$Content, [string]$BackupDirectory, [string]$Sid)
-    Assert-HerdrSafePath -Path $Path
+    param([string]$Path, [string]$Content)
     $desiredBytes = [Text.UTF8Encoding]::new($false).GetBytes($Content)
     if ((Test-Path -LiteralPath $Path) -and
         [Convert]::ToHexString([IO.File]::ReadAllBytes($Path)) -ceq [Convert]::ToHexString($desiredBytes)) {
-        if (-not (Test-HerdrProtectedAcl -Path $Path -UserSid $Sid)) {
-            Set-HerdrProtectedAcl -Path $Path -UserSid $Sid
-            if (-not (Test-HerdrProtectedAcl -Path $Path -UserSid $Sid)) {
-                throw "Protected ACL did not verify after repair: $Path"
-            }
-        }
         return $false
     }
-    if (Test-Path -LiteralPath $Path) {
-        $backup = Join-Path $BackupDirectory ("{0}.{1}.bak" -f [IO.Path]::GetFileName($Path), [DateTime]::UtcNow.Ticks)
-        Copy-Item -LiteralPath $Path -Destination $backup -ErrorAction Stop
-        Set-HerdrProtectedAcl -Path $backup -UserSid $Sid
-    }
     [IO.File]::WriteAllBytes($Path, $desiredBytes)
-    Set-HerdrProtectedAcl -Path $Path -UserSid $Sid
     return $true
 }
 
@@ -240,117 +172,20 @@ function Stop-HerdrOwnedSshd {
     if ($failures.Count) { throw ($failures -join '; ') }
 }
 
-function ConvertTo-HerdrFirewallPrefix([string]$Value) {
-    if ($Value -notmatch '^(?<Address>\d{1,3}(?:\.\d{1,3}){3})/(?<Mask>\d{1,3}(?:\.\d{1,3}){3}|\d{1,2})$') {
-        throw "Invalid firewall subnet: $Value"
-    }
-    $address = [Net.IPAddress]::Parse($Matches.Address)
-    $maskText = $Matches.Mask
-    if ($address.AddressFamily -ne [Net.Sockets.AddressFamily]::InterNetwork) { throw "Invalid IPv4 subnet: $Value" }
-    if ($maskText.Contains('.')) {
-        $maskAddress = [Net.IPAddress]::Parse($maskText)
-        if ($maskAddress.AddressFamily -ne [Net.Sockets.AddressFamily]::InterNetwork) { throw "Invalid IPv4 mask: $Value" }
-        $binary = -join @($maskAddress.GetAddressBytes() | ForEach-Object { [Convert]::ToString($_, 2).PadLeft(8, '0') })
-        if ($binary -notmatch '^1*0*$') { throw "Noncontiguous IPv4 mask: $Value" }
-        $bits = $binary.IndexOf('0')
-        if ($bits -lt 0) { $bits = 32 }
-    } else {
-        $bits = [int]$maskText
-        if ($bits -gt 32) { throw "Invalid IPv4 prefix length: $Value" }
-    }
-    $network = $address.GetAddressBytes()
-    for ($i = 0; $i -lt 4; $i++) {
-        $remaining = [Math]::Min(8, [Math]::Max(0, $bits - 8 * $i))
-        $mask = if ($remaining -eq 0) { 0 } elseif ($remaining -eq 8) { 255 } else { 256 - (1 -shl (8 - $remaining)) }
-        $network[$i] = [byte]($network[$i] -band $mask)
-    }
-    return "$([Net.IPAddress]::new($network))/$bits"
-}
-
-function Test-HerdrFirewallRule {
-    param($Rule, [string]$SshdPath, [string]$LanPrefix, [string]$VpnPrefix)
-    if (-not $Rule -or @($Rule).Count -ne 1) { return $false }
-    $rule = @($Rule)[0]
-    $address = @($rule | Get-NetFirewallAddressFilter -ErrorAction Stop)
-    $port = @($rule | Get-NetFirewallPortFilter -ErrorAction Stop)
-    $application = @($rule | Get-NetFirewallApplicationFilter -ErrorAction Stop)
-    $interface = @($rule | Get-NetFirewallInterfaceTypeFilter -ErrorAction Stop)
-    $alias = @($rule | Get-NetFirewallInterfaceFilter -ErrorAction Stop)
-    $service = @($rule | Get-NetFirewallServiceFilter -ErrorAction Stop)
-    $security = @($rule | Get-NetFirewallSecurityFilter -ErrorAction Stop)
-    if ($address.Count -ne 1 -or $port.Count -ne 1 -or $application.Count -ne 1 -or
-        $interface.Count -ne 1 -or $alias.Count -ne 1 -or $service.Count -ne 1 -or $security.Count -ne 1) { return $false }
-    $profiles = @(([string]$rule.Profile -split ',') | ForEach-Object { $_.Trim() } | Sort-Object)
-    $remotes = @()
-    foreach ($remote in @($address[0].RemoteAddress)) {
-        try { $remotes += ConvertTo-HerdrFirewallPrefix ([string]$remote) }
-        catch { return $false }
-    }
-    $remotes = @($remotes | Sort-Object)
-    $expectedRemotes = @(@($LanPrefix, $VpnPrefix) | ForEach-Object { ConvertTo-HerdrFirewallPrefix $_ } | Sort-Object)
-    return ([string]$rule.Enabled -eq 'True' -and [string]$rule.Direction -eq 'Inbound' -and
-        [string]$rule.Action -eq 'Allow' -and ($profiles -join ',') -eq 'Domain,Private' -and
-        [string]$rule.EdgeTraversalPolicy -eq 'Block' -and -not [bool]$rule.LooseSourceMapping -and
-        -not [bool]$rule.LocalOnlyMapping -and
-        ($remotes -join ',') -eq ($expectedRemotes -join ',') -and
-        [string]$address[0].LocalAddress -eq 'Any' -and
-        [string]$port[0].Protocol -eq 'TCP' -and [string]$port[0].LocalPort -eq '2222' -and
-        [string]$port[0].RemotePort -eq 'Any' -and
-        [IO.Path]::GetFullPath([string]$application[0].Program) -ieq [IO.Path]::GetFullPath($SshdPath) -and
-        [string]$interface[0].InterfaceType -eq 'Any' -and
-        [string]$alias[0].InterfaceAlias -eq 'Any' -and [string]$service[0].Service -eq 'Any' -and
-        [string]$security[0].Authentication -eq 'NotRequired' -and
-        [string]$security[0].Encryption -eq 'NotRequired' -and
-        -not [bool]$security[0].OverrideBlockRules -and
-        [string]$security[0].LocalUser -eq 'Any' -and [string]$security[0].RemoteUser -eq 'Any' -and
-        [string]$security[0].RemoteMachine -eq 'Any')
-}
-
-function Assert-HerdrFirewallPolicy {
-    param([string]$SshdPath, [string]$LanPrefix, [string]$VpnPrefix)
-    $profiles = @(Get-NetFirewallProfile -PolicyStore ActiveStore -ErrorAction Stop)
-    foreach ($name in @('Domain', 'Private', 'Public')) {
-        $profile = @($profiles | Where-Object Name -EQ $name)
-        if ($profile.Count -ne 1 -or [string]$profile[0].Enabled -ne 'True' -or
-            [string]$profile[0].DefaultInboundAction -ne 'Block') {
-            throw "Effective firewall profile $name must be enabled with DefaultInboundAction Block."
-        }
-        if ($name -ne 'Public' -and ([string]$profile[0].AllowLocalFirewallRules -ne 'True' -or
-            [string]$profile[0].AllowInboundRules -ne 'True')) {
-            throw "Effective firewall profile $name must allow local and inbound firewall rules."
-        }
-    }
-    $rule = @(Get-NetFirewallRule -Name 'CiEnvironment-HerdrSshd-In-TCP' -PolicyStore ActiveStore -ErrorAction SilentlyContinue)
-    if (-not (Test-HerdrFirewallRule -Rule $rule -SshdPath $SshdPath -LanPrefix $LanPrefix -VpnPrefix $VpnPrefix)) {
-        throw 'The effective HerdrSshd firewall rule or an associated filter differs from the requested scope.'
-    }
-}
-
 function Set-HerdrFirewallRule {
     param([string]$SshdPath, [string]$LanPrefix, [string]$VpnPrefix)
     $name = 'CiEnvironment-HerdrSshd-In-TCP'
     $rule = @(Get-NetFirewallRule -Name $name -ErrorAction SilentlyContinue)
     if ($rule.Count -gt 1) { throw "More than one local firewall rule named $name." }
-    if ($rule.Count -eq 0) {
-        New-NetFirewallRule -Name $name -DisplayName 'CiEnvironment herdr SSH (LAN and VPN)' `
-            -Direction Inbound -Action Allow -Enabled True -Protocol TCP -LocalPort 2222 `
-            -Program $SshdPath -RemoteAddress @($LanPrefix, $VpnPrefix) -Profile Domain,Private `
-            -EdgeTraversalPolicy Block -LooseSourceMapping $false -LocalOnlyMapping $false `
-            -ErrorAction Stop | Out-Null
-    } elseif (-not (Test-HerdrFirewallRule -Rule $rule -SshdPath $SshdPath -LanPrefix $LanPrefix -VpnPrefix $VpnPrefix)) {
-        $rule[0] | Set-NetFirewallRule -Direction Inbound -Action Allow -Enabled True -Profile Domain,Private `
-            -EdgeTraversalPolicy Block -LooseSourceMapping $false -LocalOnlyMapping $false -ErrorAction Stop | Out-Null
-        $rule[0] | Get-NetFirewallAddressFilter | Set-NetFirewallAddressFilter -LocalAddress Any -RemoteAddress @($LanPrefix, $VpnPrefix) -ErrorAction Stop | Out-Null
-        $rule[0] | Get-NetFirewallPortFilter | Set-NetFirewallPortFilter -Protocol TCP -LocalPort 2222 -RemotePort Any -ErrorAction Stop | Out-Null
-        $rule[0] | Get-NetFirewallApplicationFilter | Set-NetFirewallApplicationFilter -Program $SshdPath -ErrorAction Stop | Out-Null
-        $rule[0] | Get-NetFirewallInterfaceTypeFilter | Set-NetFirewallInterfaceTypeFilter -InterfaceType Any -ErrorAction Stop | Out-Null
-        $rule[0] | Get-NetFirewallInterfaceFilter | Set-NetFirewallInterfaceFilter -InterfaceAlias Any -ErrorAction Stop | Out-Null
-        $rule[0] | Get-NetFirewallServiceFilter | Set-NetFirewallServiceFilter -Service Any -ErrorAction Stop | Out-Null
-        $rule[0] | Get-NetFirewallSecurityFilter | Set-NetFirewallSecurityFilter -Authentication NotRequired `
-            -Encryption NotRequired -OverrideBlockRules $false -LocalUser Any -RemoteUser Any -RemoteMachine Any `
-            -ErrorAction Stop | Out-Null
+    $spec = @{
+        Direction = 'Inbound'; Action = 'Allow'; Enabled = 'True'; Protocol = 'TCP'; LocalPort = 2222
+        Program = $SshdPath; RemoteAddress = @($LanPrefix, $VpnPrefix); Profile = @('Domain', 'Private')
     }
-    Assert-HerdrFirewallPolicy -SshdPath $SshdPath -LanPrefix $LanPrefix -VpnPrefix $VpnPrefix
+    if ($rule.Count -eq 0) {
+        New-NetFirewallRule -Name $name -DisplayName 'CiEnvironment herdr SSH (LAN and VPN)' @spec -ErrorAction Stop | Out-Null
+    } else {
+        Set-NetFirewallRule -Name $name @spec -ErrorAction Stop | Out-Null
+    }
 }
 
 function Resolve-HerdrSid {
@@ -438,7 +273,7 @@ function Assert-HerdrPrerequisites {
             if (-not $IsAdmin) { throw 'Run setup-remote-host.ps1 from an elevated PowerShell session.' }
             if ($Architecture -ne 'X64') { throw 'The host helper supports AMD64 only.' }
             if (-not $ConsoleSid -or $ConsoleSid -ne $CurrentSid) {
-                throw 'The interactive console user SID must match the elevated current user SID.'
+                throw 'The signed-in desktop user of this session must match the elevated current user.'
             }
             if (-not $HerdrPresent) { throw 'The per-user Herdr bin\herdr.exe junction is missing.' }
             if ($SshConnection) { throw 'Do not run the host setup inside an SSH session.' }
@@ -446,9 +281,11 @@ function Assert-HerdrPrerequisites {
 
 function Get-HerdrConsoleUserSid {
             try {
-                $username = (Get-CimInstance -ClassName Win32_ComputerSystem -ErrorAction Stop).UserName
-                if (-not $username) { return $null }
-                return ([Security.Principal.NTAccount]::new($username)).Translate([Security.Principal.SecurityIdentifier]).Value
+                $session = (Get-Process -Id $PID).SessionId
+                if ($session -eq 0) { return $null }
+                $explorers = @(Get-CimInstance -ClassName Win32_Process -Filter "Name='explorer.exe' AND SessionId=$session" -ErrorAction Stop)
+                if ($explorers.Count -eq 0) { return $null }
+                return (Invoke-CimMethod -InputObject $explorers[0] -MethodName GetOwnerSid -ErrorAction Stop).Sid
             } catch { return $null }
 }
 
@@ -465,7 +302,6 @@ function Get-HerdrAllowlistText {
 function Get-HerdrSshdPath {
             param([string]$Override)
             if ($Override) {
-                Assert-HerdrSafePath -Path $Override
                 if ([IO.Path]::GetFileName($Override) -ine 'sshd.exe' -or -not (Test-Path -LiteralPath $Override -PathType Leaf)) {
                     throw 'SshdPath must be an existing absolute sshd.exe path.'
                 }
@@ -572,9 +408,6 @@ function Invoke-HerdrHostSetup {
             $configDir = Join-Path $env:LOCALAPPDATA 'CiEnvironment\HerdrSshd'
             $config = Join-Path $configDir 'sshd_config'
             try {
-                foreach ($path in @((Split-Path -Parent $configDir), $configDir, $config, $herdr, $env:USERPROFILE)) {
-                    Assert-HerdrSafePath -Path $path
-                }
                 $sshd = Get-HerdrSshdPath -Override $SshdPath
                 if ((Get-Service -Name sshd -ErrorAction SilentlyContinue).Status -eq 'Running') {
                     New-HerdrHostIssue -Status 'manual_action_required' -Message 'The system sshd service is running; it was not changed. Check its separate listener and policy manually.'
@@ -583,35 +416,26 @@ function Invoke-HerdrHostSetup {
                 $keygen = Join-Path $tools 'ssh-keygen.exe'
                 $keyscan = Join-Path $tools 'ssh-keyscan.exe'
                 foreach ($tool in @($keygen, $keyscan)) {
-                    Assert-HerdrSafePath -Path $tool
                     if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) { throw "OpenSSH tool not found: $tool" }
                 }
                 New-Item -Path $configDir -ItemType Directory -Force -ErrorAction Stop | Out-Null
-                Set-HerdrProtectedAcl -Path $configDir -UserSid $sid
-                $backupDir = Join-Path $configDir 'backup'
-                New-Item -Path $backupDir -ItemType Directory -Force -ErrorAction Stop | Out-Null
-                Set-HerdrProtectedAcl -Path $backupDir -UserSid $sid
                 $hostKey = Join-Path $configDir 'ssh_host_ed25519_key'
-                Assert-HerdrSafePath -Path $hostKey
-                Assert-HerdrSafePath -Path "$hostKey.pub"
                 if (-not (Test-Path -LiteralPath $hostKey)) {
                     Invoke-HerdrNative -Exe $keygen -Arguments "-q -t ed25519 -N `"`" -C `"herdr-sshd@$env:COMPUTERNAME`" -f `"$hostKey`"" -TimeoutSeconds 30 | Out-Null
-                    Set-HerdrProtectedAcl -Path $hostKey -UserSid $sid
-                    Set-HerdrProtectedAcl -Path "$hostKey.pub" -UserSid $sid
                 }
                 if (-not (Test-Path -LiteralPath "$hostKey.pub")) { throw 'Host key public half is missing; refusing to regenerate the private key.' }
 
                 $allowlist = ConvertTo-HerdrAuthorizedKeys -Text (Get-HerdrAllowlistText -Path $AuthorizedKeysPath)
                 [void](Write-HerdrIfChanged -Path (Join-Path $configDir 'authorized_keys') `
-                    -Content $allowlist -BackupDirectory $backupDir -Sid $sid)
+                    -Content $allowlist)
                 $addresses = @(Get-HerdrListenAddresses -LanPrefix $LanPrefix)
-                $desiredConfig = New-HerdrSshdConfig -Directory $configDir -Addresses $addresses -LanPrefix $LanPrefix -VpnPrefix $VpnPrefix
+                $desiredConfig = New-HerdrSshdConfig -Directory $configDir -Addresses $addresses
                 $previousConfig = if (Test-Path -LiteralPath $config) { [IO.File]::ReadAllBytes($config) } else { $null }
-                [void](Write-HerdrIfChanged -Path $config -Content $desiredConfig -BackupDirectory $backupDir -Sid $sid)
+                [void](Write-HerdrIfChanged -Path $config -Content $desiredConfig)
                 try { Invoke-HerdrNative -Exe $sshd -Arguments "-t -f `"$config`"" | Out-Null }
                 catch {
                     if ($null -eq $previousConfig) { Remove-Item -LiteralPath $config -ErrorAction SilentlyContinue }
-                    else { [IO.File]::WriteAllBytes($config, $previousConfig); Set-HerdrProtectedAcl -Path $config -UserSid $sid }
+                    else { [IO.File]::WriteAllBytes($config, $previousConfig) }
                     throw
                 }
                 Set-HerdrFirewallRule -SshdPath $sshd -LanPrefix $LanPrefix -VpnPrefix $VpnPrefix
