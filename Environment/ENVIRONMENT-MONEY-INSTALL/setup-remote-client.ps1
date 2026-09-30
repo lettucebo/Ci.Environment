@@ -52,6 +52,27 @@ function Get-RemoteClientUpdatedSshConfig([string]$Existing, [string]$ManagedBlo
     return $Existing + $ManagedBlock
 }
 
+function Get-RemoteClientSavedHostSettings([string]$Config) {
+    $opening = '# >>> Ci.Environment herdr-remote >>>'
+    $closing = '# <<< Ci.Environment herdr-remote <<<'
+    $start = $Config.IndexOf($opening, [StringComparison]::Ordinal)
+    $end = if ($start -ge 0) { $Config.IndexOf($closing, $start, [StringComparison]::Ordinal) } else { -1 }
+    $hosts = [ordered]@{}
+    $user = $null
+    if ($start -ge 0 -and $end -ge $start) {
+        $managed = $Config.Substring($start + $opening.Length, $end - $start - $opening.Length)
+        foreach ($name in @('money-pc', 'money-lp3')) {
+            $section = [regex]::Match($managed, "(?ms)^Host $name\r?\n(.*?)(?=^Host |\z)")
+            if (-not $section.Success) { continue }
+            $address = [regex]::Match($section.Groups[1].Value, '(?m)^[ \t]*HostName[ \t]+(\S+)')
+            $savedUser = [regex]::Match($section.Groups[1].Value, '(?m)^[ \t]*User[ \t]+"([^"]*)"')
+            if ($address.Success) { $hosts[$name] = $address.Groups[1].Value }
+            if (-not $user -and $savedUser.Success) { $user = $savedUser.Groups[1].Value }
+        }
+    }
+    return [pscustomobject]@{ HostAddresses = $hosts; SshUser = $user }
+}
+
 function Set-RemoteClientPhonebookRoute([string]$Path, [string]$Mode) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
         throw "VPN phonebook not found: $Path"
@@ -85,6 +106,18 @@ function Invoke-RemoteClientSetup {
     if (-not $PhonebookPath) { $PhonebookPath = Join-Path $env:APPDATA 'Microsoft\Network\Connections\Pbk\rasphone.pbk' }
     if (-not $SshDirectory) { $SshDirectory = Join-Path $HOME '.ssh' }
     $configPath = Join-Path $SshDirectory 'config'
+    $existingConfig = ''
+    if (Test-Path -LiteralPath $configPath -PathType Leaf) {
+        try {
+            $existingConfig = [IO.File]::ReadAllText($configPath)
+            $saved = Get-RemoteClientSavedHostSettings $existingConfig
+            if (-not $MoneyPcIp) { $MoneyPcIp = $saved.HostAddresses['money-pc'] }
+            if (-not $MoneyLp3Ip) { $MoneyLp3Ip = $saved.HostAddresses['money-lp3'] }
+            if (-not $SshUser) { $SshUser = $saved.SshUser }
+        } catch {
+            $issues.Add((New-RemoteClientIssue SSH failed "Unable to inspect managed SSH config: $($_.Exception.Message)"))
+        }
+    }
 
     try {
         $profiles = @(Get-VpnConnection -ErrorAction Stop)
@@ -114,6 +147,7 @@ function Invoke-RemoteClientSetup {
         if (-not $MoneyLp3Ip) { $MoneyLp3Ip = Read-Host 'MONEY-LP3 LAN IPv4 (blank to skip)' }
         if (($MoneyPcIp -or $MoneyLp3Ip) -and -not $SshUser) {
             $SshUser = Read-Host 'SSH user'
+            if (-not $SshUser) { $SshUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name }
         }
     }
 
@@ -188,14 +222,13 @@ function Invoke-RemoteClientSetup {
     } else {
         try {
             $managedBlock = Get-RemoteClientManagedConfig -HostAddresses $hosts -User $SshUser
-            $existing = if (Test-Path -LiteralPath $configPath -PathType Leaf) { [IO.File]::ReadAllText($configPath) } else { '' }
-            $expected = Get-RemoteClientUpdatedSshConfig -Existing $existing -ManagedBlock $managedBlock
+            $expected = Get-RemoteClientUpdatedSshConfig -Existing $existingConfig -ManagedBlock $managedBlock
             if ($Mode -eq 'Interactive') {
                 if (-not (Test-Path -LiteralPath $SshDirectory -PathType Container)) {
                     $null = New-Item -ItemType Directory -Path $SshDirectory -Force -ErrorAction Stop
                 }
                 [IO.File]::WriteAllText($configPath, $expected)
-            } elseif ($expected -cne $existing) {
+            } elseif ($expected -cne $existingConfig) {
                 $issues.Add((New-RemoteClientIssue SSH manual_action_required 'Managed SSH config is missing or differs; run Interactive setup'))
             }
         } catch {
