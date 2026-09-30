@@ -343,14 +343,16 @@ function Invoke-RemoteClientSetup {
     $money = $profiles | Where-Object Name -eq 'MONEY' | Select-Object -First 1
     $lan = $profiles | Where-Object Name -eq 'MONEY-LAN' | Select-Object -First 1
     $needsVpn = (-not $money -or -not $lan)
-    $serverMismatch = ($needsVpn -and $money -and $VpnServer -and $VpnServer -ine $money.ServerAddress)
     $psk = $null
 
     # All input is collected before creating profiles or writing files.
     if ($Mode -eq 'Interactive' -and $env:CI_ENV_ORCHESTRATED -ne '1') {
-        if ($needsVpn -and $vpnAvailable -and -not $serverMismatch) {
-            if (-not $VpnServer -and $money) { $VpnServer = $money.ServerAddress }
-            if (-not $VpnServer) { $VpnServer = Read-Host 'VPN server FQDN/IP' }
+        if ($needsVpn -and $vpnAvailable) {
+            if (-not $VpnServer) {
+                $prompt = if ($money) { "VPN server FQDN/IP (Enter to use $($money.ServerAddress))" } else { 'VPN server FQDN/IP' }
+                $VpnServer = Read-Host $prompt
+                if (-not $VpnServer -and $money) { $VpnServer = $money.ServerAddress }
+            }
             if ($VpnServer -and -not (Test-RemoteClientServer $VpnServer)) {
                 $issues.Add((New-RemoteClientIssue VPN failed 'VPN server must be an IPv4 address or valid DNS name'))
                 $VpnServer = $null
@@ -378,9 +380,7 @@ function Invoke-RemoteClientSetup {
 
     if ($vpnAvailable) {
         if ($needsVpn -and $Mode -eq 'Interactive') {
-            if ($serverMismatch) {
-                $issues.Add((New-RemoteClientIssue VPN failed 'Provided VPN server differs from existing MONEY; no VPN profile was changed'))
-            } elseif ($env:CI_ENV_ORCHESTRATED -eq '1' -or -not $VpnServer -or -not (Test-RemoteClientServer $VpnServer) -or -not $psk -or $psk.Length -eq 0) {
+            if ($env:CI_ENV_ORCHESTRATED -eq '1' -or -not $VpnServer -or -not (Test-RemoteClientServer $VpnServer) -or -not $psk -or $psk.Length -eq 0) {
                 $issues.Add((New-RemoteClientIssue VPN skipped 'VPN setup needs a server and SecureString PSK; no prompts or changes under orchestration'))
             } else {
                 $bstr = [IntPtr]::Zero
@@ -410,11 +410,10 @@ function Invoke-RemoteClientSetup {
         }
         if ($lan) {
             $mismatch = $false
-            if ($money -and ($lan.ServerAddress -ne $money.ServerAddress -or
-                (@($lan.AuthenticationMethod) -join ',') -ne (@($money.AuthenticationMethod) -join ',') -or
+            if ($money -and ((@($lan.AuthenticationMethod) -join ',') -ne (@($money.AuthenticationMethod) -join ',') -or
                 $lan.EncryptionLevel -ne $money.EncryptionLevel)) { $mismatch = $true }
             if ($mismatch) {
-                $issues.Add((New-RemoteClientIssue MONEY-LAN manual_action_required 'Existing MONEY-LAN server or authentication differs from MONEY; profile left untouched'))
+                $issues.Add((New-RemoteClientIssue MONEY-LAN manual_action_required 'Existing MONEY-LAN authentication or encryption differs from MONEY; profile left untouched'))
             } elseif (-not $lan.SplitTunneling) {
                 $issues.Add((New-RemoteClientIssue MONEY-LAN manual_action_required 'Existing MONEY-LAN is not split-tunnel; profile left untouched'))
             } elseif (@($lan.Routes | Where-Object DestinationPrefix -ne '192.168.111.0/24').Count -gt 0) {

@@ -65,7 +65,7 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 
 orchestrator 會先將腳本快照到 `C:\ProgramData\CiEnvironment`，再依序執行步驟 0 → 5。Windows 更新會跑**兩次**，以補上第一次重開機後才出現的更新。機器**只在 Windows 回報有待處理的重開機時才重新開機**（因此若第二次更新沒抓到東西就直接接續）——通常 2 到 4 次——並透過使用者登入排程工作（`CiEnvironmentResume`）在每次重開機後自動接續。
 
-在**用戶端**電腦，kickoff 只在執行步驟前詢問一次 VPN server FQDN/IP、L2TP/IPsec PSK、`MONEY-PC` 與 `MONEY-LP3` 的 LAN IP，以及 SSH 使用者；可留空略過某台 host。提問沒有 timeout。第一次連線 VPN 時由 Windows 詢問帳密，設定腳本不處理或記錄帳密；其餘步驟無人值守。在兩台 host 上，kickoff 略過用戶端提問，由步驟 3 在安裝 herdr 後設定遠端存取。
+在**用戶端**電腦，kickoff 只在執行步驟前收集輸入。任一 VPN profile 缺少時，會詢問 VPN server FQDN/IP 與 L2TP/IPsec PSK；在 server 提示直接按 Enter 可沿用既有 `MONEY` 的 server。`MONEY-LAN` 可以使用不同的 server 名稱，不會修改 `MONEY`。接著詢問尚未設定的 `MONEY-PC` 與 `MONEY-LP3` LAN IP，並在有提供 host IP 時詢問 SSH 使用者；可留空略過某台 host。提問沒有 timeout。第一次連線 VPN 時由 Windows 詢問帳密，設定腳本不處理或記錄帳密；其餘步驟無人值守。在兩台 host 上，kickoff 略過用戶端提問，由步驟 3 在安裝 herdr 後設定遠端存取。
 
 > **在 passwordless / Windows Hello（PIN）帳號上為半自動。** 當帳號為 passwordless/Hello-only 時，Windows 會停用密碼式自動登入，因此每次重開機後你需**用 PIN 解鎖**，安裝便會自動繼續；全程不會儲存任何密碼。（若是有密碼的本機/網域帳號，登入照常進行即可。）
 
@@ -114,6 +114,8 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 ### 步驟 3：核心開發工具
 
 安裝核心開發工具與應用程式，包含 Go、herdr，以及 herdr-auto-title plugin。
+
+建立 `MONEY-LAN` 時，可對用戶端 helper 傳入 `-VpnServer 'vpn.example.com'` 指定獨立的連線端點，或在 server 提示直接按 Enter 沿用既有 `MONEY` 的端點；兩種選擇都不會修改既有 `MONEY` profile。
 
 在 `MONEY-PC`、`MONEY-LP3` 上，步驟 3 也會設定由使用者執行、只接受金鑰的 SSH server，使用 port 2222，**只綁家中 LAN 的 IPv4**；防火牆只在 Private/Domain 網路放行家中 LAN 與 VPN pool。server 與 `herdr server` 在使用者登入時啟動；使用 SSH 前，使用者必須已登入，主機要保持喚醒並位於家中 LAN。設定時需在家中 LAN，以目前登入者本人的提權工作階段執行。其他電腦會取得各 host 的 SSH config 與獨立的 `MONEY-LAN` L2TP split-tunnel profile，只路由 `192.168.111.0/24`；既有 full-tunnel `MONEY` profile **完全不修改**。單獨執行步驟 3 時，也只會在腳本開頭詢問用戶端設定，不會在無人值守的安裝過程中詢問。
 
