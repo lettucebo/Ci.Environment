@@ -52,5 +52,6 @@ Writes to `HKEY_CURRENT_USER\...\Explorer\User Shell Folders` use `[microsoft.wi
 
 ## Other conventions
 
+- **Interactive setup inputs:** ask only before the standalone 03 installer starts its unattended steps, or during the fresh Install-All kickoff before state/resume-task creation. An orchestrated child (`CI_ENV_ORCHESTRATED=1`) must not prompt: its standard streams are redirected to logs. Remote helpers used by that child must expose a noninteractive verification mode.
 - **Networking:** fetch this repo's own scripts/text with `Invoke-RestMethod` / `Invoke-WebRequest`, not `(New-Object System.Net.WebClient).DownloadString` — it corrupts their UTF-8 emoji + Traditional Chinese (#45 rewrote the READMEs' `iex` one-liners for this reason). The idiomatic Chocolatey bootstrap `iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))` downloads plain ASCII and is the intentional exception — it is still used in `02.Driver.ps1`, `03.Setup01.ps1`, and `Work\*`.
 - **Comments mix English and Traditional Chinese** — both are first-class; write new comments in whichever language fits the surrounding block.

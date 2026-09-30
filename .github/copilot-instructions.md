@@ -22,6 +22,7 @@ There is no shared runtime or central orchestrator: every `.ps1` / `.sh` file is
   - `00.PreConfig.ps1` — bootstraps PowerShell 7
   - `01.WinUpdate.ps1`, `02.Driver.ps1`, `03.Setup01.ps1`, `04.Setup02.ps1`, `05.EdgeExtensions.ps1`
   - `install-vsix.ps1` — helper invoked by **`04.Setup02.ps1`** to install VS Marketplace extensions
+  - `setup-remote-host.ps1`, `setup-remote-client.ps1`, `ssh-authorized-keys.pub` — self-contained herdr remote-host/client setup and reviewed SSH key allowlist, used by **`03.Setup01.ps1`**; the client helper also runs once at **`Install-All.ps1`** kickoff
   - `EdgeExtensions.md` — Edge addon URLs parsed at runtime by `05.EdgeExtensions.ps1`
 - `Environment\ENVIRONMENT-MONEY-SANDBOX.ps1` — independent Windows Sandbox variant (legacy, pre-`Show-*` style)
 - `Environment\ENVIRONMENT-MONEY-INSTALL-MAC.sh` — macOS counterpart (Homebrew / mas), kept loosely in sync with `03.Setup01.ps1`
@@ -44,6 +45,7 @@ So **every script must work as a single self-contained file**, which forces thes
 2. **Under `iex`, `$PSScriptRoot` is empty**, so a script cannot assume sibling files are on disk. Sibling *script/text* dependencies must fall back to downloading from the `master` raw URL (e.g. `05.EdgeExtensions.ps1` → `EdgeExtensions.md`; `04.Setup02.ps1` → `install-vsix.ps1`). The exact pattern is in the PowerShell instructions.
 3. **Numbering is an interface** — workstation filenames, top-level `Step N` messages, README section order, direct links, and raw URLs must stay aligned.
 4. **User-facing setup changes are bilingual** — update `README.md` and `README.zh-TW.md` together for new/removed tools, numbered steps, or changed `iex` URLs.
+5. **Unattended remote setup** — prompt for VPN/SSH client inputs only at the beginning of an independent 03 run or before Install-All persists kickoff state. Never prompt in an orchestrated child (`CI_ENV_ORCHESTRATED=1`); it redirects the child's output to logs.
 
 Fetch **this repo's own** scripts/text with `Invoke-RestMethod` / `Invoke-WebRequest`, not `WebClient.DownloadString` — `WebClient` corrupts their UTF-8 (emoji + Traditional Chinese); that was the #45 bug (which rewrote the READMEs' `iex` one-liners). The plain-ASCII Chocolatey bootstrap one-liner that uses `WebClient` is the deliberate exception and is still present in `02.Driver.ps1`, `03.Setup01.ps1`, and the `Work\` scripts — don't "fix" it.
 

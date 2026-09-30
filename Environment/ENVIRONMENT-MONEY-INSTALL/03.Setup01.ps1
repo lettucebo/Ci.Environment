@@ -189,6 +189,57 @@ function New-ProtectedInstallerFile {
     return $path
 }
 
+$script:RemoteSetupTempDirs = @()
+function Get-RemoteSetupPaths {
+    param(
+        [Parameter(Mandatory)][ValidateSet('host', 'client')][string]$Kind,
+        [AllowEmptyString()][string]$Root = $PSScriptRoot
+    )
+    $name = if ($Kind -eq 'host') { 'setup-remote-host.ps1' } else { 'setup-remote-client.ps1' }
+    $keysName = 'ssh-authorized-keys.pub'
+    $useLocal = -not [string]::IsNullOrEmpty($Root) -and
+        (Test-Path -LiteralPath (Join-Path $Root $name) -PathType Leaf) -and
+        (Test-Path -LiteralPath (Join-Path $Root $keysName) -PathType Leaf)
+    if ($useLocal) {
+        return [pscustomobject]@{
+            Script  = Join-Path $Root $name
+            Keys    = Join-Path $Root $keysName
+        }
+    }
+    $tempDir = New-ProtectedInstallerDirectory -Prefix 'CiEnvironmentHerdrRemote'
+    $script:RemoteSetupTempDirs += $tempDir
+    $rawBase = 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL'
+    foreach ($fileName in @($name, $keysName)) {
+        $path = New-ProtectedInstallerFile -Directory $tempDir -Name $fileName
+        Invoke-WebRequest -Uri "$rawBase/$fileName" -OutFile $path -ErrorAction Stop
+    }
+    return [pscustomobject]@{
+        Script  = Join-Path $tempDir $name
+        Keys    = Join-Path $tempDir $keysName
+        TempDir = $tempDir
+    }
+}
+
+function Invoke-RemoteSetupHelper {
+    param(
+        [Parameter(Mandatory)]$Paths,
+        [Parameter(Mandatory)][ValidateSet('host', 'Interactive', 'Verify')][string]$Mode
+    )
+    $issues = if ($Mode -eq 'host') {
+        @(& $Paths.Script -AuthorizedKeysPath $Paths.Keys)
+    } else {
+        @(& $Paths.Script -Mode $Mode -AuthorizedKeysPath $Paths.Keys)
+    }
+    foreach ($issue in $issues) {
+        if ([string]::IsNullOrWhiteSpace([string]$issue.Item) -or
+            [string]::IsNullOrWhiteSpace([string]$issue.Status) -or
+            [string]::IsNullOrWhiteSpace([string]$issue.Message)) {
+            throw "Remote $Mode helper returned an invalid issue."
+        }
+        Add-StepWarning -Item $issue.Item -Status $issue.Status -Message $issue.Message
+    }
+}
+
 function Get-InstallerLogPath {
     param([Parameter(Mandatory)][string]$Name)
     if (-not $script:InstallerLogDir) {
@@ -636,6 +687,20 @@ if($PSversionTable.PsVersion.Major -lt 7){
     Show-Error -Message "Please use Powershell 7 to execute this script!"
     exit 1
 } else { Show-Success -Message "PowerShell version is $($PSversionTable.PsVersion.Major)." }
+
+# Keep this list aligned with Invoke-RemoteClientKickoff in Install-All.ps1.
+$remoteHosts = @('MONEY-PC', 'MONEY-LP3')
+$script:RemoteClientPaths = $null
+$clientCanPrompt = [Environment]::UserInteractive -and -not [Console]::IsInputRedirected
+if ($env:COMPUTERNAME -notin $remoteHosts -and
+    $env:CI_ENV_ORCHESTRATED -ne '1' -and $clientCanPrompt) {
+    try {
+        $script:RemoteClientPaths = Get-RemoteSetupPaths -Kind client
+        Invoke-RemoteSetupHelper -Paths $script:RemoteClientPaths -Mode Interactive
+    } catch {
+        Add-StepWarning -Item 'herdr.remote-client' -Message "Could not prepare remote client access: $($_.Exception.Message)"
+    }
+}
 
 # Set traditional context menu
 Show-Section -Message "Set Traditional Context Menu" -Emoji "🖱️" -Color "Green"
@@ -1946,6 +2011,22 @@ if (-not $herdrExe) {
     }
 }
 
+# The installer has finished configuring herdr; host setup needs its stable junction.
+Show-Section -Message "Configure remote herdr access" -Emoji "🔐" -Color "Green"
+try {
+    if ($env:COMPUTERNAME -in $remoteHosts) {
+        $hostPaths = Get-RemoteSetupPaths -Kind host
+        Invoke-RemoteSetupHelper -Paths $hostPaths -Mode host
+    } else {
+        if (-not $script:RemoteClientPaths) {
+            $script:RemoteClientPaths = Get-RemoteSetupPaths -Kind client
+        }
+        Invoke-RemoteSetupHelper -Paths $script:RemoteClientPaths -Mode Verify
+    }
+} catch {
+    Add-StepWarning -Item 'herdr.remote' -Message "Remote herdr setup did not complete: $($_.Exception.Message)"
+}
+
 ## Install VS 2025
 # https://learn.microsoft.com/en-us/visualstudio/install/workload-and-component-ids
 # https://developercommunity.visualstudio.com/t/setup-does-not-wait-for-installation-to-complete-w/26668#T-N1137560
@@ -2038,6 +2119,13 @@ if ($isPowerfulPc) {
 }
 
 $elapsed = (Get-Date) - $scriptStart
+foreach ($remoteTempDir in $script:RemoteSetupTempDirs) {
+    try {
+        Remove-Item -LiteralPath $remoteTempDir -Recurse -Force -ErrorAction Stop
+    } catch {
+        Add-StepWarning -Item 'herdr.remote-temp' -Message "Could not clean our remote-setup staging directory: $remoteTempDir ($($_.Exception.Message))"
+    }
+}
 Show-Section -NoNumber -Message ("Step 3 complete (elapsed {0:hh\:mm\:ss})" -f $elapsed) -Emoji "🏁" -Color "Magenta"
 if ($script:StepWarnings.Count -gt 0) {
     Show-Warning -Message "Step 3 completed with $($script:StepWarnings.Count) verified warning(s); review the installer logs."

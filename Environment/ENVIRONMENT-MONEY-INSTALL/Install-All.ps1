@@ -135,7 +135,8 @@ $SnapshotFiles = @(
     'Install-All.ps1',
     '00.PreConfig.ps1', '01.WinUpdate.ps1', '02.Driver.ps1',
     '03.Setup01.ps1', '04.Setup02.ps1', '05.EdgeExtensions.ps1',
-    'install-vsix.ps1', 'EdgeExtensions.md'
+    'install-vsix.ps1', 'EdgeExtensions.md',
+    'setup-remote-host.ps1', 'setup-remote-client.ps1', 'ssh-authorized-keys.pub'
 )
 
 # --- Helpers ---
@@ -511,6 +512,38 @@ function Invoke-Snapshot {
     return $hashes
 }
 
+function Invoke-RemoteClientKickoff {
+    param(
+        [string]$ComputerName = $env:COMPUTERNAME,
+        [string]$SnapshotPath = $SnapshotDir
+    )
+    # Keep this list aligned with $remoteHosts in 03.Setup01.ps1.
+    if ($env:CI_ENV_ORCHESTRATED -eq '1' -or
+        @('MONEY-PC', 'MONEY-LP3') -contains $ComputerName) { return }
+
+    try {
+        $clientScript = Join-Path $SnapshotPath 'setup-remote-client.ps1'
+        $keysPath = Join-Path $SnapshotPath 'ssh-authorized-keys.pub'
+        foreach ($path in @($clientScript, $keysPath)) {
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Missing client kickoff file: $path" }
+            Assert-NotReparse $path
+        }
+        # Kickoff precedes Step 0, so the default PS5.1 policy may still block .ps1 files.
+        $clientCode = [IO.File]::ReadAllText($clientScript, [Text.Encoding]::UTF8)
+        $issues = @(& ([scriptblock]::Create($clientCode)) -Mode Interactive -AuthorizedKeysPath $keysPath)
+        foreach ($issue in $issues) {
+            if ([string]::IsNullOrWhiteSpace([string]$issue.Item) -or
+                [string]::IsNullOrWhiteSpace([string]$issue.Status) -or
+                [string]::IsNullOrWhiteSpace([string]$issue.Message)) {
+                throw 'Client kickoff returned an invalid issue.'
+            }
+            Write-OrchLog "Remote client [$($issue.Status)] $($issue.Item): $($issue.Message)" 'Warning'
+        }
+    } catch {
+        Write-OrchLog "Remote client kickoff failed ($($_.Exception.GetType().Name)); review client setup before connecting. The installer will continue." 'Warning'
+    }
+}
+
 # Re-download any snapshot file that has gone missing (defensive; refreshes its recorded hash).
 function Ensure-Snapshot {
     param($State)
@@ -742,6 +775,7 @@ function Invoke-Orchestrator {
                 Write-OrchLog "Fresh install: hardening state dir, snapshotting scripts, arming the resume task."
                 Initialize-RootDir
                 $hashes = Invoke-Snapshot
+                Invoke-RemoteClientKickoff
                 $steps = @()
                 foreach ($p in $Pipeline) {
                     $steps += [ordered]@{
