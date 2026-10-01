@@ -6,15 +6,6 @@
 			"gallery": "https://api.mcp.github.com",
 			"version": "1.0.0"
 		},
-		"microsoft/markitdown": {
-			"type": "stdio",
-			"command": "uvx",
-			"args": [
-				"markitdown-mcp@0.0.1a4"
-			],
-			"gallery": "https://api.mcp.github.com",
-			"version": "1.0.0"
-		},
 		"io.github.ChromeDevTools/chrome-devtools-mcp": {
 			"type": "stdio",
 			"command": "npx",
