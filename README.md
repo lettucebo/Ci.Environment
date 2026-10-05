@@ -55,7 +55,7 @@ You can either **run everything with one command** (recommended) or run the numb
 
 ### Option A: One-Command Install (all steps, auto-resume across reboots)
 
-Run this **once** in an elevated PowerShell session to install the whole pipeline (Steps 0–5) end to end:
+Run this **once** in an elevated PowerShell session to install the whole pipeline (Steps 0–6) end to end:
 
 [Open `Install-All.ps1`](./Environment/ENVIRONMENT-MONEY-INSTALL/Install-All.ps1)
 
@@ -63,9 +63,9 @@ Run this **once** in an elevated PowerShell session to install the whole pipelin
 iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/Install-All.ps1')
 ```
 
-The orchestrator snapshots the scripts to `C:\ProgramData\CiEnvironment`, then runs Steps 0 → 5 in order. Windows Update runs **twice** to catch updates that only appear after the first reboot. The machine reboots **only when Windows reports a pending reboot** (so a second update pass that finds nothing simply continues) — typically two to four times — resuming automatically after each reboot via a per-user logon Scheduled Task (`CiEnvironmentResume`).
+The orchestrator snapshots the scripts to `C:\ProgramData\CiEnvironment`, then runs Steps 0 → 6 in order. Windows Update runs **twice** to catch updates that only appear after the first reboot. The machine reboots **only when Windows reports a pending reboot** (so a second update pass that finds nothing simply continues) — typically two to four times — resuming automatically after each reboot via a per-user logon Scheduled Task (`CiEnvironmentResume`).
 
-On a **client** machine, the kickoff collects inputs before running any steps. If either VPN profile is missing, it asks for the VPN server FQDN/IP and L2TP/IPsec PSK; press Enter at the server prompt to reuse an existing `MONEY` server. `MONEY-LAN` may use a different server name without changing `MONEY`. It also asks for missing LAN IPs of `MONEY-PC` and `MONEY-LP3`, and the SSH user if a host IP is supplied. Leave an optional host IP blank to skip it. There is no prompt timeout. Windows asks for the VPN account credentials when you first connect; setup does not handle or log them. The remaining steps run unattended. On either host, kickoff skips client prompts; Step 3 sets up remote access after installing herdr.
+On a **client** machine, the kickoff collects inputs before running any steps. If either VPN profile is missing, it asks for the VPN server FQDN/IP and L2TP/IPsec PSK; press Enter at the server prompt to reuse an existing `MONEY` server. `MONEY-LAN` may use a different server name without changing `MONEY`. It also asks for missing LAN IPs of `MONEY-PC` and `MONEY-LP3`, and the SSH user if a host IP is supplied. Leave an optional host IP blank to skip it. There is no prompt timeout. Windows asks for the VPN account credentials when you first connect; setup does not handle or log them. The remaining steps run unattended. On either host, kickoff skips client prompts; Step 6 configures remote access after Step 3 installs herdr.
 
 > **Semi-automatic on passwordless / Windows Hello (PIN) accounts.** Windows disables password-based auto-logon when the account is passwordless/Hello-only, so after each reboot you must **unlock with your PIN**; the install then continues on its own. No password is ever stored. (On a local/AD account with a password, sign-in still just happens normally.)
 
@@ -115,35 +115,6 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 
 Install core development tools and applications, including Go, herdr, and the herdr-auto-title plugin.
 
-When creating `MONEY-LAN`, you can supply its independent endpoint with `-VpnServer 'vpn.example.com'` to the client helper, or press Enter at the server prompt to reuse the existing `MONEY` endpoint. Neither choice changes an existing `MONEY` profile.
-
-On `MONEY-PC` and `MONEY-LP3`, Step 3 also sets up a user-owned, key-only SSH server on port 2222, bound **only to a home-LAN IPv4 address**, with one firewall rule limited to the home LAN and VPN address pool on Private/Domain networks. The server and `herdr server` start when that user signs in; SSH requires the user to be signed in and the host to be awake and on the home LAN. Setup must be run on the home LAN with an elevated session belonging to the signed-in user. Other machines get an SSH config entry for each supplied host and a separate `MONEY-LAN` L2TP split-tunnel profile that routes only `192.168.111.0/24`; the existing full-tunnel `MONEY` profile is **never changed**. When running Step 3 separately, client prompts happen at the start of the script, not during its unattended installation steps.
-
-Connect `MONEY-LAN`; on first connection, SSH's `StrictHostKeyChecking accept-new` automatically adds the host key to the client's known-hosts file. Then run `ssh -t money-pc herdr` or `ssh -t money-lp3 herdr`. The server-side allowed user keys come from [`ssh-authorized-keys.pub`](./Environment/ENVIRONMENT-MONEY-INSTALL/ssh-authorized-keys.pub); review additions before deploying. To revoke a key, remove it via a reviewed PR and rerun the host setup on **both** hosts; this prevents new logins but does **not guarantee** that already-established sessions end. To rerun only the host setup (on each host, signed in and on the home LAN), use an elevated PowerShell 7 session:
-
-```powershell
-$hostSetup = Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/setup-remote-host.ps1'
-& ([scriptblock]::Create($hostSetup))
-```
-
-If SSH is not listening after a LAN/IP change, rerun the host setup while on the home LAN. If Wi-Fi connected too late after sign-in, rerun host setup or sign out and back in. If the host IP changed, update the client SSH config too. In a non-elevated PowerShell session on the client, run the helper in `Interactive` mode with the new IP (use `-MoneyLp3Ip` instead for LP3); rerunning without a new IP keeps the saved value:
-
-```powershell
-$clientSetup = Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/setup-remote-client.ps1'
-& ([scriptblock]::Create($clientSetup)) -Mode Interactive -MoneyPcIp '192.168.111.42'
-```
-
-Consider a DHCP reservation so each host keeps its LAN IP. The SSH log is at `%LOCALAPPDATA%\CiEnvironment\HerdrSshd\sshd.log` and can grow without automatic rotation. If the VPN PSK was entered incorrectly, repair `MONEY-LAN` in an interactive PowerShell session; if setup also created `MONEY`, repeat with `$name = 'MONEY'` (never change a pre-existing `MONEY` profile):
-
-```powershell
-$name = 'MONEY-LAN'
-$psk = Read-Host 'L2TP PSK' -AsSecureString
-$ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($psk)
-try { Set-VpnConnection -Name $name -L2tpPsk ([Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)) -Force } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr) }
-```
-
-Do not change `MONEY` to split tunnel: it intentionally sends **all** traffic through the on-premises public IP. A laptop away from the home LAN cannot serve herdr.
-
 [Open `03.Setup01.ps1`](./Environment/ENVIRONMENT-MONEY-INSTALL/03.Setup01.ps1)
 
 ```powershell
@@ -171,6 +142,45 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 ```
 
 For the list of extensions to be installed, see [EdgeExtensions.md](./Environment/ENVIRONMENT-MONEY-INSTALL/EdgeExtensions.md)
+
+### Step 6: Remote Access (Optional)
+
+Configure VPN profiles and remote herdr access. Step 3 must be run first so herdr is installed.
+
+When creating `MONEY-LAN`, you can supply its independent endpoint with `-VpnServer 'vpn.example.com'` to the client helper, or press Enter at the server prompt to reuse the existing `MONEY` endpoint. Neither choice changes an existing `MONEY` profile.
+
+On `MONEY-PC` and `MONEY-LP3`, Step 6 sets up a user-owned, key-only SSH server on port 2222, bound **only to a home-LAN IPv4 address**, with one firewall rule limited to the home LAN and VPN address pool on Private/Domain networks. The server and `herdr server` start when that user signs in; SSH requires the user to be signed in and the host to be awake and on the home LAN. Setup must be run on the home LAN with an elevated session belonging to the signed-in user. Other machines get an SSH config entry for each supplied host and a separate `MONEY-LAN` L2TP split-tunnel profile that routes only `192.168.111.0/24`; the existing full-tunnel `MONEY` profile is **never changed**. When running Step 6 separately, client prompts happen at the start of the script, not during unattended setup.
+
+Connect `MONEY-LAN`; on first connection, SSH's `StrictHostKeyChecking accept-new` automatically adds the host key to the client's known-hosts file. Then run `ssh -t money-pc herdr` or `ssh -t money-lp3 herdr`. The server-side allowed user keys come from [`ssh-authorized-keys.pub`](./Environment/ENVIRONMENT-MONEY-INSTALL/ssh-authorized-keys.pub); review additions before deploying. To revoke a key, remove it via a reviewed PR and rerun the host setup on **both** hosts; this prevents new logins but does **not guarantee** that already-established sessions end. To rerun only the host setup (on each host, signed in and on the home LAN), use an elevated PowerShell 7 session:
+
+```powershell
+$hostSetup = Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/setup-remote-host.ps1'
+& ([scriptblock]::Create($hostSetup))
+```
+
+If SSH is not listening after a LAN/IP change, rerun the host setup while on the home LAN. If Wi-Fi connected too late after sign-in, rerun host setup or sign out and back in. If the host IP changed, update the client SSH config too. In a non-elevated PowerShell session on the client, run the helper in `Interactive` mode with the new IP (use `-MoneyLp3Ip` instead for LP3); rerunning without a new IP keeps the saved value:
+
+```powershell
+$clientSetup = Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/setup-remote-client.ps1'
+& ([scriptblock]::Create($clientSetup)) -Mode Interactive -MoneyPcIp '192.168.111.42'
+```
+
+Consider a DHCP reservation so each host keeps its LAN IP. The SSH log is at `%LOCALAPPDATA%\CiEnvironment\HerdrSshd\sshd.log` and can grow without automatic rotation. If the VPN PSK was entered incorrectly, repair `MONEY-LAN` in an interactive PowerShell session; if setup also created `MONEY`, repeat with `$name = 'MONEY'` (never change a pre-existing `MONEY` profile):
+
+```powershell
+$name = 'MONEY-LAN'
+$psk = Read-Host 'L2TP PSK' -AsSecureString
+$ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($psk)
+try { Set-VpnConnection -Name $name -L2tpPsk ([Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)) -Force } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr) }
+```
+
+Do not change `MONEY` to split tunnel: it intentionally sends **all** traffic through the on-premises public IP. A laptop away from the home LAN cannot serve herdr.
+
+[Open `06.REMOTE.ps1`](./Environment/ENVIRONMENT-MONEY-INSTALL/06.REMOTE.ps1)
+
+```powershell
+iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/06.REMOTE.ps1')
+```
 
 ## Windows Sandbox
 

@@ -1,7 +1,7 @@
 # =========================
 # Ci.Environment - One-shot install orchestrator (semi-automatic, reboot-surviving)
 # =========================
-# Runs the whole numbered pipeline (00 -> 05) end to end, automatically resuming across the
+# Runs the whole numbered pipeline (00 -> 06) end to end, automatically resuming across the
 # mid-pipeline reboots. Target machines sign in passwordless (Windows Hello / PIN), so password
 # auto-logon is impossible (Windows disables DefaultPassword auto-logon under "only allow Windows
 # Hello sign-in"). This is therefore SEMI-automatic: after each reboot you unlock with your PIN and
@@ -57,12 +57,12 @@ $TaskName     = 'CiEnvironmentResume'
 $MutexName    = 'Global\CiEnvironmentInstallAll'
 $Pwsh7        = Join-Path $env:ProgramFiles 'PowerShell\7\pwsh.exe'
 $Ps51         = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-$StateVersion = 5
+$StateVersion = 6
 $MaxAttempts  = 2   # per pipeline entry; abort when exceeded (crash-loop guard)
 $MaxReboots   = 3   # re-issue guard when an expected reboot does not happen
 $AdminsSidStr = 'S-1-5-32-544'
 $SystemSidStr = 'S-1-5-18'
-$ResultAwareSteps = @('00.PreConfig.ps1', '02.Driver.ps1', '03.Setup01.ps1', '04.Setup02.ps1', '05.EdgeExtensions.ps1')
+$ResultAwareSteps = @('00.PreConfig.ps1', '02.Driver.ps1', '03.Setup01.ps1', '04.Setup02.ps1', '05.EdgeExtensions.ps1', '06.REMOTE.ps1')
 
 if (-not ('CiEnvironmentNativeDirectory' -as [type])) {
     Add-Type -TypeDefinition @'
@@ -127,14 +127,15 @@ $Pipeline = @(
     @{ Name = '02.Driver.ps1';         RequiresPwsh7 = $true;  ForceReboot = $false },
     @{ Name = '03.Setup01.ps1';        RequiresPwsh7 = $true;  ForceReboot = $true  },
     @{ Name = '04.Setup02.ps1';        RequiresPwsh7 = $true;  ForceReboot = $false },
-    @{ Name = '05.EdgeExtensions.ps1'; RequiresPwsh7 = $true;  ForceReboot = $false }
+    @{ Name = '05.EdgeExtensions.ps1'; RequiresPwsh7 = $true;  ForceReboot = $false },
+    @{ Name = '06.REMOTE.ps1';         RequiresPwsh7 = $true;  ForceReboot = $false }
 )
 
 # Files to snapshot locally (unique names; step scripts + their sibling deps + this orchestrator).
 $SnapshotFiles = @(
     'Install-All.ps1',
     '00.PreConfig.ps1', '01.WinUpdate.ps1', '02.Driver.ps1',
-    '03.Setup01.ps1', '04.Setup02.ps1', '05.EdgeExtensions.ps1',
+    '03.Setup01.ps1', '04.Setup02.ps1', '05.EdgeExtensions.ps1', '06.REMOTE.ps1',
     'install-vsix.ps1', 'EdgeExtensions.md',
     'setup-remote-host.ps1', 'setup-remote-client.ps1', 'ssh-authorized-keys.pub'
 )
@@ -517,7 +518,7 @@ function Invoke-RemoteClientKickoff {
         [string]$ComputerName = $env:COMPUTERNAME,
         [string]$SnapshotPath = $SnapshotDir
     )
-    # Keep this list aligned with $remoteHosts in 03.Setup01.ps1.
+    # Keep this list aligned with $remoteHosts in 06.REMOTE.ps1.
     if ($env:CI_ENV_ORCHESTRATED -eq '1' -or
         @('MONEY-PC', 'MONEY-LP3') -contains $ComputerName) { return }
 
