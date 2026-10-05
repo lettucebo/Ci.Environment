@@ -16,7 +16,7 @@
 #   WITH BOM so Windows PowerShell 5.1 (used by the resume task and by step 00 before pwsh.exe exists)
 #   parses their emoji/Chinese content correctly.
 # - The state directory is ACL-hardened (Administrators + SYSTEM only) because the resume task runs
-#   its content elevated; step scripts are also SHA-256 verified before each launch.
+#   its content elevated.
 # - The orchestrator owns reboots (the per-step shutdown in 00/01/03 is suppressed when
 #   $env:CI_ENV_ORCHESTRATED='1'). After each step it reboots when the step forces it (00 = optional
 #   features/WSL2, 03 = Visual Studio / Hyper-V - both genuinely need it) OR when Test-RebootPending
@@ -63,57 +63,6 @@ $MaxReboots   = 3   # re-issue guard when an expected reboot does not happen
 $AdminsSidStr = 'S-1-5-32-544'
 $SystemSidStr = 'S-1-5-18'
 $ResultAwareSteps = @('00.PreConfig.ps1', '02.Driver.ps1', '03.Setup01.ps1', '04.Setup02.ps1', '05.EdgeExtensions.ps1', '06.REMOTE.ps1')
-
-if (-not ('CiEnvironmentNativeDirectory' -as [type])) {
-    Add-Type -TypeDefinition @'
-using System;
-using System.ComponentModel;
-using System.Runtime.InteropServices;
-
-public static class CiEnvironmentNativeDirectory
-{
-    [StructLayout(LayoutKind.Sequential)]
-    private struct SECURITY_ATTRIBUTES
-    {
-        public int nLength;
-        public IntPtr lpSecurityDescriptor;
-        [MarshalAs(UnmanagedType.Bool)]
-        public bool bInheritHandle;
-    }
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool CreateDirectoryW(
-        string lpPathName,
-        ref SECURITY_ATTRIBUTES lpSecurityAttributes);
-
-    public static void CreateExclusive(string path, byte[] securityDescriptor)
-    {
-        if (securityDescriptor == null || securityDescriptor.Length == 0)
-            throw new ArgumentException("A security descriptor is required.", "securityDescriptor");
-
-        GCHandle pinned = GCHandle.Alloc(securityDescriptor, GCHandleType.Pinned);
-        try
-        {
-            SECURITY_ATTRIBUTES attributes = new SECURITY_ATTRIBUTES();
-            attributes.nLength = Marshal.SizeOf(typeof(SECURITY_ATTRIBUTES));
-            attributes.lpSecurityDescriptor = pinned.AddrOfPinnedObject();
-            attributes.bInheritHandle = false;
-
-            if (!CreateDirectoryW(path, ref attributes))
-            {
-                int error = Marshal.GetLastWin32Error();
-                throw new Win32Exception(error, "Exclusive directory creation failed for '" + path + "'.");
-            }
-        }
-        finally
-        {
-            pinned.Free();
-        }
-    }
-}
-'@
-}
 
 # Ordered pipeline. 01 appears twice (two Windows Update passes). RequiresPwsh7=$false only for the
 # PS7 bootstrap (00). ForceReboot=$true means "always reboot after this step": 00 enables optional
@@ -210,7 +159,6 @@ function Write-OrchLog {
     $line = "{0} [{1}] {2}" -f (Get-Date).ToString('yyyy-MM-dd HH:mm:ss'), $Level, $Message
     try {
         Add-Content -Path $LogPath -Value $line -Encoding UTF8 -ErrorAction SilentlyContinue
-        if ((Test-IsAdmin) -and (Test-Path -LiteralPath $LogPath)) { Set-LockedAcl $LogPath }
     } catch { }
     switch ($Level) {
         'Error'   { Show-Error   -Message $Message }
@@ -253,13 +201,6 @@ function New-LockedSecurityDescriptor {
     return $sec
 }
 
-function Set-HighIntegrity {
-    param([string]$Path, [bool]$Directory)
-    $level = if ($Directory) { '(OI)(CI)H' } else { 'H' }
-    & icacls.exe $Path /setintegritylevel $level /q | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw "icacls could not set High integrity on $Path (exit $LASTEXITCODE)." }
-}
-
 # Apply a protected owner/DACL granting FullControl to Administrators + SYSTEM only, then verify it.
 function Set-LockedAcl {
     param([string]$Path)
@@ -267,7 +208,6 @@ function Set-LockedAcl {
     $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
     $sec = New-LockedSecurityDescriptor -Directory ([bool]$item.PSIsContainer)
     Set-Acl -LiteralPath $Path -AclObject $sec -ErrorAction Stop
-    Set-HighIntegrity -Path $Path -Directory ([bool]$item.PSIsContainer)
 
     # Verify: Administrators owns the path, inheritance is disabled, and no ACE grants another SID.
     $after = Get-Acl -LiteralPath $Path
@@ -316,9 +256,19 @@ function Test-LockedPath {
 
 function New-LockedDirectory {
     param([string]$Path)
+    if (Test-Path -LiteralPath $Path) {
+        throw "Refusing to create a locked directory because the path already exists: $Path"
+    }
+
     $security = New-LockedSecurityDescriptor -Directory $true
-    [CiEnvironmentNativeDirectory]::CreateExclusive($Path, $security.GetSecurityDescriptorBinaryForm())
-    Set-HighIntegrity -Path $Path -Directory $true
+    if ($PSVersionTable.PSEdition -eq 'Core') {
+        [System.IO.FileSystemAclExtensions]::Create((New-Object System.IO.DirectoryInfo($Path)), $security) | Out-Null
+    } else {
+        [System.IO.Directory]::CreateDirectory($Path, $security) | Out-Null
+    }
+    if (-not (Test-LockedPath -Path $Path -ExpectedType Directory)) {
+        throw "New directory '$Path' did not have the expected Administrators/SYSTEM-only owner and DACL."
+    }
     Set-LockedAcl $Path
 }
 
@@ -360,13 +310,12 @@ function Write-LockedFile {
     } finally {
         if ($stream) { $stream.Dispose() }
     }
-    Set-HighIntegrity -Path $Path -Directory $false
     Set-LockedAcl $Path
 }
 
 # Create + harden C:\ProgramData\CiEnvironment (and snapshot/logs). The resume task runs the snapshot
-# elevated, so this ACL is the security boundary (Install-All.ps1 itself runs before it can hash-
-# verify anything). Fail closed on anything suspicious.
+# elevated, so the Administrators/SYSTEM-only ACL is the security boundary. Fail closed on anything
+# suspicious before rewriting ACLs or reading persisted state.
 function Initialize-RootDir {
     Assert-NotReparse $RootDir
     if (Test-Path $RootDir) {
@@ -380,19 +329,11 @@ function Initialize-RootDir {
         $protectedPaths += @($SnapshotFiles | ForEach-Object {
             @{ Path = (Join-Path $SnapshotDir $_); Type = 'File' }
         })
-        $needsLegacyReset = $false
         foreach ($protectedPath in $protectedPaths) {
             if ((Test-Path -LiteralPath $protectedPath.Path) -and
                 -not (Test-LockedPath -Path $protectedPath.Path -ExpectedType $protectedPath.Type)) {
-                $needsLegacyReset = $true
-                break
+                throw "$($protectedPath.Path) has an untrusted owner or DACL; delete '$RootDir' and retry."
             }
-        }
-        if ($needsLegacyReset) {
-            $quarantine = "$RootDir.legacy-$((Get-Date).ToString('yyyyMMddHHmmss'))-$([guid]::NewGuid().ToString('N').Substring(0,8))"
-            Show-Warning -Message "Migrating the pre-v5 user-owned state directory to '$quarantine'; its contents will not be read or executed."
-            Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue
-            Move-Item -LiteralPath $RootDir -Destination $quarantine -ErrorAction Stop
         }
     }
     if (Test-Path $RootDir) {
@@ -492,10 +433,9 @@ function Read-StepResult {
 }
 
 # Download each repo file and store it as UTF-8 WITH BOM (so Windows PowerShell 5.1 parses the
-# emoji/Chinese content correctly). Returns a name -> SHA-256 map.
+# emoji/Chinese content correctly).
 function Invoke-Snapshot {
     Show-Section -Message "Snapshot repo scripts to $SnapshotDir" -Emoji "📥" -Color "Green"
-    $hashes = @{}
     $utf8Bom = New-Object System.Text.UTF8Encoding($true)
     foreach ($name in $SnapshotFiles) {
         $url = "$RepoRawBase/$name"
@@ -503,14 +443,12 @@ function Invoke-Snapshot {
         try {
             $resp = Invoke-WebRequest -Uri $url -UseBasicParsing -ErrorAction Stop
             Write-LockedFile -Path $dst -Content ([string]$resp.Content) -Encoding $utf8Bom
-            $hashes[$name] = (Get-FileHash -Path $dst -Algorithm SHA256).Hash
             Write-OrchLog "Snapshotted $name"
         } catch {
             Write-OrchLog "Failed to download $name from $url : $($_.Exception.Message)" 'Error'
             throw
         }
     }
-    return $hashes
 }
 
 function Invoke-RemoteClientKickoff {
@@ -545,23 +483,15 @@ function Invoke-RemoteClientKickoff {
     }
 }
 
-# Re-download any snapshot file that has gone missing (defensive; refreshes its recorded hash).
+# Verify the snapshot remains complete. Never mix files from a later repository revision into a run.
 function Ensure-Snapshot {
-    param($State)
-    $utf8Bom = New-Object System.Text.UTF8Encoding($true)
     foreach ($name in $SnapshotFiles) {
         $dst = Join-Path $SnapshotDir $name
-        if (Test-Path $dst) {
-            Assert-NotReparse $dst
-            Set-LockedAcl $dst
-            continue
+        if (-not (Test-Path -LiteralPath $dst -PathType Leaf)) {
+            throw "Snapshot file missing: $dst. To restart with a fresh snapshot, delete '$StatePath' and re-run the Install-All kickoff."
         }
-        Write-OrchLog "Snapshot file missing ($name); re-downloading." 'Warning'
-        $resp = Invoke-WebRequest -Uri "$RepoRawBase/$name" -UseBasicParsing -ErrorAction Stop
-        Write-LockedFile -Path $dst -Content ([string]$resp.Content) -Encoding $utf8Bom
-        if ($State -and $State.hashes -and ($State.hashes.PSObject.Properties.Name -contains $name)) {
-            $State.hashes.$name = (Get-FileHash -Path $dst -Algorithm SHA256).Hash
-        }
+        Assert-NotReparse $dst
+        Set-LockedAcl $dst
     }
 }
 
@@ -592,7 +522,7 @@ function Ensure-ResumeTask {
 function Resume-Prep {
     param($State)
     Initialize-RootDir
-    Ensure-Snapshot -State $State
+    Ensure-Snapshot
     Ensure-ResumeTask
 }
 
@@ -613,15 +543,6 @@ function Invoke-Step {
     if (-not (Test-Path $scriptPath)) {
         Write-OrchLog "Snapshot missing: $scriptPath" 'Error'
         return [pscustomobject]@{ ExitCode = 1001; Warnings = @() }
-    }
-
-    # Tamper check: the snapshot is ACL-protected, but verify the recorded hash as defense in depth.
-    if ($State.hashes -and ($State.hashes.PSObject.Properties.Name -contains $Entry.name)) {
-        $current = (Get-FileHash -Path $scriptPath -Algorithm SHA256).Hash
-        if ($current -ne $State.hashes.($Entry.name)) {
-            Write-OrchLog "Snapshot hash mismatch for $($Entry.name); refusing to run." 'Error'
-            return [pscustomobject]@{ ExitCode = 1003; Warnings = @() }
-        }
     }
 
     if ($Entry.requiresPwsh7 -and -not (Test-Path $Pwsh7)) {
@@ -775,7 +696,7 @@ function Invoke-Orchestrator {
             try {
                 Write-OrchLog "Fresh install: hardening state dir, snapshotting scripts, arming the resume task."
                 Initialize-RootDir
-                $hashes = Invoke-Snapshot
+                Invoke-Snapshot
                 Invoke-RemoteClientKickoff
                 $steps = @()
                 foreach ($p in $Pipeline) {
@@ -798,7 +719,6 @@ function Invoke-Orchestrator {
                     rebootPending    = $false
                     rebootBootMarker = $null
                     rebootReissues   = 0
-                    hashes           = $hashes
                     steps            = $steps
                 }
                 Save-OrchState -State $fresh
