@@ -159,7 +159,14 @@ Connect the phone to the Synology OpenVPN profile, then create a Moshi connectio
 
 To revoke the phone key, remove its public-key line via a reviewed PR and rerun host setup on both hosts. Removing a key prevents new logins but does not guarantee already-established sessions end.
 
-Connect `MONEY-LAN`; on first connection, SSH's `StrictHostKeyChecking accept-new` automatically adds the host key to the client's known-hosts file. Then run `ssh -t money-pc herdr` or `ssh -t money-lp3 herdr`. The server-side allowed user keys come from [`ssh-authorized-keys.pub`](./Environment/ENVIRONMENT-MONEY-INSTALL/ssh-authorized-keys.pub); review additions before deploying. To revoke a key, remove it via a reviewed PR and rerun the host setup on **both** hosts; this prevents new logins but does **not guarantee** that already-established sessions end. To rerun only the host setup (on each host, signed in and on the home LAN), use an elevated PowerShell 7 session:
+Connect `MONEY-LAN`; on first connection, SSH's `StrictHostKeyChecking accept-new` automatically adds the host key to the client's known-hosts file. An interactive standalone Step 6 registers reachable SSH-config hosts as saved Herdr machines; run local `herdr` and switch between them in the sidebar. For a direct local-client attach that supports local clipboard image paste, run `herdr --remote money-pc` or `herdr --remote money-lp3`. `ssh -t money-pc herdr` and `ssh -t money-lp3 herdr` remain available for a remote-shell workflow (including phone SSH clients), but Herdr runs on the remote host in this mode and cannot paste images from the local clipboard. Step 6 does not prompt during `Install-All`; in an interactive terminal after connecting `MONEY-LAN`, run the reported command for each configured host that still needs registration:
+
+```powershell
+herdr machine add money-pc --label MONEY-PC --remote-session default
+herdr machine add money-lp3 --label MONEY-LP3 --remote-session default
+```
+
+The server-side allowed user keys come from [`ssh-authorized-keys.pub`](./Environment/ENVIRONMENT-MONEY-INSTALL/ssh-authorized-keys.pub); review additions before deploying. To revoke a key, remove it via a reviewed PR and rerun the host setup on **both** hosts; this prevents new logins but does **not guarantee** that already-established sessions end. To rerun only the host setup (on each host, signed in and on the home LAN), use an elevated PowerShell 7 session:
 
 ```powershell
 $hostSetup = Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/setup-remote-host.ps1'

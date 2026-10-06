@@ -159,7 +159,14 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 
 若要撤銷手機金鑰，透過經審查的 PR 移除該公鑰，再於兩台 host 重跑 host setup。移除金鑰可阻止新連線，但不保證已建立的連線會中斷。
 
-連上 `MONEY-LAN` 後，SSH 的 `StrictHostKeyChecking accept-new` 會在第一次連線時自動將 host key 加入 client 的 known-hosts 檔案；接著執行 `ssh -t money-pc herdr` 或 `ssh -t money-lp3 herdr`。server 端允許的使用者金鑰由 [`ssh-authorized-keys.pub`](./Environment/ENVIRONMENT-MONEY-INSTALL/ssh-authorized-keys.pub) 管理，部署前請審查新增金鑰。撤銷時透過經審查的 PR 移除金鑰，並在**兩台** host 重跑設定；此後無法以該金鑰建立新連線，但**不保證**已建立的連線會中斷。若只需重跑 host 設定（在各 host 登入並連上家中 LAN），請使用提權的 PowerShell 7：
+連上 `MONEY-LAN` 後，SSH 的 `StrictHostKeyChecking accept-new` 會在第一次連線時自動將 host key 加入 client 的 known-hosts 檔案。單獨互動執行步驟 6 時，腳本會將 SSH config 中可連線的主機註冊為 Herdr saved machine；執行本機 `herdr`，即可在側邊欄切換主機。若要直接由本機 client 連線並使用本機剪貼簿貼上圖片，請執行 `herdr --remote money-pc` 或 `herdr --remote money-lp3`。`ssh -t money-pc herdr` 與 `ssh -t money-lp3 herdr` 仍可用於遠端 shell 工作流程（包括手機 SSH client），但此模式下 Herdr 在遠端主機執行，無法貼上本機剪貼簿的圖片。`Install-All` 執行步驟 6 時不會提示；連上 `MONEY-LAN` 後，請在互動式終端機手動執行輸出中提示、且尚未註冊的主機命令：
+
+```powershell
+herdr machine add money-pc --label MONEY-PC --remote-session default
+herdr machine add money-lp3 --label MONEY-LP3 --remote-session default
+```
+
+server 端允許的使用者金鑰由 [`ssh-authorized-keys.pub`](./Environment/ENVIRONMENT-MONEY-INSTALL/ssh-authorized-keys.pub) 管理，部署前請審查新增金鑰。撤銷時透過經審查的 PR 移除金鑰，並在**兩台** host 重跑設定；此後無法以該金鑰建立新連線，但**不保證**已建立的連線會中斷。若只需重跑 host 設定（在各 host 登入並連上家中 LAN），請使用提權的 PowerShell 7：
 
 ```powershell
 $hostSetup = Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/setup-remote-host.ps1'

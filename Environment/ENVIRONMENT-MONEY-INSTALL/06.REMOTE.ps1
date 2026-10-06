@@ -230,6 +230,264 @@ function Invoke-RemoteSetupHelper {
         Add-StepWarning -Item $issue.Item -Status $issue.Status -Message $issue.Message
     }
 }
+function Get-HerdrManagedSshHosts {
+    param([string]$ConfigPath = (Join-Path $env:USERPROFILE '.ssh\config'))
+    $opening = '# >>> Ci.Environment herdr-remote >>>'
+    $closing = '# <<< Ci.Environment herdr-remote <<<'
+    if (-not (Test-Path -LiteralPath $ConfigPath -PathType Leaf)) { return @() }
+    $config = [IO.File]::ReadAllText($ConfigPath)
+    $start = $config.IndexOf($opening, [StringComparison]::Ordinal)
+    $end = if ($start -ge 0) { $config.IndexOf($closing, $start, [StringComparison]::Ordinal) } else { -1 }
+    if ($start -lt 0 -or $end -lt $start) { return @() }
+    $managed = $config.Substring($start + $opening.Length, $end - $start - $opening.Length)
+    $entries = [ordered]@{}
+    $currentAlias = $null
+    foreach ($line in ($managed -split '\r?\n')) {
+        if ($line -match '^\s*Host\s+(\S+)\s*(?:#.*)?$') {
+            $currentAlias = $null
+            foreach ($alias in @('money-pc', 'money-lp3')) {
+                if ($Matches[1] -ieq $alias) {
+                    $currentAlias = $alias
+                    if (-not $entries.Contains($alias)) {
+                        $entries[$alias] = [ordered]@{ HostName = $null; Port = 0 }
+                    }
+                    break
+                }
+            }
+            continue
+        }
+        if (-not $currentAlias) { continue }
+        if ($line -match '^\s*HostName\s+(\S+)\s*(?:#.*)?$') {
+            $entries[$currentAlias].HostName = $Matches[1]
+        } elseif ($line -match '^\s*Port\s+(\S+)\s*(?:#.*)?$') {
+            $port = 0
+            if ([int]::TryParse($Matches[1], [ref]$port) -and $port -ge 1 -and $port -le 65535) {
+                $entries[$currentAlias].Port = $port
+            }
+        }
+    }
+    foreach ($alias in @('money-pc', 'money-lp3')) {
+        if (-not $entries.Contains($alias)) { continue }
+        [pscustomobject]@{
+            Alias    = $alias
+            HostName = $entries[$alias].HostName
+            Port     = $entries[$alias].Port
+            Label    = $alias.ToUpperInvariant()
+        }
+    }
+}
+function Get-HerdrExecutable {
+    $command = Get-Command herdr -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($command -and (Test-Path -LiteralPath $command.Source -PathType Leaf)) { return $command.Source }
+    $managedPath = Join-Path $env:LOCALAPPDATA 'Programs\Herdr\bin\herdr.exe'
+    if (Test-Path -LiteralPath $managedPath -PathType Leaf) { return $managedPath }
+    return $null
+}
+function Test-HerdrSshEndpoint {
+    param([Parameter(Mandatory)]$Machine, [int]$TimeoutMilliseconds = 3000)
+    $client = [Net.Sockets.TcpClient]::new()
+    try {
+        $connect = $client.ConnectAsync([string]$Machine.HostName, [int]$Machine.Port)
+        if (-not $connect.Wait($TimeoutMilliseconds)) {
+            return [pscustomobject]@{ Reachable = $false; Error = "Connection timed out after $TimeoutMilliseconds ms." }
+        }
+        $connect.GetAwaiter().GetResult()
+        return [pscustomobject]@{ Reachable = $true; Error = $null }
+    } catch {
+        return [pscustomobject]@{ Reachable = $false; Error = $_.Exception.Message }
+    } finally {
+        $client.Dispose()
+    }
+}
+function Get-HerdrMachineAddArguments {
+    param([Parameter(Mandatory)]$Machine)
+    return @('machine', 'add', [string]$Machine.Alias, '--label', [string]$Machine.Label, '--remote-session', 'default')
+}
+function ConvertFrom-HerdrMachineList {
+    param(
+        [AllowEmptyString()][string]$Json,
+        [Parameter(Mandatory)][int]$ExitCode
+    )
+    if ($ExitCode -ne 0) {
+        return [pscustomobject]@{
+            Available = $false
+            Machines  = @()
+            Error     = "herdr machine list --json exited with code $ExitCode."
+        }
+    }
+    try {
+        $machines = ConvertFrom-Json -InputObject $Json -NoEnumerate -ErrorAction Stop
+        if ($machines -isnot [array]) { throw 'Expected a JSON array of saved machines.' }
+        foreach ($machine in $machines) {
+            foreach ($property in @('id', 'label', 'target', 'session', 'enabled')) {
+                if ($null -eq $machine.PSObject.Properties[$property]) {
+                    throw "Saved machine is missing the '$property' field."
+                }
+            }
+            foreach ($property in @('id', 'label', 'target', 'session')) {
+                if ($machine.$property -isnot [string] -or [string]::IsNullOrWhiteSpace($machine.$property)) {
+                    throw "Saved machine '$($machine.id)' has an invalid '$property' field."
+                }
+            }
+            if ($machine.enabled -isnot [bool]) { throw "Saved machine '$($machine.id)' has a non-boolean enabled field." }
+        }
+        return [pscustomobject]@{
+            Available = $true
+            Machines  = @($machines)
+            Error     = $null
+        }
+    } catch {
+        return [pscustomobject]@{
+            Available = $false
+            Machines  = @()
+            Error     = "Could not read Herdr machine list: $($_.Exception.Message)"
+        }
+    }
+}
+function Register-HerdrMachines {
+    param(
+        [bool]$CanPrompt,
+        [string]$HerdrPath,
+        [string]$ConfigPath = (Join-Path $env:USERPROFILE '.ssh\config'),
+        [object[]]$Hosts,
+        [scriptblock]$EndpointTest
+    )
+    if ($env:CI_ENV_ORCHESTRATED -eq '1') { $CanPrompt = $false }
+    if ($null -eq $Hosts) {
+        try {
+            $Hosts = @(Get-HerdrManagedSshHosts -ConfigPath $ConfigPath)
+        } catch {
+            Add-StepWarning -Item 'herdr.machine' -Status 'manual_action_required' `
+                -Message "Could not read the managed SSH hosts: $($_.Exception.Message)"
+            return
+        }
+    }
+    if ($Hosts.Count -eq 0) { return }
+    if ([string]::IsNullOrWhiteSpace($HerdrPath)) { $HerdrPath = Get-HerdrExecutable }
+    if ([string]::IsNullOrWhiteSpace($HerdrPath)) {
+        foreach ($machine in $Hosts) {
+            $command = "herdr machine add $($machine.Alias) --label $($machine.Label) --remote-session default"
+            Add-StepWarning -Item "herdr.machine.$($machine.Alias)" -Status 'manual_action_required' `
+                -Message "Herdr CLI was not found. Install Herdr, then run '$command'."
+        }
+        return
+    }
+    try {
+        $machineListOutput = @(& $HerdrPath machine list --json 2>&1 | ForEach-Object { [string]$_ })
+        $machineListExitCode = $LASTEXITCODE
+        $machineListJson = $machineListOutput -join [Environment]::NewLine
+        $machineList = ConvertFrom-HerdrMachineList -Json $machineListJson -ExitCode $machineListExitCode
+    } catch {
+        $machineList = [pscustomobject]@{
+            Available = $false
+            Machines  = @()
+            Error     = "Could not run 'herdr machine list --json': $($_.Exception.Message)"
+        }
+    }
+    foreach ($machine in $Hosts) {
+        $command = "herdr machine add $($machine.Alias) --label $($machine.Label) --remote-session default"
+        if ([string]::IsNullOrWhiteSpace([string]$machine.HostName) -or
+            [int]$machine.Port -lt 1 -or [int]$machine.Port -gt 65535) {
+            Add-StepWarning -Item "herdr.machine.$($machine.Alias)" -Status 'manual_action_required' `
+                -Message "The managed SSH config for '$($machine.Alias)' is incomplete. Rerun interactive Step 6 to repair it."
+            continue
+        }
+        if (-not $machineList.Available) {
+            Add-StepWarning -Item "herdr.machine.$($machine.Alias)" -Status 'manual_action_required' `
+                -Message "$($machineList.Error) Automatic registration was skipped to avoid creating a duplicate profile. Inspect 'herdr machine list --json', resolve any existing profile, then run '$command' in an interactive terminal."
+            continue
+        }
+        if (-not $CanPrompt) {
+            $decision = Get-HerdrMachineRegistrationDecision -MachineListResult $machineList `
+                -Target $machine.Alias -Label $machine.Label -Session 'default'
+            if ($decision.Action -eq 'add') {
+                Add-StepWarning -Item "herdr.machine.$($machine.Alias)" -Status 'manual_action_required' `
+                    -Message "The saved Herdr machine is missing. Run '$command' in an interactive terminal after connecting MONEY-LAN."
+            } elseif ($decision.Action -eq 'conflict') {
+                Add-StepWarning -Item "herdr.machine.$($machine.Alias)" -Status 'manual_action_required' -Message $decision.Message
+            }
+            continue
+        }
+        $decision = Get-HerdrMachineRegistrationDecision -MachineListResult $machineList `
+            -Target $machine.Alias -Label $machine.Label -Session 'default'
+        if ($decision.Action -eq 'skip') { continue }
+        if ($decision.Action -eq 'conflict') {
+            Add-StepWarning -Item "herdr.machine.$($machine.Alias)" -Status 'manual_action_required' -Message $decision.Message
+            continue
+        }
+        $reachability = if ($EndpointTest) {
+            & $EndpointTest $machine
+        } else {
+            Test-HerdrSshEndpoint -Machine $machine
+        }
+        if (-not $reachability.Reachable) {
+            Add-StepWarning -Item "herdr.machine.$($machine.Alias)" -Status 'manual_action_required' `
+                -Message "SSH endpoint $($machine.HostName):$($machine.Port) is not reachable ($($reachability.Error)). Connect MONEY-LAN, then run '$command' manually."
+            continue
+        }
+        try {
+            $addArguments = Get-HerdrMachineAddArguments -Machine $machine
+            & $HerdrPath @addArguments
+            if ($LASTEXITCODE -ne 0) {
+                Add-StepWarning -Item "herdr.machine.$($machine.Alias)" -Status 'manual_action_required' `
+                    -Message "Herdr could not save this machine (exit code $LASTEXITCODE). Run '$command' in an interactive terminal and follow any approval prompts."
+            }
+        } catch {
+            Add-StepWarning -Item "herdr.machine.$($machine.Alias)" -Status 'manual_action_required' `
+                -Message "Herdr machine registration failed: $($_.Exception.Message). Run '$command' in an interactive terminal."
+        }
+    }
+}
+function Get-HerdrMachineRegistrationDecision {
+    param(
+        [Parameter(Mandatory)]$MachineListResult,
+        [Parameter(Mandatory)][string]$Target,
+        [Parameter(Mandatory)][string]$Label,
+        [Parameter(Mandatory)][string]$Session
+    )
+    if (-not $MachineListResult.Available) {
+        return [pscustomobject]@{
+            Action  = 'unavailable'
+            Message = [string]$MachineListResult.Error
+        }
+    }
+    $machines = @($MachineListResult.Machines)
+    $targetProfiles = @($machines | Where-Object { $_.target -ieq $Target })
+    $matchingSession = @($targetProfiles | Where-Object { $_.session -ceq $Session })
+    $enabledMatch = @($matchingSession | Where-Object { $_.enabled })
+    if ($enabledMatch.Count -gt 0) {
+        return [pscustomobject]@{
+            Action  = 'skip'
+            Message = "Herdr machine '$Target' is already enabled for session '$Session'."
+        }
+    }
+    if ($matchingSession.Count -gt 0) {
+        $machine = $matchingSession[0]
+        return [pscustomobject]@{
+            Action  = 'conflict'
+            Message = "Herdr machine '$($machine.label)' for '$Target' is disabled; enable it with 'herdr machine enable $($machine.id)' or resolve it manually."
+        }
+    }
+    if ($targetProfiles.Count -gt 0) {
+        $machine = $targetProfiles[0]
+        return [pscustomobject]@{
+            Action  = 'conflict'
+            Message = "Herdr machine '$($machine.label)' already targets '$Target' with session '$($machine.session)'; resolve the existing profile manually."
+        }
+    }
+    $labelProfile = @($machines | Where-Object { $_.label -ceq $Label })
+    if ($labelProfile.Count -gt 0) {
+        $machine = $labelProfile[0]
+        return [pscustomobject]@{
+            Action  = 'conflict'
+            Message = "Herdr label '$Label' is already used by target '$($machine.target)'; rename or remove that profile before adding '$Target'."
+        }
+    }
+    return [pscustomobject]@{
+        Action  = 'add'
+        Message = $null
+    }
+}
 
 
 Show-Section -NoNumber -Message "Step 6: Remote Access (VPN + herdr)" -Emoji "🔐" -Color "Magenta"
@@ -265,12 +523,15 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
 # Keep this list aligned with Invoke-RemoteClientKickoff in Install-All.ps1.
 $remoteHosts = @('MONEY-PC', 'MONEY-LP3')
 $script:RemoteClientPaths = $null
+$script:HerdrMachineRegistrationAttempted = $false
 $clientCanPrompt = [Environment]::UserInteractive -and -not [Console]::IsInputRedirected
 if ($env:COMPUTERNAME -notin $remoteHosts -and
     $env:CI_ENV_ORCHESTRATED -ne '1' -and $clientCanPrompt) {
     try {
         $script:RemoteClientPaths = Get-RemoteSetupPaths -Kind client
         Invoke-RemoteSetupHelper -Paths $script:RemoteClientPaths -Mode Interactive
+        Register-HerdrMachines -CanPrompt $true
+        $script:HerdrMachineRegistrationAttempted = $true
     } catch {
         Add-StepWarning -Item 'herdr.remote-client' -Message "Could not prepare remote client access: $($_.Exception.Message)"
     }
@@ -287,6 +548,9 @@ try {
             $script:RemoteClientPaths = Get-RemoteSetupPaths -Kind client
         }
         Invoke-RemoteSetupHelper -Paths $script:RemoteClientPaths -Mode Verify
+        if (-not $script:HerdrMachineRegistrationAttempted) {
+            Register-HerdrMachines -CanPrompt $false
+        }
     }
 } catch {
     Add-StepWarning -Item 'herdr.remote' -Message "Remote herdr setup did not complete: $($_.Exception.Message)"
