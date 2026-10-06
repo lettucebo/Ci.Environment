@@ -151,7 +151,14 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 
 在 `MONEY-PC`、`MONEY-LP3` 上，步驟 6 會設定由使用者執行、只接受金鑰的 SSH server，使用 port 2222，**只綁家中 LAN 的 IPv4**；單一防火牆規則只在 Private/Domain 網路放行家中 LAN 與 VPN pool。server 與 `herdr server` 在使用者登入時啟動；使用 SSH 前，使用者必須已登入，主機要保持喚醒並位於家中 LAN。設定時需在家中 LAN，以目前登入者本人的提權工作階段執行。其他電腦會取得各 host 的 SSH config 與獨立的 `MONEY-LAN` L2TP split-tunnel profile，只路由 `192.168.111.0/24`；既有 full-tunnel `MONEY` profile **完全不修改**。單獨執行步驟 6 時，用戶端提問會在腳本開頭進行，不會在無人值守的設定過程中詢問。
 
-連上 `MONEY-LAN` 後，SSH 的 `StrictHostKeyChecking accept-new` 會在第一次連線時自動將 host key 加入 client 的 known-hosts 檔案；接著執行 `ssh -t money-pc herdr` 或 `ssh -t money-lp3 herdr`。server 端允許的使用者金鑰由 [`ssh-authorized-keys.pub`](./Environment/ENVIRONMENT-MONEY-INSTALL/ssh-authorized-keys.pub) 管理，部署前請審查新增金鑰。撤銷時透過經審查的 PR 移除金鑰，並在**兩台** host 重跑設定；此後無法以該金鑰建立新連線，但**不保證**已建立的連線會中斷。若只需重跑 host 設定（在各 host 登入並連上家中 LAN），請使用提權的 PowerShell 7：
+連上 `MONEY-LAN` 後，SSH 的 `StrictHostKeyChecking accept-new` 會在第一次連線時自動將 host key 加入 client 的 known-hosts 檔案。單獨互動執行步驟 6 時，腳本會將 SSH config 中可連線的主機註冊為 Herdr saved machine；執行本機 `herdr`，即可在側邊欄切換主機。若要直接由本機 client 連線並使用本機剪貼簿貼上圖片，請執行 `herdr --remote money-pc` 或 `herdr --remote money-lp3`。`ssh -t money-pc herdr` 與 `ssh -t money-lp3 herdr` 仍可用於遠端 shell 工作流程（包括手機 SSH client），但此模式下 Herdr 在遠端主機執行，無法貼上本機剪貼簿的圖片。`Install-All` 執行步驟 6 時不會提示；連上 `MONEY-LAN` 後，請在互動式終端機手動執行輸出中提示、且尚未註冊的主機命令：
+
+```powershell
+herdr machine add money-pc --label MONEY-PC --remote-session default
+herdr machine add money-lp3 --label MONEY-LP3 --remote-session default
+```
+
+server 端允許的使用者金鑰由 [`ssh-authorized-keys.pub`](./Environment/ENVIRONMENT-MONEY-INSTALL/ssh-authorized-keys.pub) 管理，部署前請審查新增金鑰。撤銷時透過經審查的 PR 移除金鑰，並在**兩台** host 重跑設定；此後無法以該金鑰建立新連線，但**不保證**已建立的連線會中斷。若只需重跑 host 設定（在各 host 登入並連上家中 LAN），請使用提權的 PowerShell 7：
 
 ```powershell
 $hostSetup = Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environment/master/Environment/ENVIRONMENT-MONEY-INSTALL/setup-remote-host.ps1'
