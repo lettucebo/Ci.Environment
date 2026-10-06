@@ -3,7 +3,7 @@ param(
     [string]$AuthorizedKeysPath,
     [string]$SshdPath,
     [string]$LanPrefix = '192.168.111.0/24',
-    [string]$VpnPrefix = '10.2.0.0/24'
+    [string[]]$VpnPrefix = @('10.2.0.0/24', '10.8.0.0/24')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -173,18 +173,57 @@ function Stop-HerdrOwnedSshd {
 }
 
 function Set-HerdrFirewallRule {
-    param([string]$SshdPath, [string]$LanPrefix, [string]$VpnPrefix)
+    param([string]$SshdPath, [string]$LanPrefix, [string[]]$VpnPrefix)
     $name = 'CiEnvironment-HerdrSshd-In-TCP'
     $rule = @(Get-NetFirewallRule -Name $name -ErrorAction SilentlyContinue)
     if ($rule.Count -gt 1) { throw "More than one local firewall rule named $name." }
     $spec = @{
         Direction = 'Inbound'; Action = 'Allow'; Enabled = 'True'; Protocol = 'TCP'; LocalPort = 2222
-        Program = $SshdPath; RemoteAddress = @($LanPrefix, $VpnPrefix); Profile = @('Domain', 'Private')
+        Program = $SshdPath; RemoteAddress = @($LanPrefix) + $VpnPrefix; Profile = @('Domain', 'Private')
     }
     if ($rule.Count -eq 0) {
         New-NetFirewallRule -Name $name -DisplayName 'CiEnvironment herdr SSH (LAN and VPN)' @spec -ErrorAction Stop | Out-Null
     } else {
         Set-NetFirewallRule -Name $name @spec -ErrorAction Stop | Out-Null
+    }
+}
+
+function Set-HerdrDefaultShell {
+    param(
+        [string]$RegistryPath = 'HKLM:\SOFTWARE\OpenSSH',
+        [string]$ShellPath = (Join-Path $env:ProgramFiles 'PowerShell\7\pwsh.exe')
+    )
+    if (-not (Test-Path -LiteralPath $ShellPath -PathType Leaf)) {
+        return New-HerdrHostIssue -Status 'manual_action_required' `
+            -Message "PowerShell 7 was not found at '$ShellPath'; Moshi may not detect herdr on this Windows host."
+    }
+
+    $target = [IO.Path]::GetFullPath($ShellPath)
+    $key = Get-Item -LiteralPath $RegistryPath -ErrorAction SilentlyContinue
+    if ($key) {
+        $option = [string]$key.GetValue('DefaultShellCommandOption', '')
+        if ($option -and $option -notin @('-c', '/c', '-Command')) {
+            return New-HerdrHostIssue -Status 'manual_action_required' `
+                -Message "OpenSSH DefaultShellCommandOption '$option' is not compatible with the managed PowerShell 7 shell; no registry values were changed."
+        }
+
+        if ($key.GetValueNames() -contains 'DefaultShell') {
+            $existing = ([string]$key.GetValue('DefaultShell')).Trim('"')
+            if (-not [string]::Equals($existing, $target, [StringComparison]::OrdinalIgnoreCase)) {
+                return New-HerdrHostIssue -Status 'manual_action_required' `
+                    -Message "OpenSSH DefaultShell is already set to '$existing'; it was not changed. Moshi may not detect herdr."
+            }
+            return
+        }
+    } else {
+        New-Item -Path $RegistryPath -Force -ErrorAction Stop | Out-Null
+    }
+
+    New-ItemProperty -LiteralPath $RegistryPath -Name 'DefaultShell' -Value $target `
+        -PropertyType String -Force -ErrorAction Stop | Out-Null
+    $verified = [string](Get-Item -LiteralPath $RegistryPath -ErrorAction Stop).GetValue('DefaultShell')
+    if (-not [string]::Equals($verified, $target, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "OpenSSH DefaultShell verification failed: expected '$target', got '$verified'."
     }
 }
 
@@ -387,7 +426,8 @@ function Disable-HerdrSshdOnFailure {
 
 function Invoke-HerdrHostSetup {
             param([string]$AuthorizedKeysPath, [string]$SshdPath,
-                [string]$LanPrefix = '192.168.111.0/24', [string]$VpnPrefix = '10.2.0.0/24')
+                [string]$LanPrefix = '192.168.111.0/24',
+                [string[]]$VpnPrefix = @('10.2.0.0/24', '10.8.0.0/24'))
             $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
             $sid = $identity.User.Value
             $herdr = Join-Path $env:LOCALAPPDATA 'Programs\Herdr\bin\herdr.exe'
@@ -397,7 +437,7 @@ function Invoke-HerdrHostSetup {
                     -Architecture ([string][Runtime.InteropServices.RuntimeInformation]::OSArchitecture) `
                     -CurrentSid $sid -ConsoleSid (Get-HerdrConsoleUserSid) `
                     -HerdrPresent (Test-Path -LiteralPath $herdr -PathType Leaf) -SshConnection $env:SSH_CONNECTION
-                foreach ($prefix in @($LanPrefix, $VpnPrefix)) {
+                foreach ($prefix in (@($LanPrefix) + $VpnPrefix)) {
                     [void](Test-HerdrIpInPrefix -Address '127.0.0.1' -Prefix $prefix)
                 }
             } catch {
@@ -444,6 +484,12 @@ function Invoke-HerdrHostSetup {
                 Set-HerdrLogonTask -Name HerdrSshd -Sid $sid -Conhost $conhost -Arguments $sshArgs -Delay 'PT30S'
                 Set-HerdrLogonTask -Name StartHerdrServerAtLogon -Sid $sid -Conhost $conhost `
                     -Arguments "--headless `"$herdr`" server" -WorkingDirectory $env:USERPROFILE
+                try {
+                    Set-HerdrDefaultShell
+                } catch {
+                    New-HerdrHostIssue -Status 'manual_action_required' `
+                        -Message "Could not configure Moshi's Windows OpenSSH shell detection: $($_.Exception.Message)"
+                }
                 Stop-HerdrOwnedSshd -Exe $sshd -Sid $sid -Config $config
                 Start-ScheduledTask -TaskName HerdrSshd -ErrorAction Stop
                 $deadline = (Get-Date).AddSeconds(30)

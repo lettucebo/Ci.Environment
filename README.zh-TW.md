@@ -24,7 +24,7 @@
 - Git 與 TortoiseGit
 - GitHub CLI（`gh`）與獨立的 GitHub Copilot CLI
 - herdr（coding agent 的終端工作區）與 [`kryptamine/herdr-auto-title`](https://github.com/kryptamine/herdr-auto-title) plugin
-- `MONEY-PC` 與 `MONEY-LP3` 透過 SSH 及選用的 split-tunnel VPN profile 遠端使用 herdr
+- `MONEY-PC` 與 `MONEY-LP3` 透過 SSH 遠端使用 herdr，也支援手機 Moshi 經 OpenVPN 連線
 
 ### SDK 與執行環境
 - .NET Framework 4.8
@@ -149,7 +149,15 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 
 建立 `MONEY-LAN` 時，可對用戶端 helper 傳入 `-VpnServer 'vpn.example.com'` 指定獨立的連線端點，或在 server 提示直接按 Enter 沿用既有 `MONEY` 的端點；兩種選擇都不會修改既有 `MONEY` profile。
 
-在 `MONEY-PC`、`MONEY-LP3` 上，步驟 6 會設定由使用者執行、只接受金鑰的 SSH server，使用 port 2222，**只綁家中 LAN 的 IPv4**；單一防火牆規則只在 Private/Domain 網路放行家中 LAN 與 VPN pool。server 與 `herdr server` 在使用者登入時啟動；使用 SSH 前，使用者必須已登入，主機要保持喚醒並位於家中 LAN。設定時需在家中 LAN，以目前登入者本人的提權工作階段執行。其他電腦會取得各 host 的 SSH config 與獨立的 `MONEY-LAN` L2TP split-tunnel profile，只路由 `192.168.111.0/24`；既有 full-tunnel `MONEY` profile **完全不修改**。單獨執行步驟 6 時，用戶端提問會在腳本開頭進行，不會在無人值守的設定過程中詢問。
+在 `MONEY-PC`、`MONEY-LP3` 上，步驟 6 會設定由使用者執行、只接受金鑰的 SSH server，使用 port 2222，**只綁家中 LAN 的 IPv4**；單一防火牆規則只在 Private/Domain 網路放行家中 LAN 與 VPN pool（L2TP 為 `10.2.0.0/24`，Synology OpenVPN 預設為 `10.8.0.0/24`）。若 VPN 使用不同網段，重跑 host setup 時用 `-VpnPrefix` 傳入該 CIDR。設定也會將全機 OpenSSH `DefaultShell` 設為 PowerShell 7，讓 Moshi 能在原生 Windows 偵測 herdr；這也會影響同一台機器上的其他 Windows OpenSSH server。若已有其他 `DefaultShell` 值，腳本不會覆寫，需人工檢查。若此設定新增了該值且需要還原（僅限原先沒有此值的情況），執行 `Remove-ItemProperty HKLM:\SOFTWARE\OpenSSH -Name DefaultShell`。server 與 `herdr server` 在使用者登入時啟動；使用 SSH 前，使用者必須已登入，主機要保持喚醒並位於家中 LAN。設定時需在家中 LAN，以目前登入者本人的提權工作階段執行。其他電腦會取得各 host 的 SSH config 與獨立的 `MONEY-LAN` L2TP split-tunnel profile，只路由 `192.168.111.0/24`；既有 full-tunnel `MONEY` profile **完全不修改**。單獨執行步驟 6 時，用戶端提問會在腳本開頭進行，不會在無人值守的設定過程中詢問。
+
+#### 使用手機 Moshi 搭配 OpenVPN 連線
+
+在 Moshi 新增連線並產生 SSH 金鑰（Ed25519）；私鑰留在 Moshi 的安全儲存空間。從金鑰項目複製**公鑰**，透過經審查的 PR 加入 [`ssh-authorized-keys.pub`](./Environment/ENVIRONMENT-MONEY-INSTALL/ssh-authorized-keys.pub)，並在註解標示手機（例如 `moshi-iphone`）。變更合併後，在 `MONEY-PC` 與 `MONEY-LP3` 兩台 host 都重跑 host setup，更新各自允許的公鑰。
+
+手機連上 Synology OpenVPN profile 後，在 Moshi 新增連線：**Connection type 選 SSH**、**Host** 填 host setup 輸出的 host LAN IP（例如 `192.168.111.28`）、**Port 填 2222**、**Username** 填 host setup 顯示的 `SSH user`，**Authentication 選 Key** 並選剛產生的手機金鑰。OpenVPN profile 必須將家中 LAN（`192.168.111.0/24`）路由至 VPN。首次連線時，先將 SSH host fingerprint 與 host setup 輸出的 `Host fingerprint` 比對再接受。之後 Moshi 應能偵測 Herdr 並顯示 workspace picker；若只進入一般 shell，請確認 `DefaultShell` 是 PowerShell 7，且 SSH 連線可執行 `herdr session list --json`。此 Windows host 提供 SSH，不是 Mosh 或 Eternal Terminal server。
+
+若要撤銷手機金鑰，透過經審查的 PR 移除該公鑰，再於兩台 host 重跑 host setup。移除金鑰可阻止新連線，但不保證已建立的連線會中斷。
 
 連上 `MONEY-LAN` 後，SSH 的 `StrictHostKeyChecking accept-new` 會在第一次連線時自動將 host key 加入 client 的 known-hosts 檔案；接著執行 `ssh -t money-pc herdr` 或 `ssh -t money-lp3 herdr`。server 端允許的使用者金鑰由 [`ssh-authorized-keys.pub`](./Environment/ENVIRONMENT-MONEY-INSTALL/ssh-authorized-keys.pub) 管理，部署前請審查新增金鑰。撤銷時透過經審查的 PR 移除金鑰，並在**兩台** host 重跑設定；此後無法以該金鑰建立新連線，但**不保證**已建立的連線會中斷。若只需重跑 host 設定（在各 host 登入並連上家中 LAN），請使用提權的 PowerShell 7：
 
