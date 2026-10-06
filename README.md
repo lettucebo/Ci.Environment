@@ -65,7 +65,7 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 
 The orchestrator snapshots the scripts to `C:\ProgramData\CiEnvironment`, then runs Steps 0 → 6 in order. Windows Update runs **twice** to catch updates that only appear after the first reboot. The machine reboots **only when Windows reports a pending reboot** (so a second update pass that finds nothing simply continues) — typically two to four times — resuming automatically after each reboot via a per-user logon Scheduled Task (`CiEnvironmentResume`).
 
-On a **client** machine, the kickoff collects inputs before running any steps. If either VPN profile is missing, it asks for the VPN server FQDN/IP and L2TP/IPsec PSK; press Enter at the server prompt to reuse an existing `MONEY` server. `MONEY-LAN` may use a different server name without changing `MONEY`. It also asks for missing LAN IPs of `MONEY-PC` and `MONEY-LP3`, and the SSH user if a host IP is supplied. Leave an optional host IP blank to skip it. There is no prompt timeout. Windows asks for the VPN account credentials when you first connect; setup does not handle or log them. The remaining steps run unattended. On either host, kickoff skips client prompts; Step 6 configures remote access after Step 3 installs herdr.
+On a **client** machine, the kickoff collects inputs before running any steps. If either VPN profile is missing, it asks for the VPN server FQDN/IP and L2TP/IPsec PSK; press Enter at the server prompt to reuse an existing `MONEY` server. `MONEY-LAN` may use a different server name without changing `MONEY`. It also asks for missing LAN IPs of `MONEY-PC` and `MONEY-LP3`, and the SSH user if a host IP is supplied. Leave an optional host IP blank to skip it. There is no prompt timeout. Windows asks for the VPN account credentials when you first connect; setup does not handle or log them. The remaining steps run unattended. On either host, kickoff skips client prompts; if Moshi is not paired, it asks once for a pairing token (press Enter to pair manually later). Step 6 configures remote access after Step 3 installs herdr.
 
 > **Semi-automatic on passwordless / Windows Hello (PIN) accounts.** Windows disables password-based auto-logon when the account is passwordless/Hello-only, so after each reboot you must **unlock with your PIN**; the install then continues on its own. No password is ever stored. (On a local/AD account with a password, sign-in still just happens normally.)
 
@@ -151,6 +151,17 @@ When creating `MONEY-LAN`, you can supply its independent endpoint with `-VpnSer
 
 On `MONEY-PC` and `MONEY-LP3`, Step 6 sets up a user-owned, key-only SSH server on port 2222, bound **only to a home-LAN IPv4 address**, with one firewall rule limited to the home LAN and VPN address pools (`10.2.0.0/24` for L2TP and Synology OpenVPN's default `10.8.0.0/24`) on Private/Domain networks. For a different VPN pool, pass its CIDR with `-VpnPrefix` when rerunning the host setup. Setup also sets the machine-wide OpenSSH `DefaultShell` to PowerShell 7 so Moshi can detect herdr on native Windows; this affects other Windows OpenSSH servers on the machine too. An unrelated existing `DefaultShell` is never overwritten and requires manual review. If this setup added the value and you need to undo it (only if it was absent beforehand), run `Remove-ItemProperty HKLM:\SOFTWARE\OpenSSH -Name DefaultShell`. The server and `herdr server` start when that user signs in; SSH requires the user to be signed in and the host to be awake and on the home LAN. Setup must be run on the home LAN with an elevated session belonging to the signed-in user. Other machines get an SSH config entry for each supplied host and a separate `MONEY-LAN` L2TP split-tunnel profile that routes only `192.168.111.0/24`; the existing full-tunnel `MONEY` profile is **never changed**. When running Step 6 separately, client prompts happen at the start of the script, not during unattended setup.
 
+Step 6 also installs the latest Moshi Hook on both hosts, disables usage collection, and installs only the Copilot CLI hook. This Windows integration is an experimental POC; Copilot CLI hooks on Windows have not been verified. Review [Moshi's data privacy notes](https://getmoshi.app/docs/hooks#data-privacy) before pairing; agent events may be sent to Moshi's service. A fresh `Install-All` kickoff asks for a pairing token only when the host is not already paired; Step 6 prompts at its start when run separately. The temporary token is DPAPI-encrypted under `C:\ProgramData\CiEnvironment` and removed after Step 6 uses it. If you skip pairing, run `& "$env:LOCALAPPDATA\Programs\Moshi Hook\bin\moshi-hook.exe" pair` later. Run Step 6 in elevated PowerShell as the same account signed in to the desktop, because Moshi Hook is installed in that account's profile.
+
+To remove the integration and its logon task:
+
+```powershell
+$moshiHook = Join-Path $env:LOCALAPPDATA 'Programs\Moshi Hook\bin\moshi-hook.exe'
+Unregister-ScheduledTask -TaskName MoshiHookServe -Confirm:$false
+& $moshiHook uninstall
+& $moshiHook unpair
+```
+
 #### Connect from a phone with Moshi and OpenVPN
 
 In Moshi, add a connection and generate an SSH key (Ed25519); the private key stays in Moshi's secure storage. Copy the **public** key from the key row and add it through a reviewed PR to [`ssh-authorized-keys.pub`](./Environment/ENVIRONMENT-MONEY-INSTALL/ssh-authorized-keys.pub), with a comment identifying the phone (for example, `moshi-iphone`). After the change is merged, rerun the host setup on both `MONEY-PC` and `MONEY-LP3` so each host refreshes its authorized-key file.
@@ -165,6 +176,8 @@ Connect `MONEY-LAN`; on first connection, SSH's `StrictHostKeyChecking accept-ne
 herdr machine add money-pc --label MONEY-PC --remote-session default
 herdr machine add money-lp3 --label MONEY-LP3 --remote-session default
 ```
+
+On Windows, `herdr machine add` probes for a Unix shell before switching to PowerShell, so `The system cannot find the path specified.` and `#< CLIXML` progress output may appear. These probe messages are expected when the command finishes with `Saved SSH machine ... Remote server is ready.`
 
 The server-side allowed user keys come from [`ssh-authorized-keys.pub`](./Environment/ENVIRONMENT-MONEY-INSTALL/ssh-authorized-keys.pub); review additions before deploying. To revoke a key, remove it via a reviewed PR and rerun the host setup on **both** hosts; this prevents new logins but does **not guarantee** that already-established sessions end. To rerun only the host setup (on each host, signed in and on the home LAN), use an elevated PowerShell 7 session:
 

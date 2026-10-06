@@ -22,7 +22,7 @@ There is no shared runtime or central orchestrator: every `.ps1` / `.sh` file is
   - `00.PreConfig.ps1` — bootstraps PowerShell 7
   - `01.WinUpdate.ps1`, `02.Driver.ps1`, `03.Setup01.ps1`, `04.Setup02.ps1`, `05.EdgeExtensions.ps1`, `06.REMOTE.ps1`
   - `install-vsix.ps1` — helper invoked by **`04.Setup02.ps1`** to install VS Marketplace extensions
-  - `setup-remote-host.ps1`, `setup-remote-client.ps1`, `ssh-authorized-keys.pub` — self-contained herdr remote-host/client setup and reviewed SSH key allowlist, used by **`06.REMOTE.ps1`**; the client helper also runs once at **`Install-All.ps1`** kickoff
+  - `setup-remote-host.ps1`, `setup-remote-client.ps1`, `ssh-authorized-keys.pub` — self-contained herdr remote-host/client setup and reviewed SSH key allowlist, used by **`06.REMOTE.ps1`**; the client helper also runs once at **`Install-All.ps1`** kickoff. Step 6 also installs Moshi Hook on `MONEY-PC` and `MONEY-LP3` for the Copilot CLI POC.
   - `EdgeExtensions.md` — Edge addon URLs parsed at runtime by `05.EdgeExtensions.ps1`
 - `Environment\ENVIRONMENT-MONEY-SANDBOX.ps1` — independent Windows Sandbox variant (legacy, pre-`Show-*` style)
 - `Environment\ENVIRONMENT-MONEY-INSTALL-MAC.sh` — macOS counterpart (Homebrew / mas), kept loosely in sync with `03.Setup01.ps1`
