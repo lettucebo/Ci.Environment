@@ -178,12 +178,14 @@ function Install-MoshiHook {
         $action = New-ScheduledTaskAction -Execute $conhost -Argument "--headless `"$exe`" serve"
         $trigger = New-ScheduledTaskTrigger -AtLogOn -User $userSid
         $principal = New-ScheduledTaskPrincipal -UserId $userSid -LogonType Interactive -RunLevel Limited
+        $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
+            -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit ([TimeSpan]::Zero)
         Register-ScheduledTask -TaskName 'MoshiHookServe' -Action $action -Trigger $trigger `
-            -Principal $principal -Force | Out-Null
+            -Principal $principal -Settings $settings -Force -ErrorAction Stop | Out-Null
         Get-Process -Name 'moshi-hook' -ErrorAction SilentlyContinue |
             Where-Object { $_.Path -eq $exe } |
             Stop-Process -Force -ErrorAction Stop
-        Start-ScheduledTask -TaskName 'MoshiHookServe'
+        Start-ScheduledTask -TaskName 'MoshiHookServe' -ErrorAction Stop
     } catch {
         Add-StepWarning -Item 'moshi-hook' -Message "Moshi Hook setup failed: $($_.Exception.Message)"
     } finally {
