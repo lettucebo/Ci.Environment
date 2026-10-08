@@ -168,6 +168,7 @@ function Install-MoshiHook {
             throw 'The Moshi Hook installer completed without creating moshi-hook.exe.'
         }
         Invoke-MoshiHookProcess -Executable $exe -ArgumentList @('set', 'usage-collection', 'off')
+        Invoke-MoshiHookProcess -Executable $exe -ArgumentList @('set', 'auto-update', 'auto')
         Invoke-MoshiHookProcess -Executable $exe -ArgumentList @('install', '--target', 'copilot')
 
         $secretsPath = Join-Path $env:LOCALAPPDATA 'Moshi\secrets.json'
@@ -182,7 +183,7 @@ function Install-MoshiHook {
             }
         } elseif (-not (Test-Path -LiteralPath $secretsPath -PathType Leaf)) {
             Add-StepWarning -Item 'moshi-hook' -Status 'manual_action_required' `
-                -Message "Moshi Hook is installed but not paired. Run '$exe pair' in an interactive PowerShell 7 session."
+                -Message 'Moshi Hook is installed but not paired. Open a new elevated PowerShell 7 window as the signed-in desktop user, rerun Step 6 (06.REMOTE.ps1), and enter the pairing token at its start.'
         }
 
         $userSid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
