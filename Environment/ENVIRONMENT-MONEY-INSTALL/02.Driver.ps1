@@ -214,7 +214,7 @@ function Show-Step2Complete {
 # Pre-flight: execution policy + admin rights
 # -------------------------
 Show-Section -Message "Set Execution Policy" -Emoji "🔐" -Color "Yellow"
-Set-ExecutionPolicy RemoteSigned -Scope LocalMachine -Force -ErrorAction SilentlyContinue
+try { Set-ExecutionPolicy RemoteSigned -Scope LocalMachine -Force -ErrorAction Stop } catch { }
 $localMachinePolicy = Get-ExecutionPolicy -Scope LocalMachine
 $effectivePolicy = Get-ExecutionPolicy
 if ($localMachinePolicy -ne 'RemoteSigned') {

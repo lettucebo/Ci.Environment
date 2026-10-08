@@ -29,6 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Documentation
 - `README.md` / `README.zh-TW.md` — document the Windows Herdr probe output, Moshi Hook POC behavior, pairing flow, privacy notice, and removal commands. (#71)
 
+### Fixed
+- `01.WinUpdate.ps1`–`06.REMOTE.ps1` — catch overridden execution-policy errors and report the effective policy without a misleading terminating error. (#76)
+
 ### Changed
 - `Install-All.ps1` — simplify snapshot hardening by removing SHA-256 checks, High integrity labels, and automatic migration of untrusted legacy state; keep strict ACL validation and fail closed when protected paths are unsafe or snapshot files are missing. (#66)
 - `06.REMOTE.ps1` — new Step 6 holding VPN client profiles and herdr remote host/client setup moved out of `03.Setup01.ps1` (herdr install, config and auto-title stay in 03; Synology L2TP registry stays in 03). Install-All runs it last; state version bumped to 6. (#64)

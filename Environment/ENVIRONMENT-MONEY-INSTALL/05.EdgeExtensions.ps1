@@ -103,7 +103,7 @@ Show-Info -Message ("Current Time: " + $scriptStart) -Emoji "⏰"
 
 # Set ExecutionPolicy to RemoteSigned for script execution
 Show-Section -Message "Set Execution Policy" -Emoji "🔐" -Color "Yellow"
-Set-ExecutionPolicy RemoteSigned -Scope LocalMachine -Force -ErrorAction SilentlyContinue
+try { Set-ExecutionPolicy RemoteSigned -Scope LocalMachine -Force -ErrorAction Stop } catch { }
 $localMachinePolicy = Get-ExecutionPolicy -Scope LocalMachine
 $effectivePolicy = Get-ExecutionPolicy
 if ($localMachinePolicy -ne 'RemoteSigned') {
