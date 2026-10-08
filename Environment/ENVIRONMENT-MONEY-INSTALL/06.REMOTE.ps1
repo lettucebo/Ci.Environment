@@ -139,10 +139,22 @@ function Invoke-MoshiHookProcess {
         throw "Process '$Executable' failed with exit code $($process.ExitCode)."
     }
 }
+function Remove-IncompleteMoshiReleases {
+    $releasesRoot = Join-Path $env:USERPROFILE '.moshi\packages\standalone\releases'
+    if (-not (Test-Path -LiteralPath $releasesRoot -PathType Container)) { return }
+
+    foreach ($release in Get-ChildItem -LiteralPath $releasesRoot -Directory -ErrorAction Stop) {
+        $executable = Join-Path $release.FullName 'moshi-hook.exe'
+        if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
+            Remove-Item -LiteralPath $release.FullName -Recurse -Force -ErrorAction Stop
+        }
+    }
+}
 function Install-MoshiHook {
     param([AllowNull()][System.Security.SecureString]$PairingToken)
     $pairingPath = Join-Path (Join-Path $env:ProgramData 'CiEnvironment') 'moshi-pairing.dat'
     try {
+        Remove-IncompleteMoshiReleases
         $pwsh = Join-Path $env:ProgramFiles 'PowerShell\7\pwsh.exe'
         $installerCommand = '$ErrorActionPreference = "Stop"; Invoke-RestMethod ''https://getmoshi.app/install.ps1'' | Invoke-Expression'
         $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($installerCommand))
