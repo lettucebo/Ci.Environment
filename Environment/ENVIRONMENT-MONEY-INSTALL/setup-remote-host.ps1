@@ -227,6 +227,216 @@ function Set-HerdrDefaultShell {
     }
 }
 
+function Write-CiProfileStagingFile {
+    param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][byte[]]$Bytes)
+
+    $stream = [IO.FileStream]::new($Path, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+    try {
+        $stream.Write($Bytes, 0, $Bytes.Length)
+        $stream.Flush($true)
+    } finally { $stream.Dispose() }
+}
+
+function Update-CiProfileFile {
+    param([Parameter(Mandatory)][string]$Path, [string]$ManagedContent)
+
+    # Keep this writer identical in 03.Setup01.ps1: both files ship standalone under iex.
+    $guard = @'
+# >>> Ci.Environment ssh-noninteractive-guard >>>
+if ($env:SSH_CONNECTION -and ([Environment]::GetCommandLineArgs() | Where-Object { $_ -in '-c','-Command','-EncodedCommand' })) { return }
+# <<< Ci.Environment ssh-noninteractive-guard <<<
+'@
+    [byte[]]$bytes = @()
+    $existed = [IO.File]::Exists($Path)
+    if ($existed) { $bytes = [IO.File]::ReadAllBytes($Path) }
+    $encoding = [Text.UTF8Encoding]::new($false, $true)
+    $skip = 0
+    if ($bytes.Length -ge 3 -and $bytes[0] -eq 239 -and $bytes[1] -eq 187 -and $bytes[2] -eq 191) {
+        $encoding = [Text.UTF8Encoding]::new($true, $true); $skip = 3
+    } elseif ($bytes.Length -ge 4 -and $bytes[0] -eq 255 -and $bytes[1] -eq 254 -and $bytes[2] -eq 0 -and $bytes[3] -eq 0) {
+        $encoding = [Text.UTF32Encoding]::new($false, $true, $true); $skip = 4
+    } elseif ($bytes.Length -ge 4 -and $bytes[0] -eq 0 -and $bytes[1] -eq 0 -and $bytes[2] -eq 254 -and $bytes[3] -eq 255) {
+        $encoding = [Text.UTF32Encoding]::new($true, $true, $true); $skip = 4
+    } elseif ($bytes.Length -ge 2 -and $bytes[0] -eq 255 -and $bytes[1] -eq 254) {
+        $encoding = [Text.UnicodeEncoding]::new($false, $true, $true); $skip = 2
+    } elseif ($bytes.Length -ge 2 -and $bytes[0] -eq 254 -and $bytes[1] -eq 255) {
+        $encoding = [Text.UnicodeEncoding]::new($true, $true, $true); $skip = 2
+    }
+    $text = $encoding.GetString($bytes, $skip, $bytes.Length - $skip)
+    $original = $text
+    $newline = if ($text.Contains("`r`n")) { "`r`n" } else { "`n" }
+    $guard = $guard.Replace("`r`n", "`n").Replace("`n", $newline)
+
+    function Test-TopLevelProfileComment($Ast, $Token, [string]$Content) {
+        $lineStart = if ($Token.Extent.StartOffset) {
+            $Content.LastIndexOf("`n", $Token.Extent.StartOffset - 1) + 1
+        } else { 0 }
+        if ($Content.Substring($lineStart, $Token.Extent.StartOffset - $lineStart).Trim()) { return $false }
+        if (@($Ast.EndBlock.Statements | Where-Object {
+            $_.Extent.StartOffset -lt $Token.Extent.StartOffset -and $_.Extent.EndOffset -gt $Token.Extent.EndOffset
+        }).Count) { return $false }
+        return -not $Ast.FindAll({
+            param($node)
+            ($node -is [Management.Automation.Language.FunctionDefinitionAst] -or
+             $node -is [Management.Automation.Language.ScriptBlockAst] -and $node -ne $Ast -or
+             $node -is [Management.Automation.Language.TypeDefinitionAst] -or
+             $node -is [Management.Automation.Language.StatementBlockAst]) -and
+            $node.Extent.StartOffset -lt $Token.Extent.StartOffset -and
+            $node.Extent.EndOffset -gt $Token.Extent.EndOffset
+        }, $true).Count
+    }
+    function Get-ProfileStatementKey($Statement) {
+        $tokens = $null
+        $null = [Management.Automation.Language.Parser]::ParseInput($Statement.Extent.Text, [ref]$tokens, [ref]$null)
+        # Ignore formatting, not token boundaries or whitespace inside user strings.
+        return (($tokens | Where-Object { $_.Kind -notin 'NewLine', 'LineContinuation', 'EndOfInput' } |
+            ForEach-Object { "$($_.Kind):$($_.Text)" }) -join "`0")
+    }
+    function Get-ProfileSyntax([string]$Content) {
+        $tokens = $null; $errors = $null
+        $ast = [Management.Automation.Language.Parser]::ParseInput($Content, [ref]$tokens, [ref]$errors)
+        if ($errors.Count -or $ast.ParamBlock) { throw 'Profile has parse errors or a top-level param block; manual action required.' }
+        $ranges = @{}
+        foreach ($name in 'ssh-noninteractive-guard', 'powershell-profile') {
+            $markers = @($tokens | Where-Object {
+                $_.Kind -eq 'Comment' -and $_.Text -match ('Ci\.Environment ' + $name) -and $_.Text -match '[<>]'
+            })
+            if (-not $markers.Count) { continue }
+            if ($markers.Count -ne 2 -or $markers[0].Text -cne "# >>> Ci.Environment $name >>>" -or
+                $markers[1].Text -cne "# <<< Ci.Environment $name <<<") {
+                throw "Malformed or duplicate '$name' profile markers; manual action required."
+            }
+            foreach ($marker in $markers) {
+                if (-not (Test-TopLevelProfileComment $ast $marker $Content)) {
+                    throw "Profile marker '$name' is not a standalone top-level comment; manual action required."
+                }
+            }
+            $ranges[$name] = @{ Start = $markers[0].Extent.StartOffset; End = $markers[1].Extent.EndOffset }
+            foreach ($statement in @($ast.EndBlock.Statements) + @($ast.UsingStatements)) {
+                if ($statement -and $statement.Extent.StartOffset -lt $ranges[$name].End -and
+                    $statement.Extent.EndOffset -gt $ranges[$name].Start -and
+                    ($statement.Extent.StartOffset -lt $ranges[$name].Start -or $statement.Extent.EndOffset -gt $ranges[$name].End)) {
+                    throw "Profile marker '$name' splits a statement; manual action required."
+                }
+            }
+        }
+        if ($ranges.Count -eq 2) {
+            $a = $ranges['ssh-noninteractive-guard']; $b = $ranges['powershell-profile']
+            if ($a.Start -lt $b.End -and $b.Start -lt $a.End) { throw 'Overlapping profile markers; manual action required.' }
+        }
+        return @{ Ast = $ast; Tokens = $tokens; Ranges = $ranges }
+    }
+    $syntax = Get-ProfileSyntax $text
+    if ($ManagedContent) {
+        $body = $ManagedContent.Replace("`r`n", "`n").Replace("`n", $newline)
+        $managed = "# >>> Ci.Environment powershell-profile >>>$newline$body$newline# <<< Ci.Environment powershell-profile <<<"
+        $edits = [Collections.Generic.List[object]]::new()
+        $managedRange = $syntax.Ranges['powershell-profile']
+        if ($syntax.Ranges.ContainsKey('powershell-profile')) {
+            $edits.Add(@{ Start = $managedRange.Start; End = $managedRange.End; Value = $managed })
+        }
+        $template = (Get-ProfileSyntax $body).Ast.EndBlock.Statements
+        $statements = @($syntax.Ast.EndBlock.Statements)
+        $templateKeys = @($template | ForEach-Object { Get-ProfileStatementKey $_ })
+        $statementKeys = @($statements | ForEach-Object {
+            if ($managedRange -and $_.Extent.StartOffset -ge $managedRange.Start -and $_.Extent.EndOffset -le $managedRange.End) {
+                $null
+            } else { Get-ProfileStatementKey $_ }
+        })
+        $lastSequence = -1
+        for ($i = 0; $i -le $statements.Count - $template.Count; $i++) {
+            $matches = $true
+            for ($j = 0; $j -lt $template.Count; $j++) {
+                if ($statementKeys[$i + $j] -cne $templateKeys[$j]) {
+                    $matches = $false; break
+                }
+            }
+            if ($matches) {
+                $lastSequence = $statements[$i].Extent.StartOffset
+                for ($j = 0; $j -lt $template.Count; $j++) {
+                    $edits.Add(@{ Start = $statements[$i + $j].Extent.StartOffset; End = $statements[$i + $j].Extent.EndOffset; Value = '' })
+                }
+                $i += $template.Count - 1
+            }
+        }
+        $starship = $templateKeys[-1]
+        for ($i = 0; $i -lt $statements.Count; $i++) {
+            $statement = $statements[$i]
+            if ($statementKeys[$i] -ceq $starship -and
+                -not @($edits | Where-Object { $_.Start -eq $statement.Extent.StartOffset }).Count) {
+                $edits.Add(@{ Start = $statement.Extent.StartOffset; End = $statement.Extent.EndOffset; Value = '' })
+            }
+        }
+        if (-not $managedRange) {
+            if ($lastSequence -ge 0) {
+                ($edits | Where-Object { $_.Start -eq $lastSequence }).Value = $managed
+            } else {
+                $core = $syntax.Tokens | Where-Object {
+                    $_.Kind -eq 'Comment' -and $_.Text.StartsWith('# DO NOT MODIFY -- coreutils') -and
+                    (Test-TopLevelProfileComment $syntax.Ast $_ $text)
+                } | Select-Object -First 1
+                $position = if ($core) { $core.Extent.StartOffset } else { $text.Length }
+                $prefix = if ($position -and $text[$position - 1] -ne "`n") { $newline } else { '' }
+                $edits.Add(@{ Start = $position; End = $position; Value = "$prefix$managed$newline" })
+            }
+        }
+        foreach ($edit in ($edits | Sort-Object Start -Descending)) {
+            $text = $text.Remove($edit.Start, $edit.End - $edit.Start).Insert($edit.Start, $edit.Value)
+        }
+    }
+    $syntax = Get-ProfileSyntax $text
+    if ($syntax.Ranges.ContainsKey('ssh-noninteractive-guard')) {
+        $range = $syntax.Ranges['ssh-noninteractive-guard']
+        $end = $range.End
+        if ($text.Substring($end).StartsWith($newline)) { $end += $newline.Length }
+        $text = $text.Remove($range.Start, $end - $range.Start)
+    }
+    $syntax = Get-ProfileSyntax $text
+    $position = 0
+    if ($syntax.Ast.UsingStatements.Count) {
+        $position = $syntax.Ast.UsingStatements[-1].Extent.EndOffset
+        # Leave an inline comment attached to its using statement.
+        $lineEnd = $text.IndexOf("`n", $position)
+        if ($lineEnd -ge 0 -and $text.Substring($position, $lineEnd - $position).Trim() -match '^(#.*)?$') {
+            $position = $lineEnd + 1
+        }
+    }
+    $prefix = if ($position -and $text[$position - 1] -ne "`n") { $newline } else { '' }
+    $text = $text.Insert($position, "$prefix$guard$newline")
+    $null = Get-ProfileSyntax $text
+    if ($text -cne $original) {
+        $fullPath = [IO.Path]::GetFullPath($Path)
+        $parent = [IO.Path]::GetDirectoryName($fullPath)
+        [IO.Directory]::CreateDirectory($parent) | Out-Null
+        $stagingPath = Join-Path $parent ('.ci-profile-' + [guid]::NewGuid().ToString('N') + '.tmp')
+        $writeError = ''
+        try {
+            Write-CiProfileStagingFile -Path $stagingPath -Bytes ([byte[]]($encoding.GetPreamble() + $encoding.GetBytes($text)))
+            if ($existed) { [IO.File]::Replace($stagingPath, $fullPath, [NullString]::Value) }
+            else { [IO.File]::Move($stagingPath, $fullPath, $false) }
+        } catch {
+            $writeError = $_.Exception.Message
+            throw "Atomic profile write failed for '$fullPath': $writeError"
+        } finally {
+            try {
+                if ([IO.File]::Exists($stagingPath)) { [IO.File]::Delete($stagingPath) }
+            } catch {
+                throw "Could not remove profile staging file '$stagingPath': $($_.Exception.Message). Write failure: $writeError"
+            }
+        }
+    }
+}
+
+function Install-HerdrProfileSshGuard {
+    param([string]$Path = $PROFILE)
+    try {
+        Update-CiProfileFile -Path $Path
+    } catch {
+        return New-HerdrHostIssue -Status 'manual_action_required' `
+            -Message "Could not install the noninteractive SSH profile guard in '$Path'; review the profile manually: $($_.Exception.Message)"
+    }
+}
+
 function Resolve-HerdrSid {
         param([string]$Identity)
         if ($Identity -match '^S-\d(?:-\d+)+$') { return $Identity }
@@ -490,6 +700,7 @@ function Invoke-HerdrHostSetup {
                     New-HerdrHostIssue -Status 'manual_action_required' `
                         -Message "Could not configure Moshi's Windows OpenSSH shell detection: $($_.Exception.Message)"
                 }
+                Install-HerdrProfileSshGuard
                 Stop-HerdrOwnedSshd -Exe $sshd -Sid $sid -Config $config
                 Start-ScheduledTask -TaskName HerdrSshd -ErrorAction Stop
                 $deadline = (Get-Date).AddSeconds(30)
