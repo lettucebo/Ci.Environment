@@ -151,6 +151,8 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 
 在 `MONEY-PC`、`MONEY-LP3` 上，步驟 6 會設定由使用者執行、只接受金鑰的 SSH server，使用 port 2222，**只綁家中 LAN 的 IPv4**；單一防火牆規則只在 Private/Domain 網路放行家中 LAN 與 VPN pool（L2TP 為 `10.2.0.0/24`，Synology OpenVPN 預設為 `10.8.0.0/24`）。若 VPN 使用不同網段，重跑 host setup 時用 `-VpnPrefix` 傳入該 CIDR。設定也會將全機 OpenSSH `DefaultShell` 設為 PowerShell 7，讓 Moshi 能在原生 Windows 偵測 herdr；這也會影響同一台機器上的其他 Windows OpenSSH server。若已有其他 `DefaultShell` 值，腳本不會覆寫，需人工檢查。若此設定新增了該值且需要還原（僅限原先沒有此值的情況），執行 `Remove-ItemProperty HKLM:\SOFTWARE\OpenSSH -Name DefaultShell`。server 與 `herdr server` 在使用者登入時啟動；使用 SSH 前，使用者必須已登入，主機要保持喚醒並位於家中 LAN。設定時需在家中 LAN，以目前登入者本人的提權工作階段執行。其他電腦會取得各 host 的 SSH config 與獨立的 `MONEY-LAN` L2TP split-tunnel profile，只路由 `192.168.111.0/24`；既有 full-tunnel `MONEY` profile **完全不修改**。單獨執行步驟 6 時，用戶端提問會在腳本開頭進行，不會在無人值守的設定過程中詢問。
 
+PowerShell 7 即使執行 SSH 指令也會載入使用者的 profile。步驟 3 會安裝有標記的守衛，讓帶有 `-c`、`-Command` 或 `-EncodedCommand` 的非互動 SSH 呼叫略過 profile；本機指令與互動式 SSH 則維持正常的 profile 行為。步驟 3 也會保守遷移重複的舊版 PSReadLine／Starship 區塊，不改動使用者內容或最後生效的 coreutils `PSConsoleHostReadLine` 覆寫。單獨執行步驟 6 會安裝相同守衛，但不遷移 PSReadLine。若 profile 有解析錯誤、最上層 `param()` 區塊或無法明確辨識的管理標記，腳本會保留原檔並警告需要手動處理；守衛安裝失敗不會中斷 SSH 設定。`DefaultShell` 的登錄設定行為維持不變。
+
 #### 使用手機 Moshi 搭配 OpenVPN 連線
 
 在 Moshi 新增連線並產生 SSH 金鑰（Ed25519）；私鑰留在 Moshi 的安全儲存空間。從金鑰項目複製**公鑰**，透過經審查的 PR 加入 [`ssh-authorized-keys.pub`](./Environment/ENVIRONMENT-MONEY-INSTALL/ssh-authorized-keys.pub)，並在註解標示手機（例如 `moshi-iphone`）。變更合併後，在 `MONEY-PC` 與 `MONEY-LP3` 兩台 host 都重跑 host setup，更新各自允許的公鑰。
