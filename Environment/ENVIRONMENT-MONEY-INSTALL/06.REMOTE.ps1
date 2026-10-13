@@ -144,6 +144,7 @@ function Remove-IncompleteMoshiReleases {
     if (-not (Test-Path -LiteralPath $releasesRoot -PathType Container)) { return }
 
     foreach ($release in Get-ChildItem -LiteralPath $releasesRoot -Directory -ErrorAction Stop) {
+        if ($release.Name.StartsWith('.staging-', [StringComparison]::OrdinalIgnoreCase)) { continue }
         $executable = Join-Path $release.FullName 'moshi-hook.exe'
         if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
             Remove-Item -LiteralPath $release.FullName -Recurse -Force -ErrorAction Stop
@@ -597,7 +598,13 @@ $scriptStart = Get-Date
 
 # Set ExecutionPolicy to RemoteSigned for script execution
 Show-Section -Message "Set Execution Policy" -Emoji "🔐" -Color "Yellow"
-try { Set-ExecutionPolicy RemoteSigned -Scope LocalMachine -Force -ErrorAction Stop } catch { }
+$higherPriorityPolicy = Get-ExecutionPolicy -List | Where-Object {
+    $_.Scope -in @('MachinePolicy', 'UserPolicy', 'Process', 'CurrentUser') -and
+    $_.ExecutionPolicy -ne 'Undefined'
+} | Select-Object -First 1
+if ($null -eq $higherPriorityPolicy) {
+    try { Set-ExecutionPolicy RemoteSigned -Scope LocalMachine -Force -ErrorAction Stop } catch { }
+}
 $localMachinePolicy = Get-ExecutionPolicy -Scope LocalMachine
 $effectivePolicy = Get-ExecutionPolicy
 if ($localMachinePolicy -ne 'RemoteSigned') {
