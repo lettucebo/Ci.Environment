@@ -162,6 +162,8 @@ Unregister-ScheduledTask -TaskName MoshiHookServe -Confirm:$false
 & $moshiHook unpair
 ```
 
+PowerShell 7 即使執行 SSH 指令也會載入使用者的 profile。步驟 3 會安裝有標記的守衛，讓帶有 `-c`、`-Command` 或 `-EncodedCommand` 的非互動 SSH 呼叫略過 profile；本機指令與互動式 SSH 則維持正常的 profile 行為。步驟 3 也會保守遷移重複的舊版 PSReadLine／Starship 區塊，不改動使用者內容或最後生效的 coreutils `PSConsoleHostReadLine` 覆寫。單獨執行步驟 6 會安裝相同守衛，但不遷移 PSReadLine。若 profile 有解析錯誤、最上層 `param()` 區塊或無法明確辨識的管理標記，腳本會保留原檔並警告需要手動處理；守衛安裝失敗不會中斷 SSH 設定。`DefaultShell` 的登錄設定行為維持不變。
+
 #### 使用手機 Moshi 搭配 OpenVPN 連線
 
 在 Moshi 新增連線並產生 SSH 金鑰（Ed25519）；私鑰留在 Moshi 的安全儲存空間。從金鑰項目複製**公鑰**，透過經審查的 PR 加入 [`ssh-authorized-keys.pub`](./Environment/ENVIRONMENT-MONEY-INSTALL/ssh-authorized-keys.pub)，並在註解標示手機（例如 `moshi-iphone`）。變更合併後，在 `MONEY-PC` 與 `MONEY-LP3` 兩台 host 都重跑 host setup，更新各自允許的公鑰。

@@ -162,6 +162,8 @@ Unregister-ScheduledTask -TaskName MoshiHookServe -Confirm:$false
 & $moshiHook unpair
 ```
 
+PowerShell 7 loads the user's profile even for SSH commands. Step 3 installs a marked guard that skips the profile for noninteractive SSH invocations using `-c`, `-Command`, or `-EncodedCommand`; local commands and interactive SSH keep their normal profile behavior. Step 3 also conservatively migrates duplicate legacy PSReadLine/Starship blocks without changing user content or the final coreutils `PSConsoleHostReadLine` override. Standalone Step 6 installs the same guard but does not migrate PSReadLine. Profiles with parse errors, a top-level `param()` block, or ambiguous managed markers are left untouched with a manual-action warning; guard installation failure does not abort SSH setup. The `DefaultShell` registry behavior is unchanged.
+
 #### Connect from a phone with Moshi and OpenVPN
 
 In Moshi, add a connection and generate an SSH key (Ed25519); the private key stays in Moshi's secure storage. Copy the **public** key from the key row and add it through a reviewed PR to [`ssh-authorized-keys.pub`](./Environment/ENVIRONMENT-MONEY-INSTALL/ssh-authorized-keys.pub), with a comment identifying the phone (for example, `moshi-iphone`). After the change is merged, rerun the host setup on both `MONEY-PC` and `MONEY-LP3` so each host refreshes its authorized-key file.
