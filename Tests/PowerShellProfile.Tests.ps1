@@ -31,7 +31,7 @@ Import-Module PSReadLine
 
 $OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.UTF8Encoding]::UTF8
 
-Set-PSReadLineOption -PredictionSource History 
+Set-PSReadLineOption -PredictionSource History
 Set-PSReadlineKeyHandler -Key Tab -Function Complete
 Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
 Set-PSReadLineKeyHandler -Key Escape -Function Undo
@@ -40,6 +40,9 @@ Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
 
 Invoke-Expression (&starship init powershell)
 '@
+$legacy = $legacy.Replace('Set-PSReadLineOption -PredictionSource History',
+    'Set-PSReadLineOption -PredictionSource History' + [char]0x20)
+Assert ($legacy.Contains('Set-PSReadLineOption -PredictionSource History' + [char]0x20)) 'legacy fixture retains the original trailing space at runtime'
 $guardStart = '# >>> Ci.Environment ssh-noninteractive-guard >>>'
 $guardEnd = '# <<< Ci.Environment ssh-noninteractive-guard <<<'
 $managedStart = '# >>> Ci.Environment powershell-profile >>>'
