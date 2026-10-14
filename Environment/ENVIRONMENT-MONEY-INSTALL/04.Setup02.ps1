@@ -190,7 +190,13 @@ if ($PSversionTable.PsVersion.Major -lt 7) {
 
 # Set ExecutionPolicy to RemoteSigned for script execution
 Show-Section -Message "Set Execution Policy" -Emoji "🔐" -Color "Yellow"
-Set-ExecutionPolicy RemoteSigned -Scope LocalMachine -Force -ErrorAction SilentlyContinue
+$higherPriorityPolicy = Get-ExecutionPolicy -List | Where-Object {
+    $_.Scope -in @('MachinePolicy', 'UserPolicy', 'Process', 'CurrentUser') -and
+    $_.ExecutionPolicy -ne 'Undefined'
+} | Select-Object -First 1
+if ($null -eq $higherPriorityPolicy) {
+    try { Set-ExecutionPolicy RemoteSigned -Scope LocalMachine -Force -ErrorAction Stop } catch { }
+}
 $localMachinePolicy = Get-ExecutionPolicy -Scope LocalMachine
 $effectivePolicy = Get-ExecutionPolicy
 if ($localMachinePolicy -ne 'RemoteSigned') {

@@ -109,6 +109,109 @@ function Write-StepResult {
         Show-Warning -Message "Could not write the step result to '$env:CI_ENV_STEP_RESULT_PATH': $($_.Exception.Message)"
     }
 }
+function Get-MoshiPairingToken {
+    param([bool]$CanPrompt)
+    $secretsPath = Join-Path $env:LOCALAPPDATA 'Moshi\secrets.json'
+    if (Test-Path -LiteralPath $secretsPath -PathType Leaf) { return $null }
+
+    if ($env:CI_ENV_ORCHESTRATED -eq '1') {
+        $pairingPath = Join-Path (Join-Path $env:ProgramData 'CiEnvironment') 'moshi-pairing.dat'
+        if (-not (Test-Path -LiteralPath $pairingPath -PathType Leaf)) { return $null }
+        try {
+            $encryptedToken = Get-Content -LiteralPath $pairingPath -Raw -ErrorAction Stop
+            return ConvertTo-SecureString -String $encryptedToken -ErrorAction Stop
+        } catch {
+            return $null
+        }
+    }
+
+    if (-not $CanPrompt) { return $null }
+    return Read-Host -Prompt 'Moshi pairing token (press Enter to pair manually later)' -AsSecureString
+}
+function Invoke-MoshiHookProcess {
+    param(
+        [Parameter(Mandatory)][string]$Executable,
+        [Parameter(Mandatory)][string[]]$ArgumentList
+    )
+    $process = Start-Process -FilePath $Executable -ArgumentList $ArgumentList `
+        -NoNewWindow -Wait -PassThru -ErrorAction Stop
+    if ($process.ExitCode -ne 0) {
+        throw "Process '$Executable' failed with exit code $($process.ExitCode)."
+    }
+}
+function Remove-IncompleteMoshiReleases {
+    $releasesRoot = Join-Path $env:USERPROFILE '.moshi\packages\standalone\releases'
+    if (-not (Test-Path -LiteralPath $releasesRoot -PathType Container)) { return }
+
+    foreach ($release in Get-ChildItem -LiteralPath $releasesRoot -Directory -ErrorAction Stop) {
+        if ($release.Name.StartsWith('.staging-', [StringComparison]::OrdinalIgnoreCase)) { continue }
+        $executable = Join-Path $release.FullName 'moshi-hook.exe'
+        if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
+            Remove-Item -LiteralPath $release.FullName -Recurse -Force -ErrorAction Stop
+        }
+    }
+}
+function Install-MoshiHook {
+    param([AllowNull()][System.Security.SecureString]$PairingToken)
+    $pairingPath = Join-Path (Join-Path $env:ProgramData 'CiEnvironment') 'moshi-pairing.dat'
+    try {
+        Remove-IncompleteMoshiReleases
+        $pwsh = Join-Path $env:ProgramFiles 'PowerShell\7\pwsh.exe'
+        $installerCommand = '$ErrorActionPreference = "Stop"; Invoke-RestMethod ''https://getmoshi.app/install.ps1'' | Invoke-Expression'
+        $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($installerCommand))
+        Invoke-MoshiHookProcess -Executable $pwsh -ArgumentList @(
+            '-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+            '-EncodedCommand', $encodedCommand
+        )
+
+        $exe = Join-Path $env:LOCALAPPDATA 'Programs\Moshi Hook\bin\moshi-hook.exe'
+        if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) {
+            throw 'The Moshi Hook installer completed without creating moshi-hook.exe.'
+        }
+        Invoke-MoshiHookProcess -Executable $exe -ArgumentList @('set', 'usage-collection', 'off')
+        Invoke-MoshiHookProcess -Executable $exe -ArgumentList @('set', 'auto-update', 'auto')
+        Invoke-MoshiHookProcess -Executable $exe -ArgumentList @('install', '--target', 'copilot')
+
+        $secretsPath = Join-Path $env:LOCALAPPDATA 'Moshi\secrets.json'
+        if ($PairingToken -and $PairingToken.Length -gt 0) {
+            $pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($PairingToken)
+            try {
+                $env:MOSHI_PAIRING_TOKEN = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($pointer)
+                Invoke-MoshiHookProcess -Executable $exe -ArgumentList @('pair')
+            } finally {
+                Remove-Item Env:\MOSHI_PAIRING_TOKEN -ErrorAction SilentlyContinue
+                [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer)
+            }
+        } elseif (-not (Test-Path -LiteralPath $secretsPath -PathType Leaf)) {
+            Add-StepWarning -Item 'moshi-hook' -Status 'manual_action_required' `
+                -Message 'Moshi Hook is installed but not paired. Open a new elevated PowerShell 7 window as the signed-in desktop user, rerun Step 6 (06.REMOTE.ps1), and enter the pairing token at its start.'
+        }
+
+        $userSid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+        $conhost = Join-Path $env:SystemRoot 'System32\conhost.exe'
+        $action = New-ScheduledTaskAction -Execute $conhost -Argument "--headless `"$exe`" serve"
+        $trigger = New-ScheduledTaskTrigger -AtLogOn -User $userSid
+        $principal = New-ScheduledTaskPrincipal -UserId $userSid -LogonType Interactive -RunLevel Limited
+        $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
+            -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit ([TimeSpan]::Zero)
+        Register-ScheduledTask -TaskName 'MoshiHookServe' -Action $action -Trigger $trigger `
+            -Principal $principal -Settings $settings -Force -ErrorAction Stop | Out-Null
+        Get-Process -Name 'moshi-hook' -ErrorAction SilentlyContinue |
+            Where-Object { $_.Path -eq $exe } |
+            Stop-Process -Force -ErrorAction Stop
+        Start-ScheduledTask -TaskName 'MoshiHookServe' -ErrorAction Stop
+    } catch {
+        Add-StepWarning -Item 'moshi-hook' -Message "Moshi Hook setup failed: $($_.Exception.Message)"
+    } finally {
+        if (Test-Path -LiteralPath $pairingPath -PathType Leaf) {
+            try {
+                Remove-Item -LiteralPath $pairingPath -Force -ErrorAction Stop
+            } catch {
+                Add-StepWarning -Item 'moshi-hook' -Message 'Could not remove the temporary Moshi pairing token; remove C:\ProgramData\CiEnvironment\moshi-pairing.dat manually.'
+            }
+        }
+    }
+}
 function New-ProtectedInstallerSecurity {
     param([bool]$Directory)
     $adminsSid = [Security.Principal.SecurityIdentifier]::new('S-1-5-32-544')
@@ -495,7 +598,13 @@ $scriptStart = Get-Date
 
 # Set ExecutionPolicy to RemoteSigned for script execution
 Show-Section -Message "Set Execution Policy" -Emoji "🔐" -Color "Yellow"
-Set-ExecutionPolicy RemoteSigned -Scope LocalMachine -Force -ErrorAction SilentlyContinue
+$higherPriorityPolicy = Get-ExecutionPolicy -List | Where-Object {
+    $_.Scope -in @('MachinePolicy', 'UserPolicy', 'Process', 'CurrentUser') -and
+    $_.ExecutionPolicy -ne 'Undefined'
+} | Select-Object -First 1
+if ($null -eq $higherPriorityPolicy) {
+    try { Set-ExecutionPolicy RemoteSigned -Scope LocalMachine -Force -ErrorAction Stop } catch { }
+}
 $localMachinePolicy = Get-ExecutionPolicy -Scope LocalMachine
 $effectivePolicy = Get-ExecutionPolicy
 if ($localMachinePolicy -ne 'RemoteSigned') {
@@ -524,7 +633,17 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
 $remoteHosts = @('MONEY-PC', 'MONEY-LP3')
 $script:RemoteClientPaths = $null
 $script:HerdrMachineRegistrationAttempted = $false
+$script:MoshiPairingToken = $null
 $clientCanPrompt = [Environment]::UserInteractive -and -not [Console]::IsInputRedirected
+if ($env:COMPUTERNAME -in $remoteHosts) {
+    try {
+        $script:MoshiPairingToken = Get-MoshiPairingToken -CanPrompt (
+            $env:CI_ENV_ORCHESTRATED -ne '1' -and $clientCanPrompt
+        )
+    } catch {
+        Add-StepWarning -Item 'moshi-hook' -Message 'Could not prepare the Moshi pairing token; pairing may need to be completed manually.'
+    }
+}
 if ($env:COMPUTERNAME -notin $remoteHosts -and
     $env:CI_ENV_ORCHESTRATED -ne '1' -and $clientCanPrompt) {
     try {
@@ -554,6 +673,9 @@ try {
     }
 } catch {
     Add-StepWarning -Item 'herdr.remote' -Message "Remote herdr setup did not complete: $($_.Exception.Message)"
+}
+if ($env:COMPUTERNAME -in $remoteHosts) {
+    Install-MoshiHook -PairingToken $script:MoshiPairingToken
 }
 
 $elapsed = (Get-Date) - $scriptStart
