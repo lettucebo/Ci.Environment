@@ -838,6 +838,8 @@ Install-WingetPackage -Id "GoLang.Go"
 # Remote Desktop Manager (replaces the retired RDCMan)
 Install-WingetPackage -Id "Devolutions.RemoteDesktopManager"
 
+Install-WingetPackage -Id "FilesCommunity.Files"
+
 # --- .NET SDKs (winget source) ---
 # Thin-and-light hosts get the supported set (8 LTS + 10 LTS); powerful hosts also get the
 # older/EOL SDKs (3.1/5/6/7/9).
