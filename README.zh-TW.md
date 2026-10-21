@@ -65,7 +65,7 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 
 orchestrator 會先將腳本快照到 `C:\ProgramData\CiEnvironment`，再依序執行步驟 0 → 6。Windows 更新會跑**兩次**，以補上第一次重開機後才出現的更新。機器**只在 Windows 回報有待處理的重開機時才重新開機**（因此若第二次更新沒抓到東西就直接接續）——通常 2 到 4 次——並透過使用者登入排程工作（`CiEnvironmentResume`）在每次重開機後自動接續。
 
-在**用戶端**電腦，kickoff 只在執行步驟前收集輸入。任一 VPN profile 缺少時，會詢問 VPN server FQDN/IP 與 L2TP/IPsec PSK；在 server 提示直接按 Enter 可沿用既有 `MONEY` 的 server。`MONEY-LAN` 可以使用不同的 server 名稱，不會修改 `MONEY`。接著詢問尚未設定的 `MONEY-PC` 與 `MONEY-LP3` LAN IP，並在有提供 host IP 時詢問 SSH 使用者；可留空略過某台 host。提問沒有 timeout。第一次連線 VPN 時由 Windows 詢問帳密，設定腳本不處理或記錄帳密；其餘步驟無人值守。在兩台 host 上，kickoff 略過用戶端提問；步驟 6 設定遠端存取，並以步驟 3 安裝的 herdr 為前提。
+在**用戶端**電腦，kickoff 只在執行步驟前收集輸入。任一 VPN profile 缺少時，會詢問 VPN server FQDN/IP 與 L2TP/IPsec PSK；在 server 提示直接按 Enter 可沿用既有 `MONEY` 的 server。`MONEY-LAN` 可以使用不同的 server 名稱，不會修改 `MONEY`。接著詢問尚未設定的 `MONEY-PC` 與 `MONEY-LP3` LAN IP，並在有提供 host IP 時詢問 SSH 使用者；可留空略過某台 host。提問沒有 timeout。第一次連線 VPN 時由 Windows 詢問帳密，設定腳本不處理或記錄帳密；其餘步驟無人值守。在兩台 host 上，kickoff 略過用戶端提問；若 Moshi 尚未配對，會額外詢問一次 pairing token（按 Enter 可稍後手動配對）。步驟 6 設定遠端存取，並以步驟 3 安裝的 herdr 為前提。
 
 > **在 passwordless / Windows Hello（PIN）帳號上為半自動。** 當帳號為 passwordless/Hello-only 時，Windows 會停用密碼式自動登入，因此每次重開機後你需**用 PIN 解鎖**，安裝便會自動繼續；全程不會儲存任何密碼。（若是有密碼的本機/網域帳號，登入照常進行即可。）
 
@@ -151,6 +151,27 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 
 在 `MONEY-PC`、`MONEY-LP3` 上，步驟 6 會設定由使用者執行、只接受金鑰的 SSH server，使用 port 2222，**只綁家中 LAN 的 IPv4**；單一防火牆規則只在 Private/Domain 網路放行家中 LAN 與 VPN pool（L2TP 為 `10.2.0.0/24`，Synology OpenVPN 預設為 `10.8.0.0/24`）。若 VPN 使用不同網段，重跑 host setup 時用 `-VpnPrefix` 傳入該 CIDR。設定也會將全機 OpenSSH `DefaultShell` 設為 PowerShell 7，讓 Moshi 能在原生 Windows 偵測 herdr；這也會影響同一台機器上的其他 Windows OpenSSH server。若已有其他 `DefaultShell` 值，腳本不會覆寫，需人工檢查。若此設定新增了該值且需要還原（僅限原先沒有此值的情況），執行 `Remove-ItemProperty HKLM:\SOFTWARE\OpenSSH -Name DefaultShell`。server 與 `herdr server` 在使用者登入時啟動；使用 SSH 前，使用者必須已登入，主機要保持喚醒並位於家中 LAN。設定時需在家中 LAN，以目前登入者本人的提權工作階段執行。其他電腦會取得各 host 的 SSH config 與獨立的 `MONEY-LAN` L2TP split-tunnel profile，只路由 `192.168.111.0/24`；既有 full-tunnel `MONEY` profile **完全不修改**。單獨執行步驟 6 時，用戶端提問會在腳本開頭進行，不會在無人值守的設定過程中詢問。
 
+步驟 6 也會在兩台 host 安裝最新版 Moshi Hook，啟用 usage collection、always-on discovery、自動更新、所有 port 的 preview 掃描與 Git background fetch，並關閉巢狀 agent 與無 multiplexer 時的推播抑制。腳本會替已有設定根目錄的 agent 安裝 hooks、保留既有 hooks，不強制建立未使用的 agent 設定。只有 `MONEY-PC` 的 Files root 會設為 `C:\Source\Repos`；`MONEY-LP3` 保留既有 Files roots。設定會先寫入，再重啟 `MoshiHookServe` 使用者登入排程。這是背景 daemon，不是 Windows SCM service；桌面使用者需保持登入，主機需保持喚醒。沒有待處理核准時，Moshi Hook 會自動安裝更新並重新啟動。
+
+此原生 Windows 整合仍是 experimental POC。Chat View、回覆／核准、Usage providers、Files、Diff 與 Browser Preview 取決於已安裝的 agent、Windows 支援、provider 登入狀態及適用的 Moshi 訂閱；啟用設定不代表已實測所有功能。Browser Preview 另需已有執行中的 dev server，macOS-only 功能不會安裝。配對前請閱讀 [Moshi 資料隱私說明](https://getmoshi.app/docs/hooks#data-privacy)；agent 事件與 Usage 同步可能會傳送至 Moshi 服務。`Install-All` kickoff 只會在 host 尚未配對時詢問 pairing token；單獨執行步驟 6 時則在腳本開頭提問。暫存 token 會以 DPAPI 加密保存於 `C:\ProgramData\CiEnvironment`，步驟 6 使用後即刪除。若略過配對，請以登入桌面之同一帳號開啟一個**新的提權 PowerShell 7 視窗**，單獨重跑步驟 6，並在開頭輸入 pairing token；步驟 6 會完成配對並重啟 daemon。請以登入桌面之同一帳號開啟提權 PowerShell 執行步驟 6，因為 Moshi Hook 會安裝在該帳號的 profile。
+
+腳本以 `-SkipService` 呼叫 upstream installer，避免在步驟 6 套用設定前先啟動 daemon，或讓安裝卡在等待該長駐子程序。之後由步驟 6 啟動既有 `MoshiHookServe` 排程，並更新自身 process PATH。其他已開啟的終端仍保留舊 PATH；請直接使用 stable 執行檔，不需重新安裝：
+
+```powershell
+& "$env:LOCALAPPDATA\Programs\Moshi Hook\bin\moshi-hook.exe" version
+```
+
+啟動排程後，步驟 6 最多等待本機 gateway 15 秒，再執行一次 `moshi-hook doctor --json`，診斷上限也是 15 秒。腳本檢查 Herdr 與 session readiness 的結果，不只看命令 exit code。舊版 Herdr server 仍在執行、無法取得診斷或結果格式異常時，會在既有步驟報告加入 `manual_action_required` 警告。請先保存 pane 工作，再人工處理或重啟既有 Herdr server，並以 `moshi-hook doctor --json` 複查。腳本不會重啟 Herdr 或套用 doctor 的修正。無關功能、Pro 權限與 Usage snapshots 不列入安裝門檻；這項檢查不代表手機行為已驗收。
+
+移除整合與登入排程：
+
+```powershell
+$moshiHook = Join-Path $env:LOCALAPPDATA 'Programs\Moshi Hook\bin\moshi-hook.exe'
+Unregister-ScheduledTask -TaskName MoshiHookServe -Confirm:$false
+& $moshiHook uninstall
+& $moshiHook unpair
+```
+
 PowerShell 7 即使執行 SSH 指令也會載入使用者的 profile。步驟 3 會安裝有標記的守衛，讓帶有 `-c`、`-Command` 或 `-EncodedCommand` 的非互動 SSH 呼叫略過 profile；本機指令與互動式 SSH 則維持正常的 profile 行為。步驟 3 也會保守遷移重複的舊版 PSReadLine／Starship 區塊，不改動使用者內容或最後生效的 coreutils `PSConsoleHostReadLine` 覆寫。單獨執行步驟 6 會安裝相同守衛，但不遷移 PSReadLine。若 profile 有解析錯誤、最上層 `param()` 區塊或無法明確辨識的管理標記，腳本會保留原檔並警告需要手動處理；守衛安裝失敗不會中斷 SSH 設定。`DefaultShell` 的登錄設定行為維持不變。
 
 #### 使用手機 Moshi 搭配 OpenVPN 連線
@@ -167,6 +188,8 @@ PowerShell 7 即使執行 SSH 指令也會載入使用者的 profile。步驟 3 
 herdr machine add money-pc --label MONEY-PC --remote-session default
 herdr machine add money-lp3 --label MONEY-LP3 --remote-session default
 ```
+
+在 Windows 上，`herdr machine add` 會先探測 Unix shell，再切換至 PowerShell，因此可能出現 `The system cannot find the path specified.` 與 `#< CLIXML` 進度輸出。若命令最後顯示 `Saved SSH machine ... Remote server is ready.`，這兩段探測訊息屬正常輸出。
 
 server 端允許的使用者金鑰由 [`ssh-authorized-keys.pub`](./Environment/ENVIRONMENT-MONEY-INSTALL/ssh-authorized-keys.pub) 管理，部署前請審查新增金鑰。撤銷時透過經審查的 PR 移除金鑰，並在**兩台** host 重跑設定；此後無法以該金鑰建立新連線，但**不保證**已建立的連線會中斷。若只需重跑 host 設定（在各 host 登入並連上家中 LAN），請使用提權的 PowerShell 7：
 

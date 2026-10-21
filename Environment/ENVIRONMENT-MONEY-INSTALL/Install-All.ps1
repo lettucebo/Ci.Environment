@@ -483,6 +483,34 @@ function Invoke-RemoteClientKickoff {
     }
 }
 
+function Invoke-MoshiPairingKickoff {
+    param([string]$ComputerName = $env:COMPUTERNAME)
+    if (@('MONEY-PC', 'MONEY-LP3') -notcontains $ComputerName) { return }
+
+    $secretsPath = Join-Path $env:LOCALAPPDATA 'Moshi\secrets.json'
+    if (Test-Path -LiteralPath $secretsPath -PathType Leaf) { return }
+
+    try {
+        $token = Read-Host 'Moshi pairing token (press Enter to pair manually later)' -AsSecureString
+    } catch {
+        Write-OrchLog 'Could not collect the Moshi pairing token; Step 6 will require manual pairing.' 'Warning'
+        return
+    }
+    if ($null -eq $token -or $token.Length -eq 0) {
+        Write-OrchLog 'No Moshi pairing token provided; Step 6 will require manual pairing.' 'Warning'
+        return
+    }
+
+    try {
+        $pairingPath = Join-Path $RootDir 'moshi-pairing.dat'
+        $encryptedToken = ConvertFrom-SecureString -SecureString $token
+        Write-LockedFile -Path $pairingPath -Content $encryptedToken -Encoding (New-Object System.Text.UTF8Encoding($true))
+        Write-OrchLog 'Moshi pairing token saved for Step 6.' 'Info'
+    } catch {
+        Write-OrchLog 'Could not save the Moshi pairing token; Step 6 will require manual pairing.' 'Warning'
+    }
+}
+
 # Verify the snapshot remains complete. Never mix files from a later repository revision into a run.
 function Ensure-Snapshot {
     foreach ($name in $SnapshotFiles) {
@@ -698,6 +726,7 @@ function Invoke-Orchestrator {
                 Initialize-RootDir
                 Invoke-Snapshot
                 Invoke-RemoteClientKickoff
+                Invoke-MoshiPairingKickoff
                 $steps = @()
                 foreach ($p in $Pipeline) {
                     $steps += [ordered]@{

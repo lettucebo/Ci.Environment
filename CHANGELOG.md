@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `06.REMOTE.ps1` — install Moshi Hook on `MONEY-PC` and `MONEY-LP3`, enable Usage and installed-agent hooks, pair during `Install-All` kickoff, and start the user daemon at logon (experimental Windows POC). (#79)
 - `setup-remote-host.ps1` — allow Synology OpenVPN clients to reach key-only herdr SSH and configure PowerShell 7 for Moshi's Windows Herdr detection; document phone access in both READMEs. (#70)
 - `06.REMOTE.ps1` — register managed SSH hosts as Herdr saved machines during interactive Step 6 setup, while failing closed when the existing machine inventory cannot be verified. (#69)
 - `03.Setup01.ps1` / `Install-All.ps1` — prepare key-only remote herdr access on `MONEY-PC` and `MONEY-LP3`: user-mode SSH on port 2222 bound to the home LAN, scoped Private/Domain firewall rule, reviewed public-key allowlist, and user logon tasks for SSH and herdr. Clients are prompted only at kickoff for an independent `MONEY-LAN` L2TP split-tunnel profile and managed SSH hosts; the existing full-tunnel `MONEY` profile is never changed. (#58)
@@ -25,7 +26,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 03.Setup01.ps1 — install the latest SayIt release (`lettucebo/SayIt`, Windows x64) from GitHub, resolved dynamically via the GitHub Releases API (not available in WinGet).
 - 03.Setup01.ps1 / 04.Setup02.ps1 — **performance-tier host gating**: powerful workstations (`MONEY-PC`, `MONEY-SLS2`) install the full toolset; every other host is treated as a thin-and-light laptop and skips heavy software — Visual Studio 2026 Enterprise + its VS extensions, Docker Desktop + the SQL/Redis/Postgres dev containers, Hyper-V, Windows Sandbox, Power BI, SSMS, and the older/EOL .NET SDKs (2.1/2.2/3.1/5/6/7/9). .NET 8 + 10 and WSL2 + Ubuntu stay on every host. Docker containers additionally require the `docker` CLI to be present. Add hostnames to `$powerfulHosts` (declared in both scripts) to treat more machines as powerful.
 
+### Documentation
+- `README.md` / `README.zh-TW.md` — document the Windows Herdr probe output, Moshi Hook POC behavior, pairing flow, privacy notice, and removal commands. (#71)
+
+### Fixed
+- `06.REMOTE.ps1` — check Herdr readiness after starting Moshi with a bounded, read-only doctor JSON probe; report incompatible running servers or unavailable/malformed diagnostics as manual-action warnings without restarting Herdr or gating unrelated features. (#79)
+- `06.REMOTE.ps1` — pass `-SkipService` to the upstream Moshi installer so its long-lived daemon cannot block `Start-Process -Wait` before settings and pairing; keep the existing logon task as the final startup and refresh the setup process PATH. (#79)
+- `01.WinUpdate.ps1`–`06.REMOTE.ps1` — skip LocalMachine policy writes when a higher-priority scope controls the effective policy, avoiding misleading terminating errors while preserving the existing status report. (#76)
+
 ### Changed
+- `06.REMOTE.ps1` — enable always-on discovery, full preview port scanning and Git background fetch; disable push suppression, set `MONEY-PC` Files roots to `C:\Source\Repos`, and apply settings before restarting the existing user daemon by explicit PID. No port-repair or service migration is added. (#79)
 - `Install-All.ps1` — simplify snapshot hardening by removing SHA-256 checks, High integrity labels, and automatic migration of untrusted legacy state; keep strict ACL validation and fail closed when protected paths are unsafe or snapshot files are missing. (#66)
 - `06.REMOTE.ps1` — new Step 6 holding VPN client profiles and herdr remote host/client setup moved out of `03.Setup01.ps1` (herdr install, config and auto-title stay in 03; Synology L2TP registry stays in 03). Install-All runs it last; state version bumped to 6. (#64)
 - `setup-remote-client.ps1` — simplify the client POC to use SSH default identities and `StrictHostKeyChecking accept-new`, retain split-tunnel VPN setup, and update the Step 3 instructions. (#62)
