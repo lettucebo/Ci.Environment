@@ -151,7 +151,17 @@ iex (Invoke-RestMethod 'https://raw.githubusercontent.com/lettucebo/Ci.Environme
 
 在 `MONEY-PC`、`MONEY-LP3` 上，步驟 6 會設定由使用者執行、只接受金鑰的 SSH server，使用 port 2222，**只綁家中 LAN 的 IPv4**；單一防火牆規則只在 Private/Domain 網路放行家中 LAN 與 VPN pool（L2TP 為 `10.2.0.0/24`，Synology OpenVPN 預設為 `10.8.0.0/24`）。若 VPN 使用不同網段，重跑 host setup 時用 `-VpnPrefix` 傳入該 CIDR。設定也會將全機 OpenSSH `DefaultShell` 設為 PowerShell 7，讓 Moshi 能在原生 Windows 偵測 herdr；這也會影響同一台機器上的其他 Windows OpenSSH server。若已有其他 `DefaultShell` 值，腳本不會覆寫，需人工檢查。若此設定新增了該值且需要還原（僅限原先沒有此值的情況），執行 `Remove-ItemProperty HKLM:\SOFTWARE\OpenSSH -Name DefaultShell`。server 與 `herdr server` 在使用者登入時啟動；使用 SSH 前，使用者必須已登入，主機要保持喚醒並位於家中 LAN。設定時需在家中 LAN，以目前登入者本人的提權工作階段執行。其他電腦會取得各 host 的 SSH config 與獨立的 `MONEY-LAN` L2TP split-tunnel profile，只路由 `192.168.111.0/24`；既有 full-tunnel `MONEY` profile **完全不修改**。單獨執行步驟 6 時，用戶端提問會在腳本開頭進行，不會在無人值守的設定過程中詢問。
 
-步驟 6 也會在兩台 host 安裝最新版 Moshi Hook、關閉 usage collection、啟用自動更新，並且只安裝 Copilot CLI hook。沒有待處理核准時，Moshi Hook 會自動安裝更新並重新啟動。此 Windows 整合是 experimental POC；Copilot CLI hooks 在 Windows 尚未驗證。配對前請閱讀 [Moshi 資料隱私說明](https://getmoshi.app/docs/hooks#data-privacy)；agent 事件可能會傳送至 Moshi 服務。`Install-All` kickoff 只會在 host 尚未配對時詢問 pairing token；單獨執行步驟 6 時則在腳本開頭提問。暫存 token 會以 DPAPI 加密保存於 `C:\ProgramData\CiEnvironment`，步驟 6 使用後即刪除。若略過配對，請以登入桌面之同一帳號開啟一個**新的提權 PowerShell 7 視窗**，單獨重跑步驟 6，並在開頭輸入 pairing token；步驟 6 會完成配對並重啟 daemon。請以登入桌面之同一帳號開啟提權 PowerShell 執行步驟 6，因為 Moshi Hook 會安裝在該帳號的 profile。
+步驟 6 也會在兩台 host 安裝最新版 Moshi Hook，啟用 usage collection、always-on discovery、自動更新、所有 port 的 preview 掃描與 Git background fetch，並關閉巢狀 agent 與無 multiplexer 時的推播抑制。腳本會替已有設定根目錄的 agent 安裝 hooks、保留既有 hooks，不強制建立未使用的 agent 設定。只有 `MONEY-PC` 的 Files root 會設為 `C:\Source\Repos`；`MONEY-LP3` 保留既有 Files roots。設定會先寫入，再重啟 `MoshiHookServe` 使用者登入排程。這是背景 daemon，不是 Windows SCM service；桌面使用者需保持登入，主機需保持喚醒。沒有待處理核准時，Moshi Hook 會自動安裝更新並重新啟動。
+
+此原生 Windows 整合仍是 experimental POC。Chat View、回覆／核准、Usage providers、Files、Diff 與 Browser Preview 取決於已安裝的 agent、Windows 支援、provider 登入狀態及適用的 Moshi 訂閱；啟用設定不代表已實測所有功能。Browser Preview 另需已有執行中的 dev server，macOS-only 功能不會安裝。配對前請閱讀 [Moshi 資料隱私說明](https://getmoshi.app/docs/hooks#data-privacy)；agent 事件與 Usage 同步可能會傳送至 Moshi 服務。`Install-All` kickoff 只會在 host 尚未配對時詢問 pairing token；單獨執行步驟 6 時則在腳本開頭提問。暫存 token 會以 DPAPI 加密保存於 `C:\ProgramData\CiEnvironment`，步驟 6 使用後即刪除。若略過配對，請以登入桌面之同一帳號開啟一個**新的提權 PowerShell 7 視窗**，單獨重跑步驟 6，並在開頭輸入 pairing token；步驟 6 會完成配對並重啟 daemon。請以登入桌面之同一帳號開啟提權 PowerShell 執行步驟 6，因為 Moshi Hook 會安裝在該帳號的 profile。
+
+腳本以 `-SkipService` 呼叫 upstream installer，避免在步驟 6 套用設定前先啟動 daemon，或讓安裝卡在等待該長駐子程序。之後由步驟 6 啟動既有 `MoshiHookServe` 排程，並更新自身 process PATH。其他已開啟的終端仍保留舊 PATH；請直接使用 stable 執行檔，不需重新安裝：
+
+```powershell
+& "$env:LOCALAPPDATA\Programs\Moshi Hook\bin\moshi-hook.exe" version
+```
+
+啟動排程後，步驟 6 最多等待本機 gateway 15 秒，再執行一次 `moshi-hook doctor --json`，診斷上限也是 15 秒。腳本檢查 Herdr 與 session readiness 的結果，不只看命令 exit code。舊版 Herdr server 仍在執行、無法取得診斷或結果格式異常時，會在既有步驟報告加入 `manual_action_required` 警告。請先保存 pane 工作，再人工處理或重啟既有 Herdr server，並以 `moshi-hook doctor --json` 複查。腳本不會重啟 Herdr 或套用 doctor 的修正。無關功能、Pro 權限與 Usage snapshots 不列入安裝門檻；這項檢查不代表手機行為已驗收。
 
 移除整合與登入排程：
 
